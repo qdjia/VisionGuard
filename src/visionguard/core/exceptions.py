@@ -19,4 +19,3 @@ class ImageLoadError(DetectorError):
 
 class InferenceError(DetectorError):
     """Raised when model inference or output parsing fails."""
-

@@ -1,0 +1,7 @@
+path: ../../data/visionguard_smoke
+train: images/train
+val: images/val
+test: images/test
+allow_empty_labels: true
+names:
+  0: synthetic_risk_region

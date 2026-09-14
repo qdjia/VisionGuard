@@ -1,0 +1,34 @@
+experiment_name: yolo26n_baseline_640
+model: yolo26n.pt
+data: datasets/visionguard.yaml
+artifacts_dir: ../artifacts/experiments
+epochs: 100
+batch_size: 8
+image_size: 640
+device: auto
+workers: 4
+seed: 42
+deterministic: true
+optimizer: AdamW
+learning_rate: 0.001
+weight_decay: 0.0005
+warmup_epochs: 3.0
+patience: 20
+amp: true
+resume: false
+pretrained: true
+save_period: 10
+validation_sample_count: 20
+augmentation:
+  hsv_h: 0.01
+  hsv_s: 0.35
+  hsv_v: 0.25
+  degrees: 5.0
+  translate: 0.05
+  scale: 0.20
+  shear: 0.0
+  perspective: 0.0
+  flipud: 0.0
+  fliplr: 0.5
+  mosaic: 0.5
+  mixup: 0.0

@@ -1,0 +1,14 @@
+path: ../../data/visionguard
+train: images/train
+val: images/val
+test: images/test
+allow_empty_labels: true
+names:
+  0: visual_sensitive_region
+  1: weapon
+  2: violence
+  3: blood
+  4: prohibited_symbol
+  5: qr_code
+  6: watermark
+  7: other_risky_visual_element

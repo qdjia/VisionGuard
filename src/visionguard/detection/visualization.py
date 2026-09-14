@@ -65,4 +65,3 @@ def save_visualization(
     if not cv2.imwrite(str(target), rendered):
         raise ImageLoadError(f"failed to save visualization: {target}")
     return target.resolve()
-

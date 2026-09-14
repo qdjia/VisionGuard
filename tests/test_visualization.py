@@ -26,4 +26,3 @@ def test_empty_detection_list_returns_equal_copy() -> None:
 
     assert rendered is not image
     assert np.array_equal(rendered, image)
-

@@ -25,4 +25,3 @@ class ImageReference(SchemaModel):
     source: str | None = None
     width: int = Field(gt=0)
     height: int = Field(gt=0)
-

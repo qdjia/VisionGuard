@@ -88,4 +88,3 @@ def test_warmup_runs_once_even_when_called_again() -> None:
 
     assert detector.is_warmed_up is True
     assert model.predict_calls == 1
-

@@ -27,4 +27,3 @@ class OCRResult(SchemaModel):
     @property
     def full_text(self) -> str:
         return "\n".join(block.text for block in self.blocks)
-

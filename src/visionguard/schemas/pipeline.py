@@ -36,4 +36,3 @@ class PipelineResult(SchemaModel):
     rule_result: ModerationResult | None = None
     vlm_result: ModerationResult | None = None
     timings: StageTimings = Field(default_factory=StageTimings)
-

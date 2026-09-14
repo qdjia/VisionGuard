@@ -1,0 +1,7 @@
+path: yolo_dataset
+train: images/train
+val: images/val
+test: images/test
+allow_empty_labels: true
+names:
+  0: weapon

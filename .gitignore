@@ -19,6 +19,9 @@ checkpoints/*
 data/*
 !data/.gitkeep
 runs/
+*.pt
+*.pth
+*.ckpt
 
 # Local secrets and overrides
 .env

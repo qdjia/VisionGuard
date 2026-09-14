@@ -26,4 +26,3 @@ def test_detection_confidence_must_be_normalized() -> None:
             confidence=1.1,
             bbox=BoundingBox(x1=0, y1=0, x2=10, y2=10),
         )
-

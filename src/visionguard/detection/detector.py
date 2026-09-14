@@ -176,9 +176,7 @@ class YOLODetector:
         class_ids = boxes.cls.detach().cpu().tolist()
 
         detections: list[Detection] = []
-        for coordinates, confidence, raw_class_id in zip(
-            xyxy, confidences, class_ids, strict=True
-        ):
+        for coordinates, confidence, raw_class_id in zip(xyxy, confidences, class_ids, strict=True):
             class_id = int(raw_class_id)
             original_name = self._class_name(names, class_id)
             class_name = self.config.class_name_mapping.get(original_name, original_name)
