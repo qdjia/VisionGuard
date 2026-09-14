@@ -1,0 +1,12 @@
+# The class order is part of the detector checkpoint contract. Append or migrate
+# deliberately; never duplicate this list in business code.
+classes:
+  - visual_sensitive_region
+  - weapon
+  - violence
+  - blood
+  - prohibited_symbol
+  - qr_code
+  - watermark
+  - other_risky_visual_element
+

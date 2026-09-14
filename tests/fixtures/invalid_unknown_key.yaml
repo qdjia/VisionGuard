@@ -1,0 +1,21 @@
+project:
+  name: test
+  environment: test
+  artifacts_dir: artifacts
+  checkpoints_dir: checkpoints
+detection:
+  classes_file: classes.yaml
+  model_path: model.pt
+  confidence_threshold: 0.25
+  iou_threshold: 0.45
+  image_size: 640
+  device: cpu
+  misspelled_option: true
+ocr: {language: ch, use_angle_cls: true, min_confidence: 0.5, enable_roi_ocr: true}
+vlm: {provider: mock, model: mock, timeout_seconds: 1, max_retries: 0}
+cascade:
+  enabled: true
+  high_confidence_threshold: 0.8
+  low_confidence_threshold: 0.3
+  call_vlm_on_conflict: true
+

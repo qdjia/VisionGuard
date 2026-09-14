@@ -1,0 +1,4 @@
+# Phase 1 runtime dependencies. Later phases add model-specific dependencies.
+pydantic>=2.7,<3
+PyYAML>=6.0,<7
+

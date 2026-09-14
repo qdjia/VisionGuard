@@ -1,0 +1,25 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+pytest-cache-files-*/
+.test-tmp/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+dist/
+build/
+*.egg-info/
+
+# Runtime and experiment outputs
+artifacts/*
+!artifacts/.gitkeep
+checkpoints/*
+!checkpoints/.gitkeep
+data/*
+!data/.gitkeep
+runs/
+
+# Local secrets and overrides
+.env
+configs/local*.yaml
