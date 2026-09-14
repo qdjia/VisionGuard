@@ -8,10 +8,11 @@ class SchemaModel(BaseModel):
 
 
 class BoundingBox(SchemaModel):
-    x1: float = Field(ge=0.0)
-    y1: float = Field(ge=0.0)
-    x2: float = Field(ge=0.0)
-    y2: float = Field(ge=0.0)
+    # Coordinates may extend beyond an image before a consumer clamps them.
+    x1: float
+    y1: float
+    x2: float
+    y2: float
 
     @model_validator(mode="after")
     def validate_order(self) -> "BoundingBox":

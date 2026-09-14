@@ -3,7 +3,7 @@
 from visionguard.schemas.common import BoundingBox, ImageReference
 from visionguard.schemas.detection import Detection, DetectionResult, TimingInfo
 from visionguard.schemas.moderation import Evidence, ModerationResult, RiskLevel
-from visionguard.schemas.ocr import OCRResult, OCRTextBlock
+from visionguard.schemas.ocr import OCRResult, OCRScope, OCRTextBlock, OCRTiming
 from visionguard.schemas.pipeline import DecisionSource, PipelineResult, StageTimings
 
 __all__ = [
@@ -15,7 +15,9 @@ __all__ = [
     "ImageReference",
     "ModerationResult",
     "OCRResult",
+    "OCRScope",
     "OCRTextBlock",
+    "OCRTiming",
     "PipelineResult",
     "RiskLevel",
     "StageTimings",

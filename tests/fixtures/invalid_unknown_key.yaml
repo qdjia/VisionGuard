@@ -11,7 +11,7 @@ detection:
   image_size: 640
   device: cpu
   misspelled_option: true
-ocr: {language: ch, use_angle_cls: true, min_confidence: 0.5, enable_roi_ocr: true}
+ocr: {provider: paddleocr, lang: ch, device: cpu, confidence_threshold: 0.5}
 vlm: {provider: mock, model: mock, timeout_seconds: 1, max_retries: 0}
 cascade:
   enabled: true

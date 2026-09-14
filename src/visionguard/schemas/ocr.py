@@ -15,15 +15,25 @@ class OCRScope(StrEnum):
 class OCRTextBlock(SchemaModel):
     text: str
     confidence: float = Field(ge=0.0, le=1.0)
+    polygon: list[tuple[float, float]] = Field(min_length=4)
     bbox: BoundingBox
     scope: OCRScope = OCRScope.FULL_IMAGE
 
 
-class OCRResult(SchemaModel):
-    blocks: list[OCRTextBlock] = Field(default_factory=list)
-    inference_ms: float = Field(ge=0.0)
-    engine_version: str | None = None
+class OCRTiming(SchemaModel):
+    preprocess_ms: float = Field(default=0.0, ge=0.0)
+    ocr_ms: float = Field(default=0.0, ge=0.0)
+    postprocess_ms: float = Field(default=0.0, ge=0.0)
+    total_ms: float = Field(default=0.0, ge=0.0)
 
-    @property
-    def full_text(self) -> str:
-        return "\n".join(block.text for block in self.blocks)
+
+class OCRResult(SchemaModel):
+    image_width: int = Field(gt=0)
+    image_height: int = Field(gt=0)
+    blocks: list[OCRTextBlock] = Field(default_factory=list)
+    full_text: str = ""
+    timing: OCRTiming
+    device: str
+    engine_name: str
+    raw_block_count: int = Field(default=0, ge=0)
+    filtered_block_count: int = Field(default=0, ge=0)

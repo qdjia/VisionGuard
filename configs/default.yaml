@@ -18,10 +18,22 @@ detection:
   class_name_mapping: {}
 
 ocr:
-  language: ch
-  use_angle_cls: true
-  min_confidence: 0.5
-  enable_roi_ocr: true
+  provider: paddleocr
+  lang: ch
+  device: auto
+  confidence_threshold: 0.5
+  use_textline_orientation: true
+  det_enabled: true
+  rec_enabled: true
+  max_side_len: 1920
+  warmup_enabled: true
+  fallback_full_image: true
+  preprocessing:
+    enabled: false
+    grayscale: false
+    contrast_enhancement: false
+    denoise: false
+    sharpen: false
 
 vlm:
   provider: mock

@@ -3,8 +3,7 @@
 基于视觉语言模型的多模态出版内容智能审校系统。
 
 本项目面向 AI / Computer Vision 算法作品集，采用 YOLO、OCR、规则引擎与 VLM
-组成多阶段级联推理流水线。当前完成到 **Phase 2：YOLO26 单模型推理**。
-组成多阶段级联推理流水线。当前完成到 **Phase 3：YOLO26 数据集、训练与评估**。
+组成多阶段级联推理流水线。当前完成到 **Phase 4：OCR 模块**。
 
 ## 安装与测试
 
@@ -43,14 +42,6 @@ python scripts/smoke_test_detector.py \
 
 三通道 `numpy.ndarray` 输入约定为 OpenCV BGR；四通道数组约定为 RGBA，并转换为
 BGR。模型在 `YOLODetector` 构造时加载一次，后续 `predict()` 复用同一实例。
-
-## 阶段边界
-
-目前仅实现单图目标检测，尚未实现训练、数据集处理、PaddleOCR、VLM、级联推理、
-批量 Benchmark 或 API。它们将在对应阶段验收后逐步加入。
-目前实现了单图检测、YOLO 数据集审计、配置驱动训练、checkpoint 评估、实验记录、
-validation 样本和轻量错误案例导出。尚未实现 PaddleOCR、VLM、级联推理、批量
-Benchmark 或 API。
 
 ## 数据集与训练
 
@@ -116,3 +107,61 @@ YOLO 已有增强。
 | Model | Image size | Batch | Epochs | Precision | Recall | mAP50 | mAP50-95 |
 |---|---:|---:|---:|---:|---:|---:|---:|
 | YOLO26n | 640 | 8 | 100 | 待真实数据集训练 | 待训练 | 待训练 | 待训练 |
+
+## OCR
+
+Phase 4 使用 PaddleOCR 3.x adapter，并通过稳定的 Pydantic Schema 返回文本、置信度、
+倾斜四点 polygon、axis-aligned bbox、原始/过滤后文本块数量和分阶段耗时。模型在
+`OCREngine` 构造时只加载一次，全图与 ROI 共用同一个实例。ROI 内坐标会映射回原图。
+
+PaddleOCR 首次运行会下载模型到 `artifacts/paddlex_cache/`。`device: auto` 会根据当前
+PaddlePaddle 构建自动选择设备；本项目允许 PyTorch YOLO 使用 GPU、PaddleOCR 使用 CPU。
+
+全图 OCR 与可视化：
+
+```bash
+python scripts/infer_ocr.py \
+  --image data/examples/page.jpg \
+  --config configs/ocr.yaml \
+  --output artifacts/ocr/page_result.jpg
+```
+
+ROI OCR（输出坐标仍是原图坐标）：
+
+```bash
+python scripts/infer_ocr_roi.py \
+  --image data/examples/page.jpg \
+  --bbox 100 200 800 500 \
+  --config configs/ocr.yaml \
+  --output artifacts/ocr/page_roi_result.jpg
+```
+
+真实模型 smoke test：
+
+```bash
+python scripts/create_ocr_smoke_images.py
+python scripts/smoke_test_ocr.py \
+  --chinese-image data/ocr_smoke/chinese.png \
+  --english-image data/ocr_smoke/english.png
+```
+
+CER 评估清单为 JSONL，每行包含相对清单目录的 `image` 和 `text`：
+
+```json
+{"image":"001.jpg","text":"这是正确文本"}
+```
+
+```bash
+python scripts/evaluate_ocr.py \
+  --manifest data/ocr_eval/ground_truth.jsonl \
+  --output artifacts/ocr/evaluation.json \
+  --error-threshold 0.3
+```
+
+高 CER 图片及其 GT、Prediction、CER 会导出到 `artifacts/ocr/error_cases/`。
+
+## 阶段边界
+
+当前已实现配置与 Schema、YOLO26 单图推理、YOLO 数据集/训练/评估，以及 PaddleOCR
+全图/ROI 推理和 CER 基础评估。尚未实现文本 Baseline、VLM、规则引擎、最终多模态
+Pipeline、级联推理、正式 Batch Benchmark、综合 Error Analysis 或 FastAPI。

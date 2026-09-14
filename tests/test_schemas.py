@@ -8,6 +8,7 @@ from visionguard.schemas import (
     ImageReference,
     ModerationResult,
     OCRResult,
+    OCRTiming,
     PipelineResult,
     RiskLevel,
     TimingInfo,
@@ -49,7 +50,15 @@ def test_pipeline_result_preserves_cascade_observability() -> None:
             device="cpu",
             model_name="test.pt",
         ),
-        ocr=OCRResult(blocks=[], inference_ms=7.1),
+        ocr=OCRResult(
+            image_width=640,
+            image_height=480,
+            blocks=[],
+            full_text="",
+            timing=OCRTiming(ocr_ms=7.1, total_ms=7.1),
+            device="cpu",
+            engine_name="test",
+        ),
         rule_result=moderation,
     )
 

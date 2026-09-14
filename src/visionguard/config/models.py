@@ -47,11 +47,36 @@ class DetectionConfig(StrictConfigModel):
         return self
 
 
+class OCRPreprocessingConfig(StrictConfigModel):
+    enabled: bool = False
+    grayscale: bool = False
+    contrast_enhancement: bool = False
+    denoise: bool = False
+    sharpen: bool = False
+
+
 class OCRConfig(StrictConfigModel):
-    language: str = "ch"
-    use_angle_cls: bool = True
-    min_confidence: float = Field(default=0.5, ge=0.0, le=1.0)
-    enable_roi_ocr: bool = True
+    provider: str = "paddleocr"
+    lang: str = "ch"
+    device: str = "auto"
+    confidence_threshold: float = Field(default=0.5, ge=0.0, le=1.0)
+    use_textline_orientation: bool = True
+    det_enabled: bool = True
+    rec_enabled: bool = True
+    max_side_len: int = Field(default=1920, gt=0)
+    warmup_enabled: bool = True
+    fallback_full_image: bool = True
+    preprocessing: OCRPreprocessingConfig = Field(default_factory=OCRPreprocessingConfig)
+
+    @model_validator(mode="after")
+    def validate_backend_options(self) -> "OCRConfig":
+        if self.provider.lower() != "paddleocr":
+            raise ValueError(
+                "Phase 4 supports provider='paddleocr'; use an adapter for another backend"
+            )
+        if not self.device.strip():
+            raise ValueError("OCR device must not be empty")
+        return self
 
 
 class VLMConfig(StrictConfigModel):
