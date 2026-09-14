@@ -22,10 +22,15 @@ class DetectionConfig(StrictConfigModel):
     classes_file: Path
     class_names: tuple[str, ...] = ()
     model_path: Path
-    confidence_threshold: float = Field(ge=0.0, le=1.0)
+    conf_threshold: float = Field(ge=0.0, le=1.0)
     iou_threshold: float = Field(ge=0.0, le=1.0)
+    max_det: int = Field(default=300, gt=0)
     image_size: int = Field(gt=0)
     device: str = "auto"
+    half_precision: bool = True
+    warmup_enabled: bool = True
+    warmup_runs: int = Field(default=1, ge=1, le=2)
+    class_name_mapping: dict[str, str] = Field(default_factory=dict)
 
     @model_validator(mode="after")
     def validate_classes(self) -> "DetectionConfig":
@@ -33,6 +38,12 @@ class DetectionConfig(StrictConfigModel):
             raise ValueError("detection class list must not be empty")
         if len(set(self.class_names)) != len(self.class_names):
             raise ValueError("detection class names must be unique")
+        return self
+
+    @model_validator(mode="after")
+    def validate_device(self) -> "DetectionConfig":
+        if not self.device.strip():
+            raise ValueError("device must not be empty")
         return self
 
 
@@ -69,4 +80,3 @@ class AppConfig(StrictConfigModel):
     ocr: OCRConfig
     vlm: VLMConfig
     cascade: CascadeConfig
-

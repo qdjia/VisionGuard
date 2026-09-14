@@ -1,4 +1,7 @@
-# Phase 1 runtime dependencies. Later phases add model-specific dependencies.
+# Phase 2 runtime dependencies.
+numpy>=1.26,<3
+opencv-python-headless>=4.9,<5
 pydantic>=2.7,<3
 PyYAML>=6.0,<7
-
+torch>=2.2
+ultralytics>=8.3,<9

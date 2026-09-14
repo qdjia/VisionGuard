@@ -41,7 +41,9 @@ def load_config(path: str | Path) -> AppConfig:
         detection = raw["detection"]
         classes_path = _resolve_path(detection["classes_file"], base_dir)
     except (KeyError, TypeError) as exc:
-        raise ConfigLoadError(f"missing or malformed required configuration in {config_path}") from exc
+        raise ConfigLoadError(
+            f"missing or malformed required configuration in {config_path}"
+        ) from exc
 
     classes_raw = _read_yaml(classes_path)
     class_names = classes_raw.get("classes")
@@ -65,4 +67,3 @@ def load_config(path: str | Path) -> AppConfig:
         return AppConfig.model_validate(normalized)
     except ValidationError as exc:
         raise ConfigLoadError(f"invalid application configuration: {config_path}\n{exc}") from exc
-

@@ -12,8 +12,17 @@ class Detection(SchemaModel):
     bbox: BoundingBox
 
 
-class DetectionResult(SchemaModel):
-    detections: list[Detection] = Field(default_factory=list)
-    inference_ms: float = Field(ge=0.0)
-    model_version: str | None = None
+class TimingInfo(SchemaModel):
+    preprocess_ms: float = Field(default=0.0, ge=0.0)
+    inference_ms: float = Field(default=0.0, ge=0.0)
+    postprocess_ms: float = Field(default=0.0, ge=0.0)
+    total_ms: float = Field(default=0.0, ge=0.0)
 
+
+class DetectionResult(SchemaModel):
+    image_width: int = Field(gt=0)
+    image_height: int = Field(gt=0)
+    detections: list[Detection] = Field(default_factory=list)
+    timing: TimingInfo
+    device: str = Field(min_length=1)
+    model_name: str = Field(min_length=1)

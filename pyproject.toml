@@ -9,8 +9,12 @@ description = "Multimodal publishing content moderation research pipeline"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
+    "numpy>=1.26,<3",
+    "opencv-python-headless>=4.9,<5",
     "pydantic>=2.7,<3",
     "PyYAML>=6.0,<7",
+    "torch>=2.2",
+    "ultralytics>=8.3,<9",
 ]
 
 [project.optional-dependencies]
@@ -25,6 +29,7 @@ where = ["src"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+markers = ["integration: requires local model weights and inference dependencies"]
 
 [tool.ruff]
 line-length = 100
@@ -32,4 +37,3 @@ target-version = "py310"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
-

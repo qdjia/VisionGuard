@@ -10,6 +10,7 @@ from visionguard.schemas import (
     OCRResult,
     PipelineResult,
     RiskLevel,
+    TimingInfo,
 )
 
 
@@ -40,7 +41,14 @@ def test_pipeline_result_preserves_cascade_observability() -> None:
         moderation=moderation,
         decision_source=DecisionSource.RULE_ENGINE,
         vlm_called=False,
-        detections=DetectionResult(detections=[], inference_ms=4.2),
+        detections=DetectionResult(
+            image_width=640,
+            image_height=480,
+            detections=[],
+            timing=TimingInfo(inference_ms=4.2, total_ms=4.2),
+            device="cpu",
+            model_name="test.pt",
+        ),
         ocr=OCRResult(blocks=[], inference_ms=7.1),
         rule_result=moderation,
     )
@@ -48,4 +56,3 @@ def test_pipeline_result_preserves_cascade_observability() -> None:
     payload = result.model_dump(mode="json")
     assert payload["vlm_called"] is False
     assert payload["decision_source"] == "rule_engine"
-

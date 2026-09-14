@@ -1,5 +1,7 @@
+# Standalone detector entry point. Kept as a complete AppConfig so every CLI
+# uses the same validated configuration contract.
 project:
-  name: visionguard
+  name: visionguard-detector
   environment: development
   artifacts_dir: ../artifacts
   checkpoints_dir: ../checkpoints
@@ -7,11 +9,11 @@ project:
 detection:
   classes_file: classes.yaml
   model_path: ../checkpoints/yolo26.pt
+  device: auto
   conf_threshold: 0.25
   iou_threshold: 0.45
   max_det: 300
   image_size: 640
-  device: auto
   half_precision: true
   warmup_enabled: true
   warmup_runs: 1

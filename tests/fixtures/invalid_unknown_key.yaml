@@ -6,7 +6,7 @@ project:
 detection:
   classes_file: classes.yaml
   model_path: model.pt
-  confidence_threshold: 0.25
+  conf_threshold: 0.25
   iou_threshold: 0.45
   image_size: 640
   device: cpu
@@ -18,4 +18,3 @@ cascade:
   high_confidence_threshold: 0.8
   low_confidence_threshold: 0.3
   call_vlm_on_conflict: true
-
