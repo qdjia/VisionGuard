@@ -7,3 +7,5 @@ pydantic>=2.7,<3
 PyYAML>=6.0,<7
 torch>=2.2
 ultralytics>=8.3,<9
+scikit-learn>=1.5,<2
+joblib>=1.4,<2

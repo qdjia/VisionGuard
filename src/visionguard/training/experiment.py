@@ -7,16 +7,18 @@ from typing import Any
 
 import yaml
 
-from visionguard.training.config import TrainConfig
-
 
 class ExperimentManager:
-    def __init__(self, config: TrainConfig) -> None:
+    def __init__(self, config: Any) -> None:
         self.config = config
         self.directory = config.artifacts_dir / config.experiment_name
 
     def prepare(self) -> Path:
-        if self.directory.exists() and any(self.directory.iterdir()) and not self.config.resume:
+        if (
+            self.directory.exists()
+            and any(self.directory.iterdir())
+            and not getattr(self.config, "resume", False)
+        ):
             raise FileExistsError(
                 f"experiment directory is not empty: {self.directory}; use resume or a new name"
             )

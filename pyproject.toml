@@ -9,6 +9,8 @@ description = "Multimodal publishing content moderation research pipeline"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
+    "scikit-learn>=1.5,<2",
+    "joblib>=1.4,<2",
     "numpy>=1.26,<3",
     "opencv-python-headless>=4.9,<5",
     "paddleocr>=3.7,<4",

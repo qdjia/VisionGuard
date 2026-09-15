@@ -1,0 +1,22 @@
+baseline:
+  experiment_name: char_2_4_gbdt_sample_v1
+  train: ../data/text_moderation/sample/train.csv
+  val: ../data/text_moderation/sample/val.csv
+  test: ../data/text_moderation/sample/test.csv
+  artifacts_dir: ../artifacts/baseline
+  decision_threshold: 0.5
+  seed: 42
+  recall_target: 0.9
+  preprocessing:
+    lowercase: false
+  tfidf:
+    analyzer: char
+    ngram_range: [2, 4]
+    min_df: 1
+    max_df: 1.0
+    max_features: 20000
+    sublinear_tf: true
+  model:
+    n_estimators: 100
+    learning_rate: 0.05
+    max_depth: 3

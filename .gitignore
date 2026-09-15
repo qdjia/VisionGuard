@@ -18,6 +18,12 @@ checkpoints/*
 !checkpoints/.gitkeep
 data/*
 !data/.gitkeep
+!data/text_moderation/
+data/text_moderation/*
+!data/text_moderation/sample/
+*.joblib
+*.csv
+!data/text_moderation/sample/*.csv
 runs/
 *.pt
 *.pth

@@ -3,7 +3,7 @@
 基于视觉语言模型的多模态出版内容智能审校系统。
 
 本项目面向 AI / Computer Vision 算法作品集，采用 YOLO、OCR、规则引擎与 VLM
-组成多阶段级联推理流水线。当前完成到 **Phase 4：OCR 模块**。
+组成多阶段级联推理流水线。当前完成到 **Phase 5：传统文本审核 Baseline**。
 
 ## 安装与测试
 
@@ -162,6 +162,73 @@ python scripts/evaluate_ocr.py \
 
 ## 阶段边界
 
-当前已实现配置与 Schema、YOLO26 单图推理、YOLO 数据集/训练/评估，以及 PaddleOCR
-全图/ROI 推理和 CER 基础评估。尚未实现文本 Baseline、VLM、规则引擎、最终多模态
+当前已实现配置与 Schema、YOLO26 单图推理、YOLO 数据集/训练/评估、PaddleOCR
+全图/ROI 推理和 CER 基础评估，以及传统文本 Baseline。尚未实现 VLM、规则引擎、最终多模态
 Pipeline、级联推理、正式 Batch Benchmark、综合 Error Analysis 或 FastAPI。
+
+## 传统文本审核 Baseline
+
+`OCR full_text → 清洗 → character TF-IDF → GBDT → normal / sensitive`。
+这仅是后续与 VLM 比较的传统方法基准，不是最终审核模型。
+中文 character 2～4 gram 不依赖分词，可捕获局部字符组合、新词和部分变体；但它不具备
+长距离语义、上下文意图或视觉理解能力。GBDT feature importance 也不是因果语义解释。
+
+数据为 UTF-8 CSV：`text,label`，0=normal、1=sensitive，可附加 category（当前不参与训练）。
+清洗包括 NFKC、换行/空白标准化、格式控制字符清理和可选 lowercase；空文本去除、
+重复文本去重、重复文本标签冲突报错，不同 split 清洗后重叠报错。
+推理遇到空文本会明确报错，不将空白 OCR 擅自判为 normal。
+
+提供 `data/text_moderation/sample/{train,val,test}.csv` 共 36 条自构造文本，仅验证工程流程，
+不可将其指标作为真实审核精度。真实/private 数据和模型不提交 Git。
+
+```bash
+# 可选：单文件固定 seed 分层划分 70/15/15，不覆盖已有输出
+python scripts/split_text_dataset.py --data data/private/all.csv --output data/text_moderation/custom --seed 42
+
+# 默认 sample 训练；配置可覆盖 threshold/max-features/seed，并保存完整配置
+python scripts/train_text_baseline.py --config configs/baseline_text.yaml
+
+python scripts/infer_text_baseline.py --text "这是正常出版教材内容"
+python scripts/infer_text_baseline.py --texts-json data/private/texts.json
+
+# test 独立评估
+python scripts/evaluate_text_baseline.py --data data/text_moderation/sample/test.csv
+
+# 仅在 val 分析阈值，不自动修改正式 threshold
+python scripts/evaluate_text_baseline.py --data data/text_moderation/sample/val.csv --threshold-sweep --output artifacts/baseline/char_2_4_gbdt_sample_v1/val_metrics.json
+
+python scripts/export_text_errors.py --data data/text_moderation/sample/test.csv
+python scripts/smoke_test_text_baseline.py
+python -m pytest -p no:cacheprovider
+```
+
+可用 `--experiment` 指定已保存模型目录。训练器只在 train fit TF-IDF 和 GBDT，val 用于
+指标/阈值分析，test 不用于参数选择。batch 只进行一次 transform 和一次 predict_proba。
+保持 float32 sparse，不执行 `.toarray()`；训练摘要记录 sparse 实际字节数和 dense 估计。
+GBDT 在高维稀疏文本上仍可能训练较慢，`max_features` 应根据规模调整。
+
+实验目录 `artifacts/baseline/{experiment_name}/` 保存：
+
+```text
+tfidf.joblib / gbdt.joblib / sklearn_version.txt
+config.yaml / metrics.json / confusion_matrix.json
+threshold_metrics.csv / threshold_summary.json
+error_cases.jsonl / training_summary.json / feature_importance.json
+```
+
+指标包含 Accuracy、sensitive Precision/Recall/F1、per-class 指标、ROC-AUC 和 average precision
+（作为 PR 曲线摘要，字段 `pr_auc_average_precision`）。单类别时 ROC-AUC 为 null。
+重点分析 sensitive Recall、F1、PR 指标和 False Negative，而非仅 Accuracy。
+阈值分析覆盖 0.1～0.9、步长 0.05，同时给出 best F1 和 recall 目标下的 precision。
+probability 是 GBDT 输出，不宣称经过校准。joblib 只可加载可信本地文件，并要求 sklearn
+版本与保存时一致。
+
+```python
+from visionguard.baseline import TextModerationBaseline
+
+classifier = TextModerationBaseline.load("artifacts/baseline/char_2_4_gbdt_sample_v1")
+prediction = classifier.predict(ocr_result.full_text)
+prediction_with_source = classifier.predict_ocr(ocr_result)
+```
+
+这里只消费 OCR Schema，不初始化 OCR、不使用 OCR confidence，也不建立多模态 Pipeline。
