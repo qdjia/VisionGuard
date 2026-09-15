@@ -22,6 +22,8 @@ data/*
 data/text_moderation/*
 !data/text_moderation/sample/
 *.joblib
+*.safetensors
+.huggingface/
 *.csv
 !data/text_moderation/sample/*.csv
 runs/

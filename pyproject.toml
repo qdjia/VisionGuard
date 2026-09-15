@@ -9,10 +9,12 @@ description = "Multimodal publishing content moderation research pipeline"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
+    "transformers>=4.57,<5",
+    "accelerate>=1,<2",
     "scikit-learn>=1.5,<2",
     "joblib>=1.4,<2",
     "numpy>=1.26,<3",
-    "opencv-python-headless>=4.9,<5",
+    "opencv-contrib-python==4.10.0.84",
     "paddleocr>=3.7,<4",
     "paddlepaddle>=3.2,<4",
     "pydantic>=2.7,<3",

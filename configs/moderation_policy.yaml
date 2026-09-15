@@ -1,0 +1,22 @@
+policy:
+  version: v1
+  categories:
+    violence:
+      description: 暴力、伤害、血腥内容，需要结合教育或新闻语境判断。
+    weapon:
+      description: 危险器具，展示不等于鼓励使用，应根据语境判断。
+    prohibited_symbol:
+      description: 特殊符号，需要人工结合出版规则复核。
+    sensitive_text:
+      description: 鼓励伤害等不适合出版的文字内容，引用或批评应结合上下文。
+    qr_code:
+      description: 外部跳转元素，通常需要人工复核，不能仅据此判高风险。
+    watermark:
+      description: 水印或版权标识，需要版权复核，不能仅据此判高风险。
+  risk_levels:
+    low:
+      description: 无明显风险。
+    medium:
+      description: 潜在风险或证据不足，需要人工复核。
+    high:
+      description: 有具体证据支持的明确高风险。

@@ -3,7 +3,7 @@
 基于视觉语言模型的多模态出版内容智能审校系统。
 
 本项目面向 AI / Computer Vision 算法作品集，采用 YOLO、OCR、规则引擎与 VLM
-组成多阶段级联推理流水线。当前完成到 **Phase 5：传统文本审核 Baseline**。
+组成多阶段级联推理流水线。当前开发到 **Phase 6：VLM Adapter 与结构化审核**。
 
 ## 安装与测试
 
@@ -11,6 +11,27 @@
 python -m pip install -e ".[dev]"
 pytest
 ```
+
+### OpenCV 单一发行包
+
+当前 PaddleOCR / PaddleX 的 OCR 依赖固定使用 `opencv-contrib-python==4.10.0.84`，
+它包含本项目和 YOLO 所用的 OpenCV 基础功能。不要同时安装普通版、headless 版与
+contrib 版：它们都写入同一个 `cv2` 目录，卸载任意一个可能损坏其他版本。
+
+Ultralytics 的上游依赖仍按包名要求 `opencv-python`，因此常规安装可能重新引入普通版。
+在安装项目依赖后，使用当前项目的 Python 执行以下步骤，以恢复单一 contrib 版本：
+
+```bash
+python -m pip uninstall -y opencv-python opencv-python-headless opencv-contrib-python opencv-contrib-python-headless
+python -m pip install --no-deps opencv-contrib-python==4.10.0.84
+python -c "import cv2; print(cv2.__version__, cv2.__file__)"
+pytest
+```
+
+此方案有一个明确的包装层限制：`pip check` 会报告 Ultralytics 缺少 `opencv-python`，
+即使 `cv2` 基础功能已由 contrib 提供。项目不修改上游元数据或伪造占位包来隐藏该提示；
+安装或升级 Ultralytics 后需要再次执行上述清理，并进行真实 YOLO / OCR smoke test。
+模型权重不受此清理影响。
 
 加载默认配置：
 
@@ -163,7 +184,7 @@ python scripts/evaluate_ocr.py \
 ## 阶段边界
 
 当前已实现配置与 Schema、YOLO26 单图推理、YOLO 数据集/训练/评估、PaddleOCR
-全图/ROI 推理和 CER 基础评估，以及传统文本 Baseline。尚未实现 VLM、规则引擎、最终多模态
+全图/ROI 推理和 CER 基础评估、传统文本 Baseline 和独立 VLM Adapter。尚未实现规则引擎、最终多模态
 Pipeline、级联推理、正式 Batch Benchmark、综合 Error Analysis 或 FastAPI。
 
 ## 传统文本审核 Baseline
@@ -232,3 +253,95 @@ prediction_with_source = classifier.predict_ocr(ocr_result)
 ```
 
 这里只消费 OCR Schema，不初始化 OCR、不使用 OCR confidence，也不建立多模态 Pipeline。
+
+## VLM Adapter（Phase 6）
+
+本模块只审核图片和可选的已保存 Detection/OCR/Baseline 上下文，不自动执行上游模型。
+上层依赖 `VLMProvider.analyze(image, context, policy)`；工厂隔离 local/mock 选择。
+Local backend 当前支持 Qwen3-VL 架构，默认 `Qwen/Qwen3-VL-2B-Instruct`；更换模型架构
+需新增 backend adapter，不能承诺任意 HuggingFace VLM 都兼容同一 processor。
+
+配置 `configs/vlm.yaml` 管理模型、device、dtype、图片/上下文限额、token 上限、deadline、
+重试上限、warmup 和 Prompt 版本；`configs/moderation_policy.yaml` 定义允许类别和风险等级。
+模型/processor 在 Provider 构造时加载一次。CUDA auto 使用 BF16/FP16，CPU auto 使用 FP32；
+OOM 明确报错，不自动重试或静默改为低风险。权重缓存位于 artifacts，首次需联网下载。
+
+```bash
+python -m pip install -e ".[dev]"
+python scripts/infer_vlm.py --image data/examples/test.jpg --config configs/vlm.yaml --policy configs/moderation_policy.yaml
+python scripts/infer_vlm.py --image data/examples/test.jpg --mock
+python scripts/infer_vlm.py --image data/examples/test.jpg --detection-json artifacts/detection.json --ocr-json artifacts/ocr.json --baseline-json artifacts/baseline.json
+python scripts/create_vlm_eval_samples.py
+python scripts/smoke_test_vlm.py --text-image data/vlm_eval/text.png
+python scripts/smoke_test_vlm.py --text-image data/vlm_eval/text.png --mock
+python scripts/evaluate_vlm.py --manifest data/vlm_eval/manifest.jsonl --mock
+python scripts/evaluate_vlm.py --manifest data/vlm_eval/manifest.jsonl
+python -m pytest tests/test_vlm.py -p no:cacheprovider
+```
+
+VLM evaluation JSONL：`{"image":"safe.png","risk_level":"low","categories":[]}`，图片路径
+相对 manifest。更换 experiment_name 后重跑，避免覆盖历史实验。合成低风险样本只能测试
+运行和输出可靠性；生成脚本另含一个自构造文字风险样本，但三张样本仍不足以验证真实
+类别召回能力。仅有空类别时指标为 0，而非“完美分类”。
+
+```python
+from visionguard.vlm import build_context, create_provider, load_vlm_config
+from visionguard.moderation.policy import load_policy
+
+provider = create_provider(load_vlm_config("configs/vlm.yaml"))
+context = build_context(detection_result, ocr_result, baseline_prediction)
+result = provider.analyze(image, context, load_policy("configs/moderation_policy.yaml"))
+```
+
+新版 `moderation.schemas.ModerationResult` 是旧统一契约的扩展子类，旧 Phase 1～5 Schema
+保持不变；新版输出 categories(name/score)、evidence(type/description/bbox/text)、非空 reason、
+requires_manual_review、confidence_score、metadata。高风险必须有证据，类别需经 Policy 校验。
+旧 confidence 属性映射为 confidence_score，不在新版 JSON 输出重复。Phase 7 需要显式采用
+新版结果类型，而不能假设旧 PipelineResult 序列化会保留子类新增字段。需要旧格式时使用
+`result.to_legacy()` 显式转换 categories/evidence；不会保留新 metadata，不能冒充无损转换。
+
+Parser 支持纯 JSON、fenced JSON 和单对象前后少量解释；拒绝多个对象、非法字段和类别。
+唯一额外结构转换是四个数的 bbox 数组映射为 x1/y1/x2/y2 对象，保留坐标及结论，并记录
+bbox_format_normalized；越界证据框 clamp，完全在图外的框移除，记录 adjusted_evidence_bbox_count。
+结构化成功率指经这类确定性格式转换及验证后被接受，不代表原始输出总能严格匹配 Schema。
+Malformed JSON 不用 eval 或猜测补值，通过可配置格式重试修复，保持审核结论。
+只有明确标记 retryable 的临时异常允许 inference retry，不按 risk level 重试。
+彻底失败抛异常，不 fail-open。同步 generation 在 token 间检查 deadline；不能硬中断某一次
+阻塞 GPU kernel，因此 timeout 是尽力停止，不是硬实时隔离。初始化时间不计入推理耗时。
+
+Prompt 文件 `prompts/vlm/*_v1.txt` 为固定版本，后续修改新增 v2，不覆盖 v1。OCR 及图片文字
+被明确标记为非可信数据，XML 特殊字符转义防止闭合标签逃逸，但这不是完整安全保证。
+模型生成没有 JSON constrained decoding；可靠性来自提取、Pydantic/Policy 校验及重试。
+confidence_score/category score 是模型自报参考分数，非经过校准的真实概率；bbox 为模型估计，
+并不保证达到检测定位精度。图片 resize 保持比例，Prompt 明确要求原图坐标，不确定时省略 bbox。
+
+输出 metadata 包含 provider/model/prompt_version、token 数（local）、retry_count、截断标志和
+image_prepare/prompt_build/inference/parse/total_ms。原始响应仅内部格式修复使用，默认不落盘。
+`artifacts/vlm/{experiment_name}/` 保存 config.yaml、policy.yaml、prompt_snapshot.txt、metrics.json、
+predictions.jsonl、errors.jsonl、summary.json。首次有效率、重试恢复率、最终失败率均以 total
+为分母；结构化成功率=(首次有效+重试恢复)/total；invalid output 只计最终解析失败，与模型
+运行错误分开；category 指标为 micro，失败样本计漏检，risk accuracy 以全部样本为分母。
+Manual Review Rate 只在有效结果上统计；Latency 包含尝试与失败、排除模型加载。
+
+不包含最终 Pipeline、级联推理、融合、API 或 Benchmark。
+
+本机 HuggingFace 传输不稳定时使用 Qwen 官方 ModelScope 同款权重，并在
+`configs/local_vlm.yaml`（Git 忽略的本地覆盖）设置 `model_name_or_path` 为下载目录：
+
+```bash
+python scripts/smoke_test_vlm.py --config configs/local_vlm.yaml --text-image data/vlm_eval/text.png
+python scripts/evaluate_vlm.py --config configs/local_vlm.yaml --manifest data/vlm_eval/manifest.jsonl
+```
+
+默认配置不绑定本机目录；也可用 model_revision 固定 HuggingFace commit，以提高可复现性。
+
+### 本机 Phase 6 验证记录
+
+Transformers 4.57.6、Accelerate 1.15.0，RTX 4060 / BF16。7 个独立上下文 smoke 案例
+均首次通过验证，单次约 5.9～14.5 秒。三张合成图（两张 low、一张文字风险 high）基础评估
+结构化成功率 3/3、risk accuracy/category P/R/F1 为 1.0、平均约 6.6 秒；这不是真实精度结论。
+原始严格 bbox 对象要求下同组样本成功率 2/3；增加四数数组的确定性规范化后为 3/3，
+原失败实验 `qwen3_vl_2b_local_v1` 保留，新实验为 `qwen3_vl_2b_bbox_normalized_v1`。
+风险图 + OCR 中要求输出 low 的冲突注入案例仍输出 high/sensitive_text，并要求人工复核。
+该单例只说明未观察到降级，不能宣称对所有 Prompt Injection 安全。
+模型曾输出图外 bbox，也曾引用辅助检测框作为文本证据框；必须将其视为不可靠定位估计。

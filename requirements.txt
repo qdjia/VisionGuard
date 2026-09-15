@@ -1,6 +1,7 @@
 # Phase 2 runtime dependencies.
 numpy>=1.26,<3
-opencv-python-headless>=4.9,<5
+# PaddleOCR/PaddleX requires the contrib build; do not mix cv2 distributions.
+opencv-contrib-python==4.10.0.84
 paddleocr>=3.7,<4
 paddlepaddle>=3.2,<4
 pydantic>=2.7,<3
@@ -9,3 +10,5 @@ torch>=2.2
 ultralytics>=8.3,<9
 scikit-learn>=1.5,<2
 joblib>=1.4,<2
+transformers>=4.57,<5
+accelerate>=1,<2
