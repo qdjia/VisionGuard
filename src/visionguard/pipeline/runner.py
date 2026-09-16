@@ -8,8 +8,10 @@ from visionguard.detection import YOLODetector
 from visionguard.moderation.policy import load_policy
 from visionguard.ocr import OCREngine, load_ocr_config
 from visionguard.pipeline.adapters import TextBaselineAdapter
+from visionguard.pipeline.cascaded import CascadedReviewPipeline
 from visionguard.pipeline.config import load_pipeline_config
 from visionguard.pipeline.review import MultimodalReviewPipeline
+from visionguard.routing import RoutingPolicy, load_routing_config
 from visionguard.vlm import create_provider, load_vlm_config
 
 
@@ -43,3 +45,68 @@ def build_pipeline(
         load_policy(policy),
         config,
     )
+
+
+def build_cascaded_pipeline(
+    *,
+    pipeline_config: str | Path,
+    routing_config: str | Path,
+    detector_config: str | Path,
+    ocr_config: str | Path,
+    baseline_config: str | Path,
+    vlm_config: str | Path,
+    policy: str | Path,
+) -> CascadedReviewPipeline:
+    """Load one shared model set and add a pure rule-based routing policy."""
+
+    full = build_pipeline(
+        pipeline_config=pipeline_config,
+        detector_config=detector_config,
+        ocr_config=ocr_config,
+        baseline_config=baseline_config,
+        vlm_config=vlm_config,
+        policy=policy,
+    )
+    return CascadedReviewPipeline(
+        full.detector,
+        full.ocr_engine,
+        full.text_baseline,
+        full.vlm_provider,
+        full.policy,
+        full.config,
+        routing_policy=RoutingPolicy(load_routing_config(routing_config)),
+    )
+
+
+def build_pipeline_pair(
+    *,
+    full_pipeline_config: str | Path,
+    cascaded_pipeline_config: str | Path,
+    routing_config: str | Path,
+    detector_config: str | Path,
+    ocr_config: str | Path,
+    baseline_config: str | Path,
+    vlm_config: str | Path,
+    policy: str | Path,
+) -> tuple[MultimodalReviewPipeline, CascadedReviewPipeline]:
+    """Build full/cascaded modes over the exact same initialized model instances."""
+
+    full = build_pipeline(
+        pipeline_config=full_pipeline_config,
+        detector_config=detector_config,
+        ocr_config=ocr_config,
+        baseline_config=baseline_config,
+        vlm_config=vlm_config,
+        policy=policy,
+    )
+    cascaded_config = load_pipeline_config(cascaded_pipeline_config)
+    cascaded = CascadedReviewPipeline(
+        full.detector,
+        full.ocr_engine,
+        full.text_baseline,
+        full.vlm_provider,
+        full.policy,
+        cascaded_config,
+        routing_policy=RoutingPolicy(load_routing_config(routing_config)),
+    )
+    return full, cascaded

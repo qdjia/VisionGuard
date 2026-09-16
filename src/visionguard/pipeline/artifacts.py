@@ -34,6 +34,8 @@ class PipelineArtifactStore:
         try:
             directory.mkdir(parents=True, exist_ok=False)
             _save_json(directory / "input_metadata.json", result.image)
+            if result.routing is not None:
+                _save_json(directory / "routing.json", result.routing)
             if self.config.save_intermediate_json:
                 for filename, value in (
                     ("detection.json", result.detection),

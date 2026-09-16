@@ -1,4 +1,4 @@
-"""Synchronous full-execution multimodal pipeline for Phase 7."""
+"""Shared synchronous execution template for full and cascaded review pipelines."""
 
 import hashlib
 import logging
@@ -34,6 +34,12 @@ from visionguard.pipeline.schemas import (
     ReviewModuleStatus,
     ReviewResult,
     ReviewStatus,
+)
+from visionguard.routing.schemas import (
+    DecisionSource,
+    Route,
+    RoutingDecision,
+    RoutingReasonCode,
     RoutingSignals,
 )
 from visionguard.utils.image import ImageInput, load_image
@@ -149,26 +155,51 @@ class MultimodalReviewPipeline:
                     lambda: self.text_baseline.predict(baseline_text),
                 )
 
-        context_started = perf_counter()
-        context = build_context(detection, ocr, baseline)
-        context_ms = (perf_counter() - context_started) * 1000
-        if self.config.enable_vlm:
+        routing_started = perf_counter()
+        signals = self._build_routing_signals(detection, ocr, baseline, statuses)
+        routing = self._decide_route(signals)
+        routing_ms = (perf_counter() - routing_started) * 1000
+        self._log(
+            run_id,
+            "routing=%s reasons=%s",
+            routing.route,
+            ",".join(routing.reason_codes),
+        )
+
+        context_ms = 0.0
+        if routing.call_vlm and self.config.enable_vlm:
+            context_started = perf_counter()
+            context = build_context(detection, ocr, baseline)
+            context_ms = (perf_counter() - context_started) * 1000
             vlm = self._execute(
                 run_id,
                 "vlm",
                 statuses,
                 lambda: self.vlm_provider.analyze(image, context, self.policy),
             )
+        elif self.config.enable_vlm:
+            statuses["vlm"] = ReviewModuleStatus(
+                status=ModuleState.SKIPPED,
+                error_message="skipped by routing policy",
+            )
+
+        signals = signals.model_copy(
+            update={
+                "vlm_confidence": vlm.confidence_score if vlm else None,
+                "vlm_requires_manual_review": vlm.requires_manual_review if vlm else None,
+            }
+        )
+        routing = routing.model_copy(update={"signals": signals})
 
         aggregation_started = perf_counter()
-        final, review_status = self._aggregate(vlm, statuses)
-        signals = self._routing_signals(detection, ocr, baseline, vlm)
+        final, review_status, decision_source = self._aggregate(vlm, statuses, routing)
         aggregation_ms = (perf_counter() - aggregation_started) * 1000
         timing = PipelineTiming(
             image_load_ms=image_load_ms,
             detector_ms=statuses["detector"].latency_ms,
             ocr_ms=statuses["ocr"].latency_ms,
             baseline_ms=statuses["baseline"].latency_ms,
+            routing_ms=routing_ms,
             context_build_ms=context_ms,
             vlm_ms=statuses["vlm"].latency_ms,
             aggregation_ms=aggregation_ms,
@@ -183,6 +214,8 @@ class MultimodalReviewPipeline:
             vlm=vlm,
             final=final,
             review_status=review_status,
+            decision_source=decision_source,
+            routing=routing,
             module_status=statuses,
             timing=timing,
             routing_signals=signals,
@@ -196,6 +229,7 @@ class MultimodalReviewPipeline:
                 pipeline_version=self.config.pipeline_version,
                 policy_version=self.policy.version,
                 prompt_version=self._vlm_config_value("prompt_version"),
+                routing_policy_version=routing.policy_version,
                 timestamp=timestamp,
                 component_versions=self._component_versions(detection, ocr),
             ),
@@ -279,8 +313,18 @@ class MultimodalReviewPipeline:
         return value
 
     @staticmethod
-    def _aggregate(vlm, statuses):
+    def _aggregate(vlm, statuses, routing):
         failures = [status for status in statuses.values() if status.status == ModuleState.FAILED]
+        if routing.route == Route.FAST_PATH:
+            return (
+                FinalReview(
+                    risk_level="low",
+                    reason="Low risk from conservative Stage 1 safe consensus; VLM was skipped.",
+                    requires_manual_review=False,
+                ),
+                ReviewStatus.PARTIAL if failures else ReviewStatus.COMPLETED,
+                DecisionSource.FAST_PATH,
+            )
         if vlm is not None:
             return (
                 FinalReview(
@@ -291,6 +335,9 @@ class MultimodalReviewPipeline:
                     requires_manual_review=vlm.requires_manual_review,
                 ),
                 ReviewStatus.PARTIAL if failures else ReviewStatus.COMPLETED,
+                DecisionSource.FULL_PIPELINE
+                if routing.route == Route.FULL_PIPELINE
+                else DecisionSource.VLM,
             )
         successful = any(status.status == ModuleState.SUCCESS for status in statuses.values())
         return (
@@ -299,9 +346,12 @@ class MultimodalReviewPipeline:
                 requires_manual_review=True,
             ),
             ReviewStatus.PARTIAL if successful else ReviewStatus.FAILED,
+            DecisionSource.FULL_PIPELINE
+            if routing.route == Route.FULL_PIPELINE
+            else DecisionSource.VLM,
         )
 
-    def _routing_signals(self, detection, ocr, baseline, vlm):
+    def _build_routing_signals(self, detection, ocr, baseline, statuses):
         detection_confidences = (
             [item.confidence for item in detection.detections] if detection else []
         )
@@ -310,17 +360,34 @@ class MultimodalReviewPipeline:
         return RoutingSignals(
             detection_count=len(detection_confidences),
             max_detection_confidence=max(detection_confidences, default=None),
+            mean_detection_confidence=(
+                sum(detection_confidences) / len(detection_confidences)
+                if detection_confidences
+                else None
+            ),
             ocr_block_count=len(ocr_confidences),
             mean_ocr_confidence=sum(ocr_confidences) / len(ocr_confidences)
             if ocr_confidences
             else None,
             baseline_probability=baseline.probability if baseline else None,
-            vlm_confidence=vlm.confidence_score if vlm else None,
-            vlm_requires_manual_review=vlm.requires_manual_review if vlm else None,
+            ocr_text_length=len(ocr.full_text.strip()) if ocr else 0,
+            detector_status=str(statuses["detector"].status),
+            ocr_status=str(statuses["ocr"].status),
+            baseline_status=str(statuses["baseline"].status),
             ocr_text_truncated_for_baseline=(
                 original_chars > self.config.max_ocr_chars_for_baseline
             ),
             baseline_input_chars=len(baseline.text) if baseline else 0,
+        )
+
+    def _decide_route(self, signals: RoutingSignals) -> RoutingDecision:
+        return RoutingDecision(
+            route=Route.FULL_PIPELINE,
+            call_vlm=self.config.enable_vlm,
+            reason_codes=[RoutingReasonCode.FULL_PIPELINE],
+            explanation="Phase 7 full pipeline always calls VLM when it is enabled.",
+            signals=signals,
+            policy_version="full_pipeline_v1",
         )
 
     def _component_versions(self, detection, ocr):

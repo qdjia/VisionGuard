@@ -8,6 +8,7 @@ from pydantic import Field, model_validator
 
 from visionguard.baseline.schemas import TextModerationPrediction
 from visionguard.moderation.schemas import ModerationCategory, ModerationResult
+from visionguard.routing.schemas import DecisionSource, RoutingDecision, RoutingSignals
 from visionguard.schemas import DetectionResult, OCRResult, RiskLevel
 from visionguard.schemas.common import SchemaModel
 
@@ -44,6 +45,7 @@ class PipelineTiming(SchemaModel):
     detector_ms: float = Field(default=0, ge=0)
     ocr_ms: float = Field(default=0, ge=0)
     baseline_ms: float = Field(default=0, ge=0)
+    routing_ms: float = Field(default=0, ge=0)
     context_build_ms: float = Field(default=0, ge=0)
     vlm_ms: float = Field(default=0, ge=0)
     aggregation_ms: float = Field(default=0, ge=0)
@@ -67,22 +69,11 @@ class FinalReview(SchemaModel):
     requires_manual_review: bool
 
 
-class RoutingSignals(SchemaModel):
-    detection_count: int = Field(default=0, ge=0)
-    max_detection_confidence: float | None = Field(default=None, ge=0, le=1)
-    ocr_block_count: int = Field(default=0, ge=0)
-    mean_ocr_confidence: float | None = Field(default=None, ge=0, le=1)
-    baseline_probability: float | None = Field(default=None, ge=0, le=1)
-    vlm_confidence: float | None = Field(default=None, ge=0, le=1)
-    vlm_requires_manual_review: bool | None = None
-    ocr_text_truncated_for_baseline: bool = False
-    baseline_input_chars: int = Field(default=0, ge=0)
-
-
 class ReviewMetadata(SchemaModel):
     pipeline_version: str
     policy_version: str
     prompt_version: str | None = None
+    routing_policy_version: str | None = None
     timestamp: datetime
     component_versions: dict[str, str | None] = Field(default_factory=dict)
 
@@ -103,6 +94,9 @@ class ReviewResult(SchemaModel):
     vlm: ModerationResult | None = None
     final: FinalReview
     review_status: ReviewStatus
+    # Defaults keep Phase 7 result JSON loadable after the Phase 8 schema extension.
+    decision_source: DecisionSource = DecisionSource.FULL_PIPELINE
+    routing: RoutingDecision | None = None
     module_status: dict[Literal["detector", "ocr", "baseline", "vlm"], ReviewModuleStatus]
     timing: PipelineTiming
     routing_signals: RoutingSignals

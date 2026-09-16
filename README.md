@@ -3,7 +3,7 @@
 基于视觉语言模型的多模态出版内容智能审校系统。
 
 本项目面向 AI / Computer Vision 算法作品集，采用 YOLO、OCR、规则引擎与 VLM
-组成多阶段级联推理流水线。当前开发到 **Phase 7：Multimodal Review Pipeline**。
+组成多阶段级联推理流水线。当前开发到 **Phase 8：Cascaded Inference + Dynamic Routing**。
 
 ## 安装与测试
 
@@ -184,8 +184,9 @@ python scripts/evaluate_ocr.py \
 ## 阶段边界
 
 当前已实现配置与 Schema、YOLO26 单图推理、YOLO 数据集/训练/评估、PaddleOCR
-全图/ROI 推理和 CER 基础评估、传统文本 Baseline、独立 VLM Adapter 和同步多模态 Review
-Pipeline。尚未实现规则引擎、级联推理、正式 Batch Benchmark、综合 Error Analysis 或 FastAPI。
+全图/ROI 推理和 CER 基础评估、传统文本 Baseline、独立 VLM Adapter、同步多模态 Review
+Pipeline，以及规则式级联推理与路由实验工具。尚未实现正式 Batch Benchmark、综合 Risk Fusion、
+综合 Error Analysis 或 FastAPI。
 
 ## 传统文本审核 Baseline
 
@@ -403,8 +404,9 @@ artifacts/pipeline/{run_id}/
 ```
 
 `routing_signals` 保留 detection confidence/count、OCR confidence/block count、Baseline
-probability、VLM confidence/manual-review 和各阶段耗时，供 Phase 8 使用；当前没有 routing
-policy。Pipeline evaluation 输出 risk accuracy、category micro P/R/F1、manual-review/failure/
+probability、VLM confidence/manual-review 和各阶段耗时。Phase 8 在此基础上扩展正式
+RoutingDecision；Full Pipeline 仍固定调用 VLM。Pipeline evaluation 输出 risk accuracy、
+category micro P/R/F1、manual-review/failure/
 partial rate、平均/P50/P95 总延迟和平均 VLM 延迟。
 
 本机 Phase 7 工程验收使用 RTX 4060、现有 smoke YOLO 权重、PaddleOCR CPU、Phase 5 sample
@@ -423,3 +425,134 @@ Transformers 4.57.6、Accelerate 1.15.0，RTX 4060 / BF16。7 个独立上下文
 风险图 + OCR 中要求输出 low 的冲突注入案例仍输出 high/sensitive_text，并要求人工复核。
 该单例只说明未观察到降级，不能宣称对所有 Prompt Injection 安全。
 模型曾输出图外 bbox，也曾引用辅助检测框作为文本证据框；必须将其视为不可靠定位估计。
+
+## Cascaded Inference + Dynamic Routing（Phase 8）
+
+Phase 8 保留 Phase 7 的 `MultimodalReviewPipeline`（Full / Always-VLM），并以薄子类
+`CascadedReviewPipeline` 只替换信号收集和路由决策。图像加载、YOLO、OCR、Baseline、
+`build_context()`、VLM 调用、失败隔离、结果聚合及 artifact 保存仍由同一执行模板负责，避免
+Full 与 Cascaded 两套实现逐渐偏离。`build_pipeline_pair()` 还会让两种模式共享同一组已初始化
+模型，降低对比实验中的加载开销和实例差异。
+
+```text
+Image → YOLO + OCR → OCR text → Baseline → RoutingPolicy
+                                             ├─ safe consensus → Fast Path → low
+                                             └─ risky/uncertain/failure → VLM Path
+```
+
+`RoutingPolicy` 是纯规则领域层：只消费 `RoutingSignals` 并返回 `RoutingDecision`，不调用任何
+模型，也不负责复杂审核结论。第一版 Fast Path 只能输出 low；medium、high、不确定、冲突、
+证据不足或 Stage 1 模块失败全部进入 VLM。这样 Router 只决定是否支付昂贵的 VLM 成本，不能
+越权替代审核模型。若 VLM 也失败，结果为 partial/manual review，`risk_level=null`，不会 fail-open。
+
+正式阈值位于 `configs/routing.yaml`，包括 Baseline safe/risky、Detection high-risk/suspicious、
+OCR 最低平均置信度/文本长度及配置化高风险类别。边界语义为：`p <= safe_threshold` 才可能
+Fast Path；`p >= risky_threshold` 进入 VLM；中间区间为 uncertain。修改规则或正式阈值时应升级
+`routing_v1`，结果 metadata 和实验 summary 都记录该版本。Threshold Sweep 只回放分析，不会
+改写正式 YAML，也不会自动选择所谓最佳阈值。
+
+```json
+{
+  "route": "fast_path",
+  "call_vlm": false,
+  "reason_codes": ["no_detection", "safe_consensus"],
+  "explanation": "Fast-path low risk allowed by conservative safe consensus.",
+  "signals": {
+    "detection_count": 0,
+    "mean_ocr_confidence": 0.94,
+    "baseline_probability": 0.04,
+    "detector_status": "success",
+    "ocr_status": "success",
+    "baseline_status": "success"
+  },
+  "policy_version": "routing_v1"
+}
+```
+
+Full Pipeline 与 Cascaded 单图命令：
+
+```bash
+python scripts/run_pipeline.py \
+  --image data/vlm_eval/risky.png \
+  --detector-config configs/local_detector.yaml \
+  --vlm-config configs/local_vlm.yaml
+
+python scripts/run_cascaded_pipeline.py \
+  --image data/vlm_eval/risky.png \
+  --detector-config configs/local_detector.yaml \
+  --vlm-config configs/local_vlm.yaml
+```
+
+Mock 单测和真实 smoke test：
+
+```bash
+python -m pytest tests/test_routing_policy.py tests/test_cascaded_pipeline.py \
+  tests/test_routing_evaluator.py -p no:cacheprovider
+
+python scripts/smoke_test_cascaded.py \
+  --images data/vlm_eval/safe.png data/vlm_eval/text.png data/vlm_eval/risky.png \
+           data/ocr_smoke/chinese.png data/visionguard_smoke/images/train/train_00.jpg \
+  --detector-config configs/local_detector.yaml \
+  --vlm-config configs/local_vlm.yaml
+```
+
+评估、Full/Cascaded 对比和阈值扫描都要求使用新的空输出目录，以免覆盖历史实验：
+
+```bash
+python scripts/evaluate_routing.py \
+  --manifest data/vlm_eval/manifest.jsonl \
+  --output artifacts/routing/cascaded_eval_v1 \
+  --detector-config configs/local_detector.yaml \
+  --vlm-config configs/local_vlm.yaml
+
+python scripts/compare_pipeline_modes.py \
+  --manifest data/vlm_eval/manifest.jsonl \
+  --output artifacts/routing/comparison_v1 \
+  --detector-config configs/local_detector.yaml \
+  --vlm-config configs/local_vlm.yaml
+
+python scripts/sweep_routing_thresholds.py \
+  --manifest data/vlm_eval/manifest.jsonl \
+  --output artifacts/routing/threshold_sweep_v1 \
+  --safe-thresholds 0.05 0.10 0.15 0.20 0.30 \
+  --detector-config configs/local_detector.yaml \
+  --vlm-config configs/local_vlm.yaml
+```
+
+`Unsafe Fast Pass` 定义为 GT 是 medium/high、Router 却选择 fast_path。这是首要安全指标，
+会以 count、占全部样本比例和占 need-vlm 样本比例单独输出。Routing Precision/Recall/F1 使用
+`low → candidate_skip`、`medium/high → need_vlm` 的工程代理标签；它不等于“该样本客观上一定
+需要 VLM”。`potential unnecessary VLM call` 也只是 GT low 且 VLM 仍判 low 的分析候选，
+不能证明这次调用绝对没有必要。
+
+```bash
+python scripts/analyze_routing_errors.py \
+  --predictions artifacts/routing/cascaded_eval_v1/predictions.jsonl \
+  --output artifacts/routing/errors_v1
+```
+
+错误分析生成 `routing_errors.jsonl`、`summary.json`，并按 `unsafe_fast_pass/`、
+`potential_unnecessary_vlm/`、`conflict/`、`module_failure_route/` 分类复制样本。每条记录包含图片、
+GT、route、reason codes、signals 和最终结果。每次推理目录额外包含 `routing.json`：
+
+```text
+artifacts/routing/
+├── cascaded_routing_v1/{run_id}/
+│   ├── routing.json
+│   ├── review_result.json / timing.json
+│   ├── detection.json / ocr.json / baseline.json / vlm.json
+│   └── visualizations/
+├── comparison_v1/{full,cascaded}/
+├── threshold_sweep_v1/
+└── errors_v1/
+```
+
+本机 Phase 8 工程验收使用 RTX 4060、smoke YOLO、PaddleOCR CPU、sample Baseline 和本地
+Qwen3-VL-2B。5 张真实 smoke 输入全部完成，其中 2 张明确安全文本图跳过 VLM，风险文本、
+无文字和低 OCR 质量样本进入 VLM。3 张合成 evaluation 样本上，Full → Cascaded 的 VLM
+Call Rate 为 100% → 66.7%，Skip Rate 为 0% → 33.3%，平均延迟约 20.13s → 13.05s，
+P50 约 22.25s → 9.47s，P95 约 27.36s → 25.95s，Unsafe Fast Pass 为 0，risk accuracy 和
+category micro P/R/F1 均为 1.0。阈值扫描链路已验证，但这 3 个样本在 0.05～0.30 间路由结果
+相同。以上数字只证明小型合成数据上的工程链路与观测能力，不能代表真实出版审核效果；正式
+阈值必须用规模更大、类别覆盖完整且经过人工标注的数据集确定。当前仍是同步单图、规则路由，
+不包含 ML Router、Batch Benchmark、正式 Risk Fusion、服务化或分布式调度。

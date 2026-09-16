@@ -1,0 +1,19 @@
+routing:
+  version: routing_v1
+  conservative_mode: true
+  baseline:
+    safe_threshold: 0.10
+    risky_threshold: 0.80
+  detector:
+    high_risk_conf_threshold: 0.65
+    suspicious_conf_threshold: 0.30
+  ocr:
+    min_mean_confidence: 0.60
+    min_text_length: 3
+  high_risk_classes:
+    - weapon
+    - violence
+    - blood
+    - prohibited_symbol
+  failure:
+    route_to_vlm: true
