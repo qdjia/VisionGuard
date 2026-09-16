@@ -1,0 +1,15 @@
+pipeline:
+  save_artifacts: true
+  artifact_root: ../artifacts/pipeline
+  save_input_copy: false
+  enable_detector: true
+  enable_ocr: true
+  enable_text_baseline: true
+  enable_vlm: true
+  fail_fast: false
+  save_intermediate_json: true
+  save_visualizations: true
+  pipeline_version: v1
+  max_ocr_chars_for_baseline: 4000
+  trace:
+    enabled: true

@@ -3,7 +3,7 @@
 基于视觉语言模型的多模态出版内容智能审校系统。
 
 本项目面向 AI / Computer Vision 算法作品集，采用 YOLO、OCR、规则引擎与 VLM
-组成多阶段级联推理流水线。当前开发到 **Phase 6：VLM Adapter 与结构化审核**。
+组成多阶段级联推理流水线。当前开发到 **Phase 7：Multimodal Review Pipeline**。
 
 ## 安装与测试
 
@@ -184,8 +184,8 @@ python scripts/evaluate_ocr.py \
 ## 阶段边界
 
 当前已实现配置与 Schema、YOLO26 单图推理、YOLO 数据集/训练/评估、PaddleOCR
-全图/ROI 推理和 CER 基础评估、传统文本 Baseline 和独立 VLM Adapter。尚未实现规则引擎、最终多模态
-Pipeline、级联推理、正式 Batch Benchmark、综合 Error Analysis 或 FastAPI。
+全图/ROI 推理和 CER 基础评估、传统文本 Baseline、独立 VLM Adapter 和同步多模态 Review
+Pipeline。尚未实现规则引擎、级联推理、正式 Batch Benchmark、综合 Error Analysis 或 FastAPI。
 
 ## 传统文本审核 Baseline
 
@@ -334,6 +334,84 @@ python scripts/evaluate_vlm.py --config configs/local_vlm.yaml --manifest data/v
 ```
 
 默认配置不绑定本机目录；也可用 model_revision 固定 HuggingFace commit，以提高可复现性。
+
+## Multimodal Review Pipeline（Phase 7）
+
+Phase 7 使用固定的同步完整调用顺序：图像标准化后依次执行 YOLO、OCR、OCR 文本
+Baseline、Phase 6 `build_context()` 与 VLM，最后把 VLM 的核心结论和所有中间结果写入
+`ReviewResult`。Pipeline 只接受已经初始化的依赖；模型加载集中在 `pipeline.runner`，因此
+同一次 CLI / 服务进程只加载一次模型。Detection、OCR、Baseline 与 VLM 彼此不直接依赖。
+
+本阶段不进行置信度路由或 Risk Fusion。Detection 与 Baseline 只是 VLM 上下文证据；VLM
+失败时 `final.risk_level` 为 `null`、`review_status=partial` 且强制人工复核，绝不会默认判为
+low。默认 `fail_fast=false`，单模块失败会记录错误类型、精简消息和耗时，其余可运行模块继续。
+图像加载失败是 fatal；artifact 保存失败不会推翻已经完成的审核结果。
+
+`configs/pipeline.yaml` 控制四个模块开关、artifact、可视化、输入副本、fail-fast、Pipeline
+版本、OCR 输入 Baseline 的字符上限与 trace。四个模块默认全部开启；模块开关仅用于测试和
+消融实验，不是 Phase 8 的动态路由策略。
+
+```bash
+python scripts/run_pipeline.py \
+  --image data/vlm_eval/risky.png \
+  --pipeline-config configs/pipeline.yaml \
+  --detector-config configs/detector.yaml \
+  --ocr-config configs/ocr.yaml \
+  --baseline-config configs/baseline_text.yaml \
+  --vlm-config configs/local_vlm.yaml \
+  --policy configs/moderation_policy.yaml
+```
+
+真实 smoke test 会复用同一组已初始化模型；传入的样本应覆盖普通图片、文字图片、风险文字、
+有检测结果的图片与无文字图片：
+
+```bash
+python scripts/smoke_test_pipeline.py \
+  --images data/vlm_eval/safe.png data/ocr_smoke/chinese.png \
+           data/vlm_eval/risky.png data/visionguard_smoke/images/train/train_00.jpg \
+  --detector-config configs/detector.yaml \
+  --vlm-config configs/local_vlm.yaml
+```
+
+Evaluation manifest 每行包含相对图片路径、risk_level 和 categories。下面的少量合成样本仅
+用于工程链路验收，不能作为真实出版内容审核准确率结论：
+
+```json
+{"image":"safe.png","risk_level":"low","categories":[]}
+```
+
+```bash
+python scripts/evaluate_pipeline.py \
+  --manifest data/vlm_eval/manifest.jsonl \
+  --output artifacts/pipeline/evaluation_v1 \
+  --detector-config configs/detector.yaml \
+  --vlm-config configs/local_vlm.yaml
+```
+
+每次运行生成 UUID4 `run_id`，日志、JSON 和目录都使用该 ID。默认不复制输入原图，只保存
+源路径、标准化像素 SHA-256 与可视化；`save_input_copy=true` 时才额外保存输入副本。
+
+```text
+artifacts/pipeline/{run_id}/
+├── input_metadata.json
+├── detection.json / ocr.json / baseline.json / vlm.json
+├── review_result.json / timing.json
+├── error.json                  # 有模块失败时
+└── visualizations/
+    ├── detection.jpg
+    └── ocr.jpg
+```
+
+`routing_signals` 保留 detection confidence/count、OCR confidence/block count、Baseline
+probability、VLM confidence/manual-review 和各阶段耗时，供 Phase 8 使用；当前没有 routing
+policy。Pipeline evaluation 输出 risk accuracy、category micro P/R/F1、manual-review/failure/
+partial rate、平均/P50/P95 总延迟和平均 VLM 延迟。
+
+本机 Phase 7 工程验收使用 RTX 4060、现有 smoke YOLO 权重、PaddleOCR CPU、Phase 5 sample
+Baseline 与本地 Qwen3-VL-2B：5 个代表性样本全部完成，另一个低阈值训练样本产生 32 个
+检测框并走完整链路。3 张合成 evaluation 样本的 failure/partial rate 为 0，risk accuracy 与
+category micro P/R/F1 均为 1.0，平均总延迟约 15.48 秒；这些数字只证明当前小样本工程链路
+可运行，不代表真实业务精度。
 
 ### 本机 Phase 6 验证记录
 
