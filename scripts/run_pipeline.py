@@ -16,6 +16,7 @@ def _arguments() -> argparse.Namespace:
     parser.add_argument("--baseline-config", type=Path, default=Path("configs/baseline_text.yaml"))
     parser.add_argument("--vlm-config", type=Path, default=Path("configs/vlm.yaml"))
     parser.add_argument("--policy", type=Path, default=Path("configs/moderation_policy.yaml"))
+    parser.add_argument("--fusion-config", type=Path, default=Path("configs/fusion.yaml"))
     parser.add_argument("--output", type=Path, help="override the pipeline artifact root")
     return parser.parse_args()
 
@@ -30,6 +31,7 @@ def main() -> int:
         baseline_config=args.baseline_config,
         vlm_config=args.vlm_config,
         policy=args.policy,
+        fusion_config=args.fusion_config,
     )
     if args.output:
         pipeline.config = pipeline.config.model_copy(
@@ -44,6 +46,8 @@ def main() -> int:
     print(f"Risk level: {result.final.risk_level}")
     print(f"Categories: {[item.name for item in result.final.categories]}")
     print(f"Manual review: {result.final.requires_manual_review}")
+    print(f"Fusion score: {result.fusion.risk_score:.3f}")
+    print(f"Fusion reasons: {[str(code) for code in result.fusion.reason_codes]}")
     for name, status in result.module_status.items():
         print(f"{name}: {status.status} ({status.latency_ms:.2f} ms)")
     print(f"Total time: {result.timing.total_ms:.2f} ms")

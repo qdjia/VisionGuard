@@ -7,6 +7,7 @@ from typing import Literal
 from pydantic import Field, model_validator
 
 from visionguard.baseline.schemas import TextModerationPrediction
+from visionguard.fusion.schemas import FusionDecision
 from visionguard.moderation.schemas import ModerationCategory, ModerationResult
 from visionguard.routing.schemas import DecisionSource, RoutingDecision, RoutingSignals
 from visionguard.schemas import DetectionResult, OCRResult, RiskLevel
@@ -48,6 +49,7 @@ class PipelineTiming(SchemaModel):
     routing_ms: float = Field(default=0, ge=0)
     context_build_ms: float = Field(default=0, ge=0)
     vlm_ms: float = Field(default=0, ge=0)
+    fusion_ms: float = Field(default=0, ge=0)
     aggregation_ms: float = Field(default=0, ge=0)
     artifact_save_ms: float = Field(default=0, ge=0)
     total_ms: float = Field(default=0, ge=0)
@@ -74,6 +76,7 @@ class ReviewMetadata(SchemaModel):
     policy_version: str
     prompt_version: str | None = None
     routing_policy_version: str | None = None
+    fusion_policy_version: str | None = None
     timestamp: datetime
     component_versions: dict[str, str | None] = Field(default_factory=dict)
 
@@ -92,11 +95,12 @@ class ReviewResult(SchemaModel):
     ocr: OCRResult | None = None
     baseline: TextModerationPrediction | None = None
     vlm: ModerationResult | None = None
-    final: FinalReview
+    final: FusionDecision | FinalReview
     review_status: ReviewStatus
     # Defaults keep Phase 7 result JSON loadable after the Phase 8 schema extension.
     decision_source: DecisionSource = DecisionSource.FULL_PIPELINE
     routing: RoutingDecision | None = None
+    fusion: FusionDecision | None = None
     module_status: dict[Literal["detector", "ocr", "baseline", "vlm"], ReviewModuleStatus]
     timing: PipelineTiming
     routing_signals: RoutingSignals

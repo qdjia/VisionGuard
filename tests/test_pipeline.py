@@ -5,6 +5,7 @@ import numpy as np
 import pytest
 
 from visionguard.baseline.schemas import TextModerationPrediction
+from visionguard.fusion import RiskFusionEngine, load_fusion_config
 from visionguard.moderation.policy import load_policy
 from visionguard.moderation.schemas import ModerationResult
 from visionguard.pipeline import MultimodalReviewPipeline
@@ -120,7 +121,15 @@ def make_pipeline(policy, tmp_path, *, failures=(), text="risk text", **changes)
     ocr = FakeOCR(calls, text=text, error="ocr" in failures)
     baseline = FakeBaseline(calls, error="baseline" in failures)
     vlm = FakeVLM(calls, error="vlm" in failures)
-    pipeline = MultimodalReviewPipeline(detector, ocr, baseline, vlm, policy, config)
+    pipeline = MultimodalReviewPipeline(
+        detector,
+        ocr,
+        baseline,
+        vlm,
+        policy,
+        config,
+        fusion_engine=RiskFusionEngine(load_fusion_config("configs/fusion.yaml")),
+    )
     return pipeline, calls, vlm
 
 
@@ -191,7 +200,7 @@ def test_vlm_failure_never_defaults_to_low(policy, tmp_path):
     pipeline, _, _ = make_pipeline(policy, tmp_path, failures={"vlm"})
     result = pipeline.run(image())
     assert result.review_status == "partial"
-    assert result.final.risk_level is None
+    assert result.final.risk_level == "medium"
     assert result.final.categories == []
     assert result.final.requires_manual_review
     assert result.vlm is None
@@ -222,6 +231,7 @@ def test_truncation_signal_and_disabled_dependency_validation(policy, tmp_path):
             FakeVLM([]),
             policy,
             PipelineConfig(save_artifacts=False),
+            fusion_engine=RiskFusionEngine(load_fusion_config("configs/fusion.yaml")),
         )
     disabled = MultimodalReviewPipeline(
         None,
@@ -236,9 +246,10 @@ def test_truncation_signal_and_disabled_dependency_validation(policy, tmp_path):
             enable_text_baseline=False,
             enable_vlm=False,
         ),
+        fusion_engine=RiskFusionEngine(load_fusion_config("configs/fusion.yaml")),
     ).run(image())
     assert disabled.review_status == "failed"
-    assert disabled.final.risk_level is None
+    assert disabled.final.risk_level == "medium"
     assert disabled.final.requires_manual_review
 
 
@@ -256,6 +267,7 @@ def test_artifacts_and_input_copy(policy, tmp_path):
         FakeVLM(calls),
         policy,
         config,
+        fusion_engine=RiskFusionEngine(load_fusion_config("configs/fusion.yaml")),
     )
     result = pipeline.run(image())
     directory = tmp_path / "runs" / result.run_id
@@ -265,6 +277,7 @@ def test_artifacts_and_input_copy(policy, tmp_path):
         "ocr.json",
         "baseline.json",
         "vlm.json",
+        "fusion.json",
         "review_result.json",
         "timing.json",
         "input.jpg",
@@ -286,6 +299,7 @@ def test_artifacts_and_input_copy(policy, tmp_path):
         FakeVLM(failed_calls),
         policy,
         config.model_copy(update={"save_visualizations": False}),
+        fusion_engine=RiskFusionEngine(load_fusion_config("configs/fusion.yaml")),
     )
     partial = failed_pipeline.run(image())
     error_file = tmp_path / "runs" / partial.run_id / "error.json"
@@ -308,6 +322,7 @@ def test_artifact_failure_does_not_erase_review(policy, tmp_path):
         FakeVLM(calls),
         policy,
         config,
+        fusion_engine=RiskFusionEngine(load_fusion_config("configs/fusion.yaml")),
         artifact_store=FailingArtifactStore(config),
     )
     result = pipeline.run(image())

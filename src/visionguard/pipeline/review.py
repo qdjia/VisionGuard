@@ -9,6 +9,7 @@ from uuid import uuid4
 
 import numpy as np
 
+from visionguard.fusion import RiskFusionEngine, build_fusion_signals
 from visionguard.moderation.policy import ModerationPolicy
 from visionguard.pipeline.adapters import (
     DetectorProtocol,
@@ -26,7 +27,6 @@ from visionguard.pipeline.exceptions import (
 from visionguard.pipeline.schemas import (
     ArtifactState,
     ArtifactStatus,
-    FinalReview,
     ModuleState,
     PipelineTiming,
     ReviewImage,
@@ -72,6 +72,7 @@ class MultimodalReviewPipeline:
         moderation_policy: ModerationPolicy,
         config: PipelineConfig,
         *,
+        fusion_engine: RiskFusionEngine,
         artifact_store: PipelineArtifactStore | None = None,
     ) -> None:
         self.detector = detector
@@ -80,6 +81,7 @@ class MultimodalReviewPipeline:
         self.vlm_provider = vlm_provider
         self.policy = moderation_policy
         self.config = config
+        self.fusion_engine = fusion_engine
         self.artifact_store = artifact_store or PipelineArtifactStore(config)
         dependencies = {
             "detector": (config.enable_detector, detector),
@@ -166,6 +168,45 @@ class MultimodalReviewPipeline:
             ",".join(routing.reason_codes),
         )
 
+        fusion_ms = 0.0
+        if routing.route == Route.FAST_PATH:
+            guard_started = perf_counter()
+            guard_signals = build_fusion_signals(
+                detection,
+                ocr,
+                baseline,
+                None,
+                routing,
+                statuses,
+                self.fusion_engine.config,
+            )
+            guard_decision = self.fusion_engine.decide(guard_signals)
+            fusion_ms += (perf_counter() - guard_started) * 1000
+            if guard_decision.risk_level != "low":
+                original_route = routing.route
+                reason_codes = [
+                    *routing.reason_codes,
+                    RoutingReasonCode.FUSION_SAFETY_GUARD,
+                ]
+                update = {
+                    "reason_codes": list(dict.fromkeys(reason_codes)),
+                    "explanation": (
+                        routing.explanation
+                        + " Fusion safety guard rejected the low-risk fast path."
+                    ),
+                    "routing_overridden_by_fusion": True,
+                    "original_route": original_route,
+                }
+                if self.config.enable_vlm:
+                    update.update({"route": Route.VLM_PATH, "call_vlm": True})
+                routing = routing.model_copy(update=update)
+                self._log(
+                    run_id,
+                    "fusion safety guard override=%s pre_fusion_risk=%s",
+                    self.config.enable_vlm,
+                    guard_decision.risk_level,
+                )
+
         context_ms = 0.0
         if routing.call_vlm and self.config.enable_vlm:
             context_started = perf_counter()
@@ -192,7 +233,21 @@ class MultimodalReviewPipeline:
         routing = routing.model_copy(update={"signals": signals})
 
         aggregation_started = perf_counter()
-        final, review_status, decision_source = self._aggregate(vlm, statuses, routing)
+        fusion_started = perf_counter()
+        fusion_signals = build_fusion_signals(
+            detection,
+            ocr,
+            baseline,
+            vlm,
+            routing,
+            statuses,
+            self.fusion_engine.config,
+        )
+        fusion = self.fusion_engine.decide(fusion_signals)
+        fusion_ms += (perf_counter() - fusion_started) * 1000
+        final = fusion
+        review_status = self._review_status(statuses)
+        decision_source = DecisionSource.FUSION
         aggregation_ms = (perf_counter() - aggregation_started) * 1000
         timing = PipelineTiming(
             image_load_ms=image_load_ms,
@@ -202,6 +257,7 @@ class MultimodalReviewPipeline:
             routing_ms=routing_ms,
             context_build_ms=context_ms,
             vlm_ms=statuses["vlm"].latency_ms,
+            fusion_ms=fusion_ms,
             aggregation_ms=aggregation_ms,
             total_ms=(perf_counter() - started) * 1000,
         )
@@ -216,6 +272,7 @@ class MultimodalReviewPipeline:
             review_status=review_status,
             decision_source=decision_source,
             routing=routing,
+            fusion=fusion,
             module_status=statuses,
             timing=timing,
             routing_signals=signals,
@@ -230,6 +287,7 @@ class MultimodalReviewPipeline:
                 policy_version=self.policy.version,
                 prompt_version=self._vlm_config_value("prompt_version"),
                 routing_policy_version=routing.policy_version,
+                fusion_policy_version=self.fusion_engine.version,
                 timestamp=timestamp,
                 component_versions=self._component_versions(detection, ocr),
             ),
@@ -313,43 +371,12 @@ class MultimodalReviewPipeline:
         return value
 
     @staticmethod
-    def _aggregate(vlm, statuses, routing):
+    def _review_status(statuses):
         failures = [status for status in statuses.values() if status.status == ModuleState.FAILED]
-        if routing.route == Route.FAST_PATH:
-            return (
-                FinalReview(
-                    risk_level="low",
-                    reason="Low risk from conservative Stage 1 safe consensus; VLM was skipped.",
-                    requires_manual_review=False,
-                ),
-                ReviewStatus.PARTIAL if failures else ReviewStatus.COMPLETED,
-                DecisionSource.FAST_PATH,
-            )
-        if vlm is not None:
-            return (
-                FinalReview(
-                    risk_level=vlm.risk_level,
-                    categories=vlm.categories,
-                    reason=vlm.reason,
-                    confidence_score=vlm.confidence_score,
-                    requires_manual_review=vlm.requires_manual_review,
-                ),
-                ReviewStatus.PARTIAL if failures else ReviewStatus.COMPLETED,
-                DecisionSource.FULL_PIPELINE
-                if routing.route == Route.FULL_PIPELINE
-                else DecisionSource.VLM,
-            )
         successful = any(status.status == ModuleState.SUCCESS for status in statuses.values())
-        return (
-            FinalReview(
-                reason="VLM result unavailable; no final moderation conclusion was produced.",
-                requires_manual_review=True,
-            ),
-            ReviewStatus.PARTIAL if successful else ReviewStatus.FAILED,
-            DecisionSource.FULL_PIPELINE
-            if routing.route == Route.FULL_PIPELINE
-            else DecisionSource.VLM,
-        )
+        if failures:
+            return ReviewStatus.PARTIAL if successful else ReviewStatus.FAILED
+        return ReviewStatus.COMPLETED if successful else ReviewStatus.FAILED
 
     def _build_routing_signals(self, detection, ocr, baseline, statuses):
         detection_confidences = (

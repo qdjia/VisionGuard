@@ -102,6 +102,7 @@ def evaluate_pipeline(pipeline, manifest: str | Path, output_dir: str | Path) ->
         "model_versions": last_metadata.component_versions if last_metadata else {},
         "policy_version": pipeline.policy.version,
         "prompt_version": last_metadata.prompt_version if last_metadata else None,
+        "fusion_policy_version": (last_metadata.fusion_policy_version if last_metadata else None),
         "sample_count": total,
         "metrics": metrics,
         "failure_count": failures,

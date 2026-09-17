@@ -1,6 +1,6 @@
 pipeline:
   save_artifacts: true
-  artifact_root: ../artifacts/pipeline
+  artifact_root: ../artifacts/fusion/full_fusion_v1
   save_input_copy: false
   enable_detector: true
   enable_ocr: true
@@ -9,7 +9,7 @@ pipeline:
   fail_fast: false
   save_intermediate_json: true
   save_visualizations: true
-  pipeline_version: v1
+  pipeline_version: v2
   max_ocr_chars_for_baseline: 4000
   trace:
     enabled: true

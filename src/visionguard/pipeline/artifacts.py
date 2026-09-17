@@ -36,6 +36,8 @@ class PipelineArtifactStore:
             _save_json(directory / "input_metadata.json", result.image)
             if result.routing is not None:
                 _save_json(directory / "routing.json", result.routing)
+            if result.fusion is not None:
+                _save_json(directory / "fusion.json", result.fusion)
             if self.config.save_intermediate_json:
                 for filename, value in (
                     ("detection.json", result.detection),

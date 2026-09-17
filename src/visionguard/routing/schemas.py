@@ -17,6 +17,7 @@ class DecisionSource(StrEnum):
     FAST_PATH = "fast_path"
     VLM = "vlm"
     FULL_PIPELINE = "full_pipeline"
+    FUSION = "fusion"
 
 
 class RoutingReasonCode(StrEnum):
@@ -31,6 +32,7 @@ class RoutingReasonCode(StrEnum):
     NO_TEXT = "no_text"
     NO_DETECTION = "no_detection"
     FULL_PIPELINE = "full_pipeline"
+    FUSION_SAFETY_GUARD = "fusion_safety_guard"
 
 
 class RoutingSignals(SchemaModel):
@@ -64,6 +66,8 @@ class RoutingDecision(SchemaModel):
     explanation: str = Field(min_length=1)
     signals: RoutingSignals
     policy_version: str = Field(min_length=1)
+    routing_overridden_by_fusion: bool = False
+    original_route: Route | None = None
 
     @model_validator(mode="after")
     def route_matches_call(self) -> "RoutingDecision":

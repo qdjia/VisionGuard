@@ -3,6 +3,7 @@ from types import SimpleNamespace
 import numpy as np
 
 from visionguard.baseline.schemas import TextModerationPrediction
+from visionguard.fusion import RiskFusionEngine, load_fusion_config
 from visionguard.moderation.policy import load_policy
 from visionguard.moderation.schemas import ModerationResult
 from visionguard.pipeline.cascaded import CascadedReviewPipeline
@@ -121,7 +122,16 @@ class VLM:
         )
 
 
-def pipeline(tmp_path, *, detector=None, ocr=None, baseline=None, vlm=None, artifacts=False):
+def pipeline(
+    tmp_path,
+    *,
+    detector=None,
+    ocr=None,
+    baseline=None,
+    vlm=None,
+    artifacts=False,
+    routing_policy=None,
+):
     config = PipelineConfig(
         save_artifacts=artifacts,
         save_visualizations=False,
@@ -135,7 +145,8 @@ def pipeline(tmp_path, *, detector=None, ocr=None, baseline=None, vlm=None, arti
         provider,
         load_policy("configs/moderation_policy.yaml"),
         config,
-        routing_policy=RoutingPolicy(load_routing_config("configs/routing.yaml")),
+        routing_policy=routing_policy or RoutingPolicy(load_routing_config("configs/routing.yaml")),
+        fusion_engine=RiskFusionEngine(load_fusion_config("configs/fusion.yaml")),
     )
     return result, provider
 
@@ -144,13 +155,14 @@ def test_safe_consensus_skips_vlm_and_writes_routing_artifact(tmp_path):
     review, vlm = pipeline(tmp_path, artifacts=True)
     result = review.run(np.zeros((20, 20, 3), dtype=np.uint8))
     assert result.routing.route == "fast_path"
-    assert result.decision_source == "fast_path"
+    assert result.decision_source == "fusion"
     assert result.final.risk_level == "low"
     assert result.vlm is None
     assert result.module_status["vlm"].status == "skipped"
     assert result.timing.vlm_ms == 0
     assert vlm.calls == 0
     assert (tmp_path / "routing" / result.run_id / "routing.json").is_file()
+    assert (tmp_path / "routing" / result.run_id / "fusion.json").is_file()
 
 
 def test_high_risk_detection_routes_to_vlm(tmp_path):
@@ -158,7 +170,7 @@ def test_high_risk_detection_routes_to_vlm(tmp_path):
     result = review.run(np.zeros((20, 20, 3), dtype=np.uint8))
     assert result.routing.route == "vlm_path"
     assert "high_risk_detection" in result.routing.reason_codes
-    assert result.decision_source == "vlm"
+    assert result.decision_source == "fusion"
     assert result.final.risk_level == "high"
     assert vlm.calls == 1
 
@@ -182,7 +194,7 @@ def test_vlm_failure_is_partial_manual_review_not_low(tmp_path):
     result = review.run(np.zeros((20, 20, 3), dtype=np.uint8))
     assert result.routing.call_vlm
     assert result.review_status == "partial"
-    assert result.final.risk_level is None
+    assert result.final.risk_level == "medium"
     assert result.final.requires_manual_review
 
 
@@ -195,13 +207,44 @@ def test_low_confidence_and_empty_ocr_route_to_vlm(tmp_path):
     assert {"no_text", "insufficient_evidence"}.issubset(empty_result.routing.reason_codes)
 
 
+def test_fast_path_fusion_safety_guard_overrides_route(tmp_path):
+    routing_config = load_routing_config("configs/routing.yaml")
+    relaxed_detector = routing_config.detector.model_copy(
+        update={"high_risk_conf_threshold": 0.99, "suspicious_conf_threshold": 0.99}
+    )
+    relaxed_policy = RoutingPolicy(routing_config.model_copy(update={"detector": relaxed_detector}))
+    review, vlm = pipeline(
+        tmp_path,
+        detector=Detector(risky=True),
+        routing_policy=relaxed_policy,
+    )
+    result = review.run(np.zeros((20, 20, 3), dtype=np.uint8))
+    assert result.routing.original_route == "fast_path"
+    assert result.routing.routing_overridden_by_fusion
+    assert result.routing.route == "vlm_path"
+    assert "fusion_safety_guard" in result.routing.reason_codes
+    assert result.fusion.metadata.routing_overridden_by_fusion
+    assert result.fusion.requires_manual_review
+    assert vlm.calls == 1
+
+
 def test_phase_seven_result_json_remains_loadable(tmp_path):
     review, _ = pipeline(tmp_path)
     payload = review.run(np.zeros((20, 20, 3), dtype=np.uint8)).model_dump(mode="json")
     payload.pop("decision_source")
     payload.pop("routing")
+    payload.pop("fusion")
     payload["timing"].pop("routing_ms")
+    payload["timing"].pop("fusion_ms")
     payload["metadata"].pop("routing_policy_version")
+    payload["metadata"].pop("fusion_policy_version")
+    payload["final"] = {
+        "risk_level": "low",
+        "categories": [],
+        "reason": "Historical Phase 7 result.",
+        "confidence_score": None,
+        "requires_manual_review": False,
+    }
     for field in (
         "mean_detection_confidence",
         "high_risk_detection_count",
@@ -217,4 +260,5 @@ def test_phase_seven_result_json_remains_loadable(tmp_path):
         payload["routing_signals"].pop(field)
     restored = ReviewResult.model_validate(payload)
     assert restored.routing is None
+    assert restored.fusion is None
     assert restored.decision_source == "full_pipeline"

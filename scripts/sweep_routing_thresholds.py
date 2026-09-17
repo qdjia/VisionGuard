@@ -64,6 +64,7 @@ def main() -> int:
     parser.add_argument("--baseline-config", type=Path, default=Path("configs/baseline_text.yaml"))
     parser.add_argument("--vlm-config", type=Path, required=True)
     parser.add_argument("--policy", type=Path, default=Path("configs/moderation_policy.yaml"))
+    parser.add_argument("--fusion-config", type=Path, default=Path("configs/fusion.yaml"))
     args = parser.parse_args()
     configure_logging()
     output = args.output.resolve()
@@ -77,6 +78,7 @@ def main() -> int:
         baseline_config=args.baseline_config,
         vlm_config=args.vlm_config,
         policy=args.policy,
+        fusion_config=args.fusion_config,
     )
     # Sweep owns one summary directory; avoid duplicating per-run full artifacts.
     full.config = full.config.model_copy(update={"save_artifacts": False})

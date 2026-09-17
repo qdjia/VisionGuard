@@ -3,7 +3,7 @@
 基于视觉语言模型的多模态出版内容智能审校系统。
 
 本项目面向 AI / Computer Vision 算法作品集，采用 YOLO、OCR、规则引擎与 VLM
-组成多阶段级联推理流水线。当前开发到 **Phase 8：Cascaded Inference + Dynamic Routing**。
+组成多阶段级联推理流水线。当前开发到 **Phase 9：Risk Fusion + Multimodal Decision Fusion**。
 
 ## 安装与测试
 
@@ -185,8 +185,8 @@ python scripts/evaluate_ocr.py \
 
 当前已实现配置与 Schema、YOLO26 单图推理、YOLO 数据集/训练/评估、PaddleOCR
 全图/ROI 推理和 CER 基础评估、传统文本 Baseline、独立 VLM Adapter、同步多模态 Review
-Pipeline，以及规则式级联推理与路由实验工具。尚未实现正式 Batch Benchmark、综合 Risk Fusion、
-综合 Error Analysis 或 FastAPI。
+Pipeline、规则式级联推理、动态路由和可解释多模态 Risk Fusion。尚未实现正式 Batch Benchmark、
+跨阶段综合 Error Analysis 或 FastAPI。
 
 ## 传统文本审核 Baseline
 
@@ -443,7 +443,8 @@ Image → YOLO + OCR → OCR text → Baseline → RoutingPolicy
 `RoutingPolicy` 是纯规则领域层：只消费 `RoutingSignals` 并返回 `RoutingDecision`，不调用任何
 模型，也不负责复杂审核结论。第一版 Fast Path 只能输出 low；medium、high、不确定、冲突、
 证据不足或 Stage 1 模块失败全部进入 VLM。这样 Router 只决定是否支付昂贵的 VLM 成本，不能
-越权替代审核模型。若 VLM 也失败，结果为 partial/manual review，`risk_level=null`，不会 fail-open。
+越权替代审核模型。Phase 9 接入后，VLM 失败由 Fusion 保守输出至少 medium/manual review，
+不会 fail-open。
 
 正式阈值位于 `configs/routing.yaml`，包括 Baseline safe/risky、Detection high-risk/suspicious、
 OCR 最低平均置信度/文本长度及配置化高风险类别。边界语义为：`p <= safe_threshold` 才可能
@@ -554,5 +555,138 @@ Call Rate 为 100% → 66.7%，Skip Rate 为 0% → 33.3%，平均延迟约 20.1
 P50 约 22.25s → 9.47s，P95 约 27.36s → 25.95s，Unsafe Fast Pass 为 0，risk accuracy 和
 category micro P/R/F1 均为 1.0。阈值扫描链路已验证，但这 3 个样本在 0.05～0.30 间路由结果
 相同。以上数字只证明小型合成数据上的工程链路与观测能力，不能代表真实出版审核效果；正式
-阈值必须用规模更大、类别覆盖完整且经过人工标注的数据集确定。当前仍是同步单图、规则路由，
-不包含 ML Router、Batch Benchmark、正式 Risk Fusion、服务化或分布式调度。
+阈值必须用规模更大、类别覆盖完整且经过人工标注的数据集确定。Phase 8 的 Routing 与 Phase 9
+Fusion 保持独立；当前仍是同步单图、规则路由，不包含 ML Router、Batch Benchmark、服务化或
+分布式调度。
+
+## Risk Fusion + Multimodal Decision Fusion（Phase 9）
+
+Phase 9 将最终结论从“直接采用 VLM 或 Fast Path low”升级为独立 `RiskFusionEngine`。Routing
+只决定是否调用 VLM；Fusion 只消费扁平 `FusionSignals` 并决定最终风险。两者不互相承担对方
+职责，Full 与 Cascaded Pipeline 共用同一个无状态 FusionEngine。
+
+```text
+Full:      YOLO + OCR + Baseline + VLM → Fusion → FusionDecision
+Cascaded: YOLO + OCR + Baseline → Routing
+                                  ├─ Fast Path → pre-fusion safety guard
+                                  │               ├─ low → final fusion
+                                  │               └─ non-low → override → VLM → final fusion
+                                  └─ VLM Path → VLM → final fusion
+```
+
+正式配置位于 `configs/fusion.yaml`，版本为 `fusion_v1`。Detector severity、Baseline/OCR 阈值、
+VLM level score、visual/text/VLM 权重、风险边界、失败/冲突策略和 uncertainty margin 均配置化。
+修改正式规则或阈值时应升级 policy version。Pipeline 配置版本升级为 v2，新的默认运行目录为
+`artifacts/fusion/full_fusion_v1/` 与 `artifacts/fusion/cascaded_fusion_v1/`，不会覆盖 Phase 8 目录。
+
+第一版 weighted score：
+
+```text
+visual_score = max(detection_confidence × class_severity)
+text_score   = baseline_probability × mean_ocr_confidence
+vlm_score    = configured(low=0.15, medium=0.60, high=0.90)
+risk_score   = Σ(normalized_available_weight × available_score)
+```
+
+默认权重为 visual=0.25、text=0.20、VLM=0.55。缺少 VLM 时只在 visual/text 上重新归一化，
+不会将 VLM 人为当作 0 分。OCR confidence 只决定文本证据可靠性，不直接代表审核风险。
+VLM confidence 默认不缩放分数，因为该值未经校准；即使开启，也只做谨慎缩放。
+`risk_score` 是工程融合分，不是严格校准概率。
+
+```json
+{
+  "risk_level": "high",
+  "risk_score": 0.71,
+  "categories": [
+    {"name": "weapon", "score": 0.91, "sources": ["detector", "vlm"]}
+  ],
+  "requires_manual_review": false,
+  "decision_source": "fusion",
+  "reason_codes": ["visual_risk", "vlm_risk"],
+  "policy_version": "fusion_v1",
+  "metadata": {
+    "vlm_used": true,
+    "routing_policy_version": "routing_v1",
+    "fusion_policy_version": "fusion_v1",
+    "score_is_calibrated_probability": false
+  }
+}
+```
+
+冲突包括 high visual/VLM low、Baseline high/VLM low、VLM high/其他证据均低，以及高 Baseline
+配合低可靠 OCR。冲突不会通过多数投票隐藏，而是保留 provenance 并强制人工复核。`failed`
+模块从可用权重中移除，同时保守地至少输出 medium/manual；合法 `skipped` 不视为故障。距离
+0.30 或 0.70 决策边界小于 0.05 时增加 `near_decision_boundary` 并要求人工复核。
+
+Fast Path safety guard 示例：Routing 原判 fast_path，但 Stage 1 visual/text 融合为 medium；Pipeline
+将路由改为 vlm_path，记录 `original_route=fast_path`、`fusion_safety_guard` 和
+`routing_overridden_by_fusion=true`，再调用 VLM。若 VLM 被禁用，则不 Fast Pass，保守进入人工复核。
+
+单图和测试：
+
+```bash
+python scripts/run_pipeline.py --image data/vlm_eval/risky.png \
+  --detector-config configs/local_detector.yaml --vlm-config configs/local_vlm.yaml \
+  --fusion-config configs/fusion.yaml
+
+python scripts/run_cascaded_pipeline.py --image data/vlm_eval/risky.png \
+  --detector-config configs/local_detector.yaml --vlm-config configs/local_vlm.yaml \
+  --fusion-config configs/fusion.yaml
+
+python -m pytest tests/test_fusion_engine.py tests/test_fusion_conflicts.py \
+  tests/test_fusion_missing_modules.py tests/test_fusion_evaluator.py -p no:cacheprovider
+```
+
+Live Fusion Evaluation 只运行一次昂贵模型，并保存可重放 `records.jsonl`：
+
+```bash
+python scripts/evaluate_fusion.py --mode cascaded \
+  --manifest data/vlm_eval/manifest.jsonl \
+  --output artifacts/fusion/evaluation_v1 \
+  --detector-config configs/local_detector.yaml --vlm-config configs/local_vlm.yaml
+```
+
+下面的 strategy、ablation 和 sweep 全部消费同一份 records，不重复运行 YOLO/OCR/VLM：
+
+```bash
+python scripts/compare_fusion_strategies.py \
+  --records artifacts/fusion/evaluation_v1/records.jsonl \
+  --output artifacts/fusion/strategy_compare_v1
+
+python scripts/run_fusion_ablation.py \
+  --records artifacts/fusion/evaluation_v1/records.jsonl \
+  --output artifacts/fusion/ablation_v1
+
+python scripts/sweep_fusion.py \
+  --records artifacts/fusion/evaluation_v1/records.jsonl \
+  --output artifacts/fusion/sweep_v1 \
+  --low-max-values 0.25 0.30 0.35 \
+  --weight-sets 0.25,0.20,0.55 0.30,0.25,0.45
+```
+
+历史 Phase 7/8/9 artifact replay 和错误分析：
+
+```bash
+python scripts/replay_fusion.py \
+  --artifacts artifacts/routing/cascaded_routing_v1 \
+  --output artifacts/fusion/replay_v1.jsonl
+
+python scripts/analyze_fusion_errors.py \
+  --records artifacts/fusion/evaluation_v1/records.jsonl \
+  --output artifacts/fusion/errors_v1
+```
+
+Error Analysis 分类保存 false_low、false_high、evidence_conflict、near_boundary、module_failure 和
+routing_override；其中 GT medium/high 但 Fusion low 会单独统计为 `unsafe_fused_low`。每个新运行
+除 routing.json 外还保存 fusion.json，包含扁平 signals、visual/text/VLM scores、归一化权重、
+最终分数、原因和 provenance。
+
+本机 Phase 9 工程验证使用 RTX 4060、smoke YOLO、PaddleOCR CPU、sample Baseline 和本地
+Qwen3-VL-2B。5 张真实 smoke 输入全部完成；3 张合成 evaluation 样本的 Risk Accuracy 与
+Category micro F1 为 1.0，Manual Review Rate 33.3%，Conflict Rate 0%，Near-boundary Rate
+33.3%，Routing Override Rate 0%，Unsafe Fused Low 为 0。离线策略对比中 VLM-only Risk
+Accuracy 为 66.7%，hard-rule/weighted 为 100%；这只表明当前小样本上文本 Baseline 提供了
+额外工程信号，不能证明 Fusion 在真实数据上必然优于 VLM。五组 ablation、六组阈值/权重组合、
+16 个历史 artifact replay 和 Error Analysis 链路均已运行。正式权重、阈值和 safety override
+必须在规模更大、类别覆盖完整、人工标注且具有真实冲突/失败案例的数据集上重新评估。当前不包含
+ML/Neural Fusion、自动阈值选择、Batch Benchmark、FastAPI、异步队列或分布式调度。

@@ -19,6 +19,7 @@ def main() -> int:
     parser.add_argument("--baseline-config", type=Path, default=Path("configs/baseline_text.yaml"))
     parser.add_argument("--vlm-config", type=Path, default=Path("configs/vlm.yaml"))
     parser.add_argument("--policy", type=Path, default=Path("configs/moderation_policy.yaml"))
+    parser.add_argument("--fusion-config", type=Path, default=Path("configs/fusion.yaml"))
     args = parser.parse_args()
     configure_logging()
     pipeline = build_cascaded_pipeline(
@@ -29,6 +30,7 @@ def main() -> int:
         baseline_config=args.baseline_config,
         vlm_config=args.vlm_config,
         policy=args.policy,
+        fusion_config=args.fusion_config,
     )
     result = pipeline.run(args.image)
     print(result.model_dump_json(indent=2))
@@ -36,6 +38,8 @@ def main() -> int:
         f"run_id={result.run_id} route={result.routing.route} "
         f"call_vlm={result.routing.call_vlm} "
         f"reasons={[str(code) for code in result.routing.reason_codes]} "
+        f"fusion_score={result.fusion.risk_score:.3f} "
+        f"fusion_risk={result.fusion.risk_level} "
         f"total_ms={result.timing.total_ms:.2f}"
     )
     return 0

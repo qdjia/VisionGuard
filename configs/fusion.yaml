@@ -1,0 +1,41 @@
+fusion:
+  version: fusion_v1
+  strategy: weighted
+  conservative_mode: true
+  detector:
+    high_risk_conf_threshold: 0.65
+    suspicious_conf_threshold: 0.30
+    hard_override_min_count: 2
+    class_severity:
+      visual_sensitive_region: 0.75
+      weapon: 1.00
+      violence: 0.90
+      blood: 0.80
+      prohibited_symbol: 0.85
+      qr_code: 0.40
+      watermark: 0.30
+      other_risky_visual_element: 0.60
+  baseline:
+    safe_threshold: 0.10
+    risky_threshold: 0.80
+    min_ocr_reliability: 0.60
+  vlm:
+    trust_enabled: true
+    use_confidence_scaling: false
+    level_scores:
+      low: 0.15
+      medium: 0.60
+      high: 0.90
+  weights:
+    visual: 0.25
+    text: 0.20
+    vlm: 0.55
+  conflict:
+    force_manual_review: true
+  failure:
+    force_manual_review: true
+    minimum_risk_level: medium
+  risk_mapping:
+    low_max: 0.30
+    medium_max: 0.70
+  uncertainty_margin: 0.05
