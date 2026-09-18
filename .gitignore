@@ -24,6 +24,9 @@ data/text_moderation/*
 !data/benchmark/
 data/benchmark/*
 !data/benchmark/manifest.jsonl
+!data/hard_cases/
+data/hard_cases/*
+!data/hard_cases/manifest.jsonl
 *.joblib
 *.safetensors
 .huggingface/

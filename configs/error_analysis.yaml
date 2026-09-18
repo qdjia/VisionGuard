@@ -1,0 +1,33 @@
+error_analysis:
+  version: error_analysis_v1
+  experiment_name: phase11_error_analysis_v1
+  output_root: artifacts/error_analysis
+  cer_threshold: 0.30
+  detection_iou_threshold: 0.50
+  high_confidence_threshold: 0.90
+  boundary_margin: 0.05
+  routing_boundaries: [0.10, 0.80]
+  fusion_boundaries: [0.30, 0.70]
+  confidence_bins: [0.0, 0.3, 0.5, 0.7, 0.9, 1.0]
+  severity:
+    false_low: critical
+    unsafe_fast_pass: critical
+    pipeline_failure: critical
+    false_high: high
+    wrong_risk_level: high
+    missed_category: high
+    module_failure: high
+    partial_result: high
+    wrong_category: medium
+    extra_category: medium
+    potential_unnecessary_vlm: low
+    near_decision_boundary: low
+    low_confidence_ocr: low
+  hard_cases:
+    include_severities: [critical, high, medium]
+    include_boundary_cases: true
+    regression_severities: [critical, high]
+    require_verified_annotation: true
+  report:
+    top_error_count: 20
+    low_sample_warning_threshold: 10

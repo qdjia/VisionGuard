@@ -3,7 +3,57 @@
 基于视觉语言模型的多模态出版内容智能审校系统。
 
 本项目面向 AI / Computer Vision 算法作品集，采用 YOLO、OCR、规则引擎与 VLM
-组成多阶段级联推理流水线。当前开发到 **Phase 10：Batch Inference Benchmark + Performance Profiling**。
+组成多阶段级联推理流水线。当前开发到 **Phase 11：Systematic Error Analysis**。
+
+## Systematic Error Analysis（Phase 11）
+
+Phase 11 consumes existing evaluation records and ground-truth manifests offline. It separates
+observable failures from suspected causes, preserves a non-causal propagation trace, and never
+changes routing, fusion, prompt, policy, threshold, or model weights automatically. The tracked
+hard-case manifest is an engineering regression seed, not a production publishing benchmark.
+
+```bash
+# Offline analysis; YOLO/OCR/VLM are not loaded.
+python scripts/analyze_pipeline_errors.py \
+  --records artifacts/fusion/evaluation_phase9_20260917/records.jsonl \
+  --config configs/error_analysis.yaml \
+  --output artifacts/error_analysis/phase11_analysis_v1
+
+# Hash-deduplicated hard-case manifest.
+python scripts/build_hard_case_dataset.py \
+  --errors artifacts/error_analysis/phase11_analysis_v1/error_cases.jsonl \
+  --output data/hard_cases/manifest.jsonl
+
+# Replay only routing and fusion over stored signals.
+python scripts/replay_error_cases.py \
+  --records artifacts/fusion/evaluation_phase9_20260917/records.jsonl \
+  --output artifacts/error_analysis/phase11_replay_v1
+
+# Live regression explicitly loads the configured models.
+python scripts/run_hard_case_regression.py \
+  --manifest data/hard_cases/manifest.jsonl \
+  --pipeline-mode cascaded \
+  --detector-config configs/local_detector.yaml \
+  --vlm-config configs/local_vlm.yaml \
+  --output artifacts/error_analysis/phase11_regression_v1
+
+python scripts/generate_error_report.py \
+  --analysis artifacts/error_analysis/phase11_analysis_v1 \
+  --output artifacts/error_analysis/phase11_analysis_v1/report_copy.md
+```
+
+The extended manifest accepts partial `ground_truth` (`risk_level`, `categories`, `text`,
+`objects`, `requires_manual_review`) and annotation metadata (`source`, `difficulty`,
+`annotation_status`, `notes`, `generation_method`). Missing transcription or object boxes disables
+CER or detector FP/FN claims respectively. Use `verified`, `needs_review`, or `ambiguous` annotation
+status; model output must never be promoted to ground truth.
+
+Each new analysis directory contains `config.yaml`, `summary.json`, `failure_taxonomy.csv`,
+`error_cases.jsonl`, `hard_cases.jsonl`, `top_errors.md`, `recommendations.json`, the main report,
+and per-case traces/visualizations. Existing non-empty output directories are rejected. The current
+three-sample Phase 9 evaluation only validates the engineering flow and is explicitly too small for
+quality claims; a production conclusion requires a diverse, independently annotated 20–50+ sample
+evaluation set at minimum.
 
 ## 安装与测试
 
