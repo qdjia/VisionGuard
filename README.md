@@ -3,7 +3,7 @@
 基于视觉语言模型的多模态出版内容智能审校系统。
 
 本项目面向 AI / Computer Vision 算法作品集，采用 YOLO、OCR、规则引擎与 VLM
-组成多阶段级联推理流水线。当前开发到 **Phase 9：Risk Fusion + Multimodal Decision Fusion**。
+组成多阶段级联推理流水线。当前开发到 **Phase 10：Batch Inference Benchmark + Performance Profiling**。
 
 ## 安装与测试
 
@@ -185,7 +185,7 @@ python scripts/evaluate_ocr.py \
 
 当前已实现配置与 Schema、YOLO26 单图推理、YOLO 数据集/训练/评估、PaddleOCR
 全图/ROI 推理和 CER 基础评估、传统文本 Baseline、独立 VLM Adapter、同步多模态 Review
-Pipeline、规则式级联推理、动态路由和可解释多模态 Risk Fusion。尚未实现正式 Batch Benchmark、
+ Pipeline、规则式级联推理、动态路由、可解释多模态 Risk Fusion 和可复现性能 Benchmark。尚未实现
 跨阶段综合 Error Analysis 或 FastAPI。
 
 ## 传统文本审核 Baseline
@@ -689,4 +689,123 @@ Accuracy 为 66.7%，hard-rule/weighted 为 100%；这只表明当前小样本�
 额外工程信号，不能证明 Fusion 在真实数据上必然优于 VLM。五组 ablation、六组阈值/权重组合、
 16 个历史 artifact replay 和 Error Analysis 链路均已运行。正式权重、阈值和 safety override
 必须在规模更大、类别覆盖完整、人工标注且具有真实冲突/失败案例的数据集上重新评估。当前不包含
-ML/Neural Fusion、自动阈值选择、Batch Benchmark、FastAPI、异步队列或分布式调度。
+ML/Neural Fusion、自动阈值选择、FastAPI、异步队列或分布式调度。
+
+## Batch Inference Benchmark + Performance Profiling（Phase 10）
+
+Phase 10 提供独立于业务 Pipeline 的可复现性能测量层。正式配置位于
+`configs/benchmark.yaml`；`configs/benchmark_smoke.yaml` 只用于 batch 1/2 快速验证。
+所有实验写入新的独立目录，如果目标目录已存在会直接报错，不覆盖历史数据。
+
+批量模式严格区分：
+
+| 模块 | Batch mode | 说明 |
+|---|---|---|
+| YOLO | `true_batch` | 多张 BGR ndarray 一次进入 Ultralytics |
+| Baseline | `true_batch` | 一次 TF-IDF transform 和一次 `predict_proba` |
+| PaddleOCR | `sequential` | 当前稳定 Provider API 按单图解析 |
+| Qwen3-VL | `sequential` | 保持独立结构化解析与单样本错误隔离 |
+| Pipeline | `mixed` | YOLO/文本批量，OCR 顺序，Routing 后选择性调用 VLM |
+
+CUDA kernel 是异步执行的。Benchmark 会按配置在计时前后调用
+`torch.cuda.synchronize()`，并在测量前重置 peak memory；该同步只存在于 Benchmark 层，不会改变
+生产 Pipeline。显存字段分别表示当前 allocated、PyTorch reserved 和区间 peak allocated，它们不能
+互相替代。模型构造和模型内部 warmup 计入 `startup_time_ms`；首个请求单独记录为
+`cold_inference_ms`，配置 warmup 不进入 steady-state percentile。
+
+Pipeline mixed batch 数据流：
+
+```text
+Batch images
+  → YOLO true batch
+  → OCR sequential
+  → Baseline true batch（仅非空 OCR 文本）
+  → Routing + pre-fusion safety guard
+  → selected VLM subset（当前 sequential）
+  → Fusion per sample
+  → ordered ReviewResult list
+```
+
+`data/benchmark/manifest.jsonl` 是 20 条工作负载记录，覆盖 safe/risky text、OCR-heavy、visual、
+no-text、Fast/VLM path；其中包含对已有 smoke 图片的重复引用，用于工程性能测量，不是正式审核
+准确率数据集。可通过固定 seed 随机顺序，避免固定输入顺序造成缓存偏差。
+
+单模块 Benchmark：
+
+```bash
+python scripts/benchmark_modules.py \
+  --manifest data/benchmark/manifest.jsonl \
+  --config configs/benchmark.yaml --batch-size 4 \
+  --detector-config configs/local_detector.yaml \
+  --vlm-config configs/local_vlm.yaml \
+  --output artifacts/benchmarks/phase10_modules_v1
+```
+
+Full / Cascaded Pipeline：
+
+```bash
+python scripts/benchmark_pipeline.py \
+  --manifest data/benchmark/manifest.jsonl \
+  --config configs/benchmark.yaml --pipeline-mode full --batch-size 4 \
+  --detector-config configs/local_detector.yaml --vlm-config configs/local_vlm.yaml \
+  --output artifacts/benchmarks/phase10_full_v1
+
+python scripts/benchmark_pipeline.py \
+  --manifest data/benchmark/manifest.jsonl \
+  --config configs/benchmark.yaml --pipeline-mode cascaded --batch-size 4 \
+  --detector-config configs/local_detector.yaml --vlm-config configs/local_vlm.yaml \
+  --output artifacts/benchmarks/phase10_cascaded_v1
+```
+
+Batch size sweep 和公平比较：
+
+```bash
+python scripts/benchmark_batch_sizes.py \
+  --manifest data/benchmark/manifest.jsonl --config configs/benchmark.yaml \
+  --pipeline-mode cascaded \
+  --detector-config configs/local_detector.yaml --vlm-config configs/local_vlm.yaml \
+  --output artifacts/benchmarks/phase10_batch_sweep_v1
+
+python scripts/compare_pipeline_performance.py \
+  --manifest data/benchmark/manifest.jsonl --config configs/benchmark.yaml --batch-size 4 \
+  --detector-config configs/local_detector.yaml --vlm-config configs/local_vlm.yaml \
+  --output artifacts/benchmarks/phase10_full_vs_cascaded_v1
+```
+
+Full/Cascaded 对比共享相同模型实例、样本、batch size、seed、warmup 和硬件，并关闭每请求 Pipeline
+artifact 写入。输出包括 `records.jsonl`、`summary.json`、`summary.csv` 和
+`performance_report.md`。报告可从已有 summary 重新生成：
+
+如需单独测量 artifact I/O，将 benchmark 配置中的 `save_pipeline_artifacts` 改为 `true`。该模式会
+明确标记为 `sequential`，并把请求产物写入独立的 `*_request_artifacts` 目录；不要将关闭 artifact
+得到的差异描述为模型推理优化。
+
+```bash
+python scripts/generate_performance_report.py \
+  --input artifacts/benchmarks/phase10_full_vs_cascaded_v1 \
+  --output artifacts/benchmarks/phase10_full_vs_cascaded_v1_report.md
+```
+
+每条记录明确保存 batch latency、per-sample latency、images/s、VLM 调用数/调用率、人工复核数、
+失败数、模块耗时与显存。汇总包含 Mean、Median、Std、Min、Max、P50/P90/P95/P99、Fast/VLM
+Path 平均延迟和模块耗时占比。CUDA OOM 会保存为 `status=oom`、清理 cache 并继续 sweep；其他异常
+不会被静默吞掉。
+
+环境快照只记录 Python、OS、PyTorch/CUDA、GPU 型号/显存以及关键库版本，不记录用户名、私有路径、
+token。性能结论只适用于记录的单消费级 GPU、软件版本和工程数据集，不能泛化为所有部署环境。
+当前未实现真正的 OCR/VLM batch、异步请求队列、跨请求动态 batching、TensorRT、Triton、分布式或
+多 GPU 推理，也未进入 FastAPI 阶段。
+
+本机 RTX 4060 Laptop GPU 的一次 Phase 10 smoke（每组仅 1 次 measured run）结果如下：
+
+| Mode | Batch | Mean/P50/P95/P99 ms | Throughput | VLM rate | Peak GPU MB |
+|---|---:|---:|---:|---:|---:|
+| Cascaded | 1 | 7849.80 | 0.127 images/s | 100% | 6309.1 |
+| Cascaded | 2 | 17398.41 | 0.115 images/s | 100% | 4588.7 |
+| Full | 2 | 16218.14 | 0.123 images/s | 100% | 4593.4 |
+| Cascaded comparison | 2 | 16383.42 | 0.122 images/s | 100% | 4593.4 |
+
+该 smoke 的 batch 2 样本全部被路由至 VLM，因此 Cascaded 没有降低 VLM Call Rate，平均延迟相对
+Full 反而有约 1.02% 的正常测量波动，不能宣称性能提升。VLM 占 Full 约 91.21%、Cascaded 约
+90.57% 的模块时间，是当前明确瓶颈。由于每组只有一次正式测量，P50/P95/P99 数值相同；正式结论
+必须使用 `configs/benchmark.yaml` 的多次测量和覆盖 Fast Path/VLM Path 的更大真实工作负载。

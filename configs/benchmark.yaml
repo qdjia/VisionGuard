@@ -1,0 +1,24 @@
+benchmark:
+  experiment_name: phase10_batch_v1
+  warmup_runs: 2
+  measured_runs: 5
+  module_runs:
+    detector: 20
+    ocr: 10
+    baseline: 50
+    vlm: 3
+    fusion: 50
+    pipeline: 5
+  batch_sizes: [1, 2, 4, 8]
+  percentiles: [50, 90, 95, 99]
+  synchronize_cuda: true
+  measure_gpu_memory: true
+  measure_cpu_memory: false
+  save_raw_records: true
+  pipeline_modes: [full, cascaded]
+  include_cold_start: true
+  shuffle_samples: true
+  seed: 42
+  save_pipeline_artifacts: false
+  dataset_kind: engineering
+  output_root: ../artifacts/benchmarks

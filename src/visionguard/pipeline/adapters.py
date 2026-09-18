@@ -11,6 +11,8 @@ from visionguard.schemas import DetectionResult, OCRResult
 class DetectorProtocol(Protocol):
     def predict(self, image: np.ndarray) -> DetectionResult: ...
 
+    def predict_batch(self, images: list[np.ndarray]) -> list[DetectionResult]: ...
+
 
 class OCRProtocol(Protocol):
     def recognize(self, image: np.ndarray) -> OCRResult: ...
@@ -20,6 +22,8 @@ class TextBaselineProtocol(Protocol):
     experiment_name: str
 
     def predict(self, text: str) -> TextModerationPrediction: ...
+
+    def predict_batch(self, texts: list[str]) -> list[TextModerationPrediction]: ...
 
 
 class TextBaselineAdapter:
@@ -32,3 +36,7 @@ class TextBaselineAdapter:
     def predict(self, text: str) -> TextModerationPrediction:
         result = self._baseline.predict_batch([text], source="ocr")
         return result.predictions[0].model_copy(update={"timing": result.timing})
+
+    def predict_batch(self, texts: list[str]) -> list[TextModerationPrediction]:
+        result = self._baseline.predict_batch(texts, source="ocr")
+        return [item.model_copy(update={"timing": result.timing}) for item in result.predictions]

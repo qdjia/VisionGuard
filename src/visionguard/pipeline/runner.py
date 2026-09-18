@@ -1,6 +1,7 @@
 """Application bootstrap that initializes every enabled model exactly once."""
 
 from pathlib import Path
+from time import perf_counter
 
 from visionguard.baseline import TextModerationBaseline, load_baseline_config
 from visionguard.config import load_config
@@ -25,28 +26,44 @@ def build_pipeline(
     vlm_config: str | Path,
     policy: str | Path,
     fusion_config: str | Path = "configs/fusion.yaml",
+    startup_timings: dict[str, float] | None = None,
 ) -> MultimodalReviewPipeline:
     """Load enabled dependencies in the bootstrap layer, never inside the pipeline."""
 
     config = load_pipeline_config(pipeline_config)
+    timings = startup_timings if startup_timings is not None else {}
+    started = perf_counter()
     detector = (
         YOLODetector(load_config(detector_config).detection) if config.enable_detector else None
     )
+    timings["detector"] = (perf_counter() - started) * 1000
+    started = perf_counter()
     ocr_engine = OCREngine(load_ocr_config(ocr_config)) if config.enable_ocr else None
+    timings["ocr"] = (perf_counter() - started) * 1000
     baseline = None
+    started = perf_counter()
     if config.enable_text_baseline:
         baseline_settings = load_baseline_config(baseline_config)
         experiment = baseline_settings.artifacts_dir / baseline_settings.experiment_name
         baseline = TextBaselineAdapter(TextModerationBaseline.load(experiment))
+    timings["baseline"] = (perf_counter() - started) * 1000
+    started = perf_counter()
     provider = create_provider(load_vlm_config(vlm_config)) if config.enable_vlm else None
+    timings["vlm"] = (perf_counter() - started) * 1000
+    started = perf_counter()
+    moderation_policy = load_policy(policy)
+    timings["policy"] = (perf_counter() - started) * 1000
+    started = perf_counter()
+    fusion_engine = RiskFusionEngine(load_fusion_config(fusion_config))
+    timings["fusion"] = (perf_counter() - started) * 1000
     return MultimodalReviewPipeline(
         detector,
         ocr_engine,
         baseline,
         provider,
-        load_policy(policy),
+        moderation_policy,
         config,
-        fusion_engine=RiskFusionEngine(load_fusion_config(fusion_config)),
+        fusion_engine=fusion_engine,
     )
 
 
@@ -60,6 +77,7 @@ def build_cascaded_pipeline(
     vlm_config: str | Path,
     policy: str | Path,
     fusion_config: str | Path = "configs/fusion.yaml",
+    startup_timings: dict[str, float] | None = None,
 ) -> CascadedReviewPipeline:
     """Load one shared model set and add a pure rule-based routing policy."""
 
@@ -71,6 +89,7 @@ def build_cascaded_pipeline(
         vlm_config=vlm_config,
         policy=policy,
         fusion_config=fusion_config,
+        startup_timings=startup_timings,
     )
     return CascadedReviewPipeline(
         full.detector,
@@ -95,6 +114,7 @@ def build_pipeline_pair(
     vlm_config: str | Path,
     policy: str | Path,
     fusion_config: str | Path = "configs/fusion.yaml",
+    startup_timings: dict[str, float] | None = None,
 ) -> tuple[MultimodalReviewPipeline, CascadedReviewPipeline]:
     """Build full/cascaded modes over the exact same initialized model instances."""
 
@@ -106,6 +126,7 @@ def build_pipeline_pair(
         vlm_config=vlm_config,
         policy=policy,
         fusion_config=fusion_config,
+        startup_timings=startup_timings,
     )
     cascaded_config = load_pipeline_config(cascaded_pipeline_config)
     cascaded = CascadedReviewPipeline(

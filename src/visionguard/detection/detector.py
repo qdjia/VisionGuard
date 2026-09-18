@@ -76,7 +76,7 @@ class YOLODetector:
     def is_warmed_up(self) -> bool:
         return self._warmed_up
 
-    def _predict_raw(self, image: np.ndarray) -> Any:
+    def _predict_raw(self, image: np.ndarray | list[np.ndarray]) -> Any:
         return self._model.predict(
             source=image,
             conf=self.config.conf_threshold,
@@ -159,6 +159,58 @@ class YOLODetector:
         )
         return result
 
+    def predict_batch(self, images: list[ImageInput]) -> list[DetectionResult]:
+        """Run one Ultralytics call for multiple images while preserving input order."""
+
+        if not images:
+            return []
+        total_started = perf_counter()
+        preprocess_started = perf_counter()
+        normalized = [load_image(image) for image in images]
+        preprocess_ms = (perf_counter() - preprocess_started) * 1000
+
+        inference_started = perf_counter()
+        try:
+            raw_results = list(self._predict_raw(normalized))
+        except Exception as exc:
+            LOGGER.exception(
+                "YOLO batch inference failed for model=%s device=%s batch_size=%d",
+                self.model_name,
+                self.device,
+                len(normalized),
+            )
+            raise InferenceError(
+                f"YOLO batch inference failed for model={self.model_name} device={self.device}"
+            ) from exc
+        inference_ms = (perf_counter() - inference_started) * 1000
+        if len(raw_results) != len(normalized):
+            raise InferenceError(
+                f"YOLO returned {len(raw_results)} results for {len(normalized)} inputs"
+            )
+
+        postprocess_started = perf_counter()
+        detections = [self._parse_result(result) for result in raw_results]
+        postprocess_ms = (perf_counter() - postprocess_started) * 1000
+        total_ms = (perf_counter() - total_started) * 1000
+        count = len(normalized)
+        timing = TimingInfo(
+            preprocess_ms=preprocess_ms / count,
+            inference_ms=inference_ms / count,
+            postprocess_ms=postprocess_ms / count,
+            total_ms=total_ms / count,
+        )
+        return [
+            DetectionResult(
+                image_width=image.shape[1],
+                image_height=image.shape[0],
+                detections=items,
+                timing=timing,
+                device=self.device,
+                model_name=self.model_name,
+            )
+            for image, items in zip(normalized, detections, strict=True)
+        ]
+
     def _parse_results(self, raw_results: Any) -> list[Detection]:
         if raw_results is None:
             raise ValueError("model returned None")
@@ -166,7 +218,9 @@ class YOLODetector:
         if not results:
             return []
 
-        result = results[0]
+        return self._parse_result(results[0])
+
+    def _parse_result(self, result: Any) -> list[Detection]:
         boxes = getattr(result, "boxes", None)
         if boxes is None or len(boxes) == 0:
             return []

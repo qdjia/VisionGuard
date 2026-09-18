@@ -21,6 +21,9 @@ data/*
 !data/text_moderation/
 data/text_moderation/*
 !data/text_moderation/sample/
+!data/benchmark/
+data/benchmark/*
+!data/benchmark/manifest.jsonl
 *.joblib
 *.safetensors
 .huggingface/

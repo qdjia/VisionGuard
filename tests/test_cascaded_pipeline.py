@@ -3,6 +3,7 @@ from types import SimpleNamespace
 import numpy as np
 
 from visionguard.baseline.schemas import TextModerationPrediction
+from visionguard.benchmarking import BatchReviewRunner
 from visionguard.fusion import RiskFusionEngine, load_fusion_config
 from visionguard.moderation.policy import load_policy
 from visionguard.moderation.schemas import ModerationResult
@@ -25,6 +26,7 @@ class Detector:
     def __init__(self, *, risky=False, error=False):
         self.risky = risky
         self.error = error
+        self.batch_calls = 0
 
     def predict(self, image):
         if self.error:
@@ -47,6 +49,10 @@ class Detector:
             device="cpu",
             model_name="mock-detector",
         )
+
+    def predict_batch(self, images):
+        self.batch_calls += 1
+        return [self.predict(image) for image in images]
 
 
 class OCR:
@@ -98,6 +104,9 @@ class Baseline:
             threshold=0.5,
             source="ocr",
         )
+
+    def predict_batch(self, texts):
+        return [self.predict(text) for text in texts]
 
 
 class VLM:
@@ -163,6 +172,29 @@ def test_safe_consensus_skips_vlm_and_writes_routing_artifact(tmp_path):
     assert vlm.calls == 0
     assert (tmp_path / "routing" / result.run_id / "routing.json").is_file()
     assert (tmp_path / "routing" / result.run_id / "fusion.json").is_file()
+
+
+def test_mixed_batch_preserves_order_and_selectively_calls_vlm(tmp_path):
+    class SelectiveDetector(Detector):
+        def predict_batch(self, images):
+            self.batch_calls += 1
+            return [Detector(risky=bool(image[0, 0, 0])).predict(image) for image in images]
+
+    detector = SelectiveDetector()
+    review, vlm = pipeline(tmp_path, detector=detector)
+    safe = np.zeros((20, 20, 3), dtype=np.uint8)
+    risky = np.ones((20, 20, 3), dtype=np.uint8)
+
+    results = BatchReviewRunner(review).run([safe, risky])
+
+    assert detector.batch_calls == 1
+    assert [result.routing.call_vlm for result in results] == [False, True]
+    assert [result.image.sha256 for result in results] == [
+        results[0].image.sha256,
+        results[1].image.sha256,
+    ]
+    assert results[0].image.sha256 != results[1].image.sha256
+    assert vlm.calls == 1
 
 
 def test_high_risk_detection_routes_to_vlm(tmp_path):

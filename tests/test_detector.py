@@ -39,9 +39,10 @@ class FakeModel:
     def __init__(self) -> None:
         self.predict_calls = 0
 
-    def predict(self, **_: Any) -> list[FakeResult]:
+    def predict(self, **kwargs: Any) -> list[FakeResult]:
         self.predict_calls += 1
-        return [FakeResult()]
+        source = kwargs.get("source")
+        return [FakeResult() for _ in source] if isinstance(source, list) else [FakeResult()]
 
 
 def make_config(*, warmup_enabled: bool = False) -> DetectionConfig:
@@ -88,3 +89,18 @@ def test_warmup_runs_once_even_when_called_again() -> None:
 
     assert detector.is_warmed_up is True
     assert model.predict_calls == 1
+
+
+def test_true_batch_uses_one_backend_call_and_preserves_order() -> None:
+    model = FakeModel()
+    detector = YOLODetector(make_config(), model_factory=lambda _: model)
+    images = [
+        np.zeros((20, 30, 3), dtype=np.uint8),
+        np.zeros((25, 35, 3), dtype=np.uint8),
+    ]
+
+    results = detector.predict_batch(images)
+
+    assert model.predict_calls == 1
+    assert [(item.image_width, item.image_height) for item in results] == [(30, 20), (35, 25)]
+    assert all(item.detections[0].class_name == "weapon" for item in results)

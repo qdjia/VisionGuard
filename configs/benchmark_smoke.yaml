@@ -1,0 +1,24 @@
+benchmark:
+  experiment_name: phase10_smoke_v1
+  warmup_runs: 0
+  measured_runs: 1
+  module_runs:
+    detector: 1
+    ocr: 1
+    baseline: 1
+    vlm: 1
+    fusion: 1
+    pipeline: 1
+  batch_sizes: [1, 2]
+  percentiles: [50, 90, 95, 99]
+  synchronize_cuda: true
+  measure_gpu_memory: true
+  measure_cpu_memory: false
+  save_raw_records: true
+  pipeline_modes: [full, cascaded]
+  include_cold_start: true
+  shuffle_samples: false
+  seed: 42
+  save_pipeline_artifacts: false
+  dataset_kind: engineering
+  output_root: ../artifacts/benchmarks
