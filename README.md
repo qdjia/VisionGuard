@@ -1,105 +1,126 @@
 # VisionGuard
 
-> 面向出版内容审核的多模态 AI/CV 研究工程。An industry-style multimodal moderation research pipeline for publishing content.
+> 基于视觉语言模型的多模态出版内容智能审校系统<br>
+> Multimodal Publishing Content Moderation System Based on Vision-Language Models
 
-VisionGuard 将目标检测、OCR、文本基线、视觉语言模型（VLM）、动态路由与可解释风险融合组织成可训练、可评估、可回放、可服务化的完整链路。项目重点是算法工程流程和实验可信度，而不是用户、权限或 CRUD 系统。
+VisionGuard 是一个面向 AI / Computer Vision 算法实习作品集的研究型项目。它把目标检测、OCR 文字识别、传统文本分类、视觉语言模型（VLM）、动态路由和风险融合组织成一条完整、可评估、可复现的推理链路。
 
-## Why this project
+项目重点是展示工业界常见的算法研发过程，而不是开发用户系统、权限管理、数据库或复杂后台页面。
 
-出版图片中的风险可能来自视觉目标、印刷文字，也可能来自二者组合后的语义。单一模型难以同时兼顾成本、召回率与可解释性。VisionGuard 因此采用两阶段级联：先执行低成本视觉/OCR/文本分析，仅在证据冲突、置信度不足或语义复杂时调用 VLM，最后由独立融合层给出结构化结论。
+当前质量检查：**144 个自动化测试全部通过**。仓库中的公开样本均为小规模合成数据；实验数字用于证明工程链路可运行，不能代表真实生产审核准确率。
+
+## 项目要解决什么问题
+
+一张出版图片可能同时包含多种风险：
+
+- 图片里出现武器、暴力、血液、敏感符号等视觉内容；
+- 图片中印刷了违规或敏感文字；
+- 图片本身和文字单独看都正常，但组合起来存在特殊含义；
+- OCR、检测器和语义模型给出了互相冲突的判断。
+
+单一模型很难同时解决这些问题。因此 VisionGuard 采用两阶段级联推理：先运行成本较低的 YOLO、OCR 和文本基线；只有在证据不足、判断冲突或语义复杂时，才调用耗时更高的 VLM；最后由独立的风险融合模块生成结构化审核结论。
+
+## 系统架构
 
 ```mermaid
 flowchart LR
-    I[Image] --> P[Image preprocessing]
-    P --> D[YOLO detector]
-    P --> O[PaddleOCR]
-    O --> B[TF-IDF + GBDT baseline]
-    D --> R[Dynamic router]
+    I[输入图片] --> P[图片读取与预处理]
+    P --> D[YOLO 目标检测]
+    P --> O[PaddleOCR 文字识别]
+    O --> B[TF-IDF + GBDT 文本基线]
+    D --> R[动态路由]
     O --> R
     B --> R
-    R -->|clear & safe| F[Risk fusion]
-    R -->|uncertain / conflict| V[VLM adapter]
+    R -->|证据明确且低风险| F[风险融合]
+    R -->|不确定、冲突或高风险| V[VLM 多模态分析]
     V --> F
-    F --> J[Typed moderation JSON]
-    J --> A[Artifacts / evaluation / API]
+    F --> J[结构化审核结果]
+    J --> A[评估、实验产物与 API]
 ```
 
-## Key capabilities
+更完整的系统图、Routing 图、Fusion 图和实验流程图见[架构说明](docs/architecture.md)。
 
-- Configurable YOLO detection classes with training, validation, inference and standard detection metrics.
-- Full-image and ROI PaddleOCR with polygon preservation, global-coordinate remapping and CER evaluation.
-- TF-IDF + GBDT text baseline for a reproducible non-VLM comparison.
-- Provider-neutral VLM interface with Pydantic contracts and bounded structured-output repair.
-- Full and cascaded inference modes with explicit routing signals and `vlm_called` observability.
-- Versioned, explainable risk fusion with evidence provenance, ablation and offline replay.
-- Batch-size benchmarking, stage latency, throughput and GPU-memory profiling.
-- Cross-stage failure taxonomy, hard-case datasets and regression replay.
-- Single-load FastAPI service with warmup, bounded concurrency, timeouts and Prometheus metrics.
+## 核心能力
 
-Current quality gate: **144 automated tests passed** on the verified Phase 13 environment. Real-model results remain separately labeled as small engineering validation or smoke evidence.
+- **目标检测：**封装 Ultralytics YOLO，支持训练、验证、推理、可视化和 Precision、Recall、mAP 指标。
+- **OCR：**支持整图 OCR 和 ROI OCR，保留倾斜文字 polygon，并把 ROI 坐标映射回原图。
+- **传统文本基线：**使用 TF-IDF + GBDT，为 VLM 方法提供低成本对照实验。
+- **VLM Adapter：**业务代码不绑定具体模型，输出通过 Pydantic 校验为严格结构化结果。
+- **级联推理：**根据置信度、冲突、模块状态和风险信号决定是否调用 VLM。
+- **可解释风险融合：**保存证据来源、分数贡献、冲突原因和人工复核标记。
+- **性能分析：**统计阶段耗时、P50/P95、吞吐量、VLM 调用率和 GPU 显存。
+- **错误分析：**提供跨阶段失败分类、hard case 数据集和离线回放。
+- **模型服务：**FastAPI 在应用启动时只加载一次模型，并提供 warmup、并发限制和结构化错误。
 
-## Repository layout
+## 项目目录
 
 ```text
 src/visionguard/
-├── detection/       # YOLO adapter, schemas, visualization
-├── training/        # dataset validation, train/evaluate orchestration
-├── ocr/             # OCR provider, ROI geometry, CER, visualization
-├── baseline/        # TF-IDF + GBDT training and inference
-├── vlm/             # provider contract, prompt/context, structured parsing
-├── pipeline/        # full multimodal orchestration and artifacts
-├── routing/         # cascaded decision policy and evaluation
-├── fusion/          # evidence normalization and risk decision
-├── benchmarking/    # latency, throughput and resource profiling
-├── error_analysis/  # attribution, taxonomy and regression cases
-└── api/             # inference-only FastAPI application
-configs/             # reviewed public defaults; local overrides are ignored
-scripts/             # train, infer, evaluate, benchmark and analysis CLIs
-tests/               # unit and contract tests; real models use smoke scripts
-docs/                # architecture, experiments, reproduction and interview material
-data/                # tiny synthetic public fixtures only
+├── detection/       # YOLO 加载、推理、Schema 与可视化
+├── training/        # 数据集检查、检测器训练与评估
+├── ocr/             # OCR Provider、ROI 坐标、CER 与可视化
+├── baseline/        # TF-IDF + GBDT 训练和推理
+├── vlm/             # VLM 接口、上下文、Prompt 与结构化解析
+├── pipeline/        # 多模态推理编排、状态、耗时和产物
+├── routing/         # 是否调用 VLM 的级联路由策略
+├── fusion/          # 证据归一化与最终风险决策
+├── benchmarking/    # 延迟、吞吐量和资源分析
+├── error_analysis/  # 错误归因、失败分类与回归样本
+└── api/             # 仅用于模型推理的 FastAPI 服务
+configs/             # 可公开的默认配置；本机配置由 Git 忽略
+scripts/             # 训练、推理、评估、Benchmark 和分析命令
+tests/               # 单元测试与接口契约测试
+docs/                # 架构、实验、配置、复现与技术报告
+data/                # 只保存可公开的小型合成样本
 ```
 
-## Module workflows
+## 各模块常用入口
 
-| Area | Main entry points | Output |
+| 功能 | 主要脚本 | 主要输出 |
 |---|---|---|
-| Detection training/evaluation | `train_detector.py`, `evaluate_detector.py` | checkpoints, P/R/mAP, visual errors |
-| OCR | `infer_ocr.py`, `infer_ocr_roi.py`, `evaluate_ocr.py` | text, confidence, polygon/bbox, CER |
-| Text baseline | `train_text_baseline.py`, `evaluate_text_baseline.py` | persisted TF-IDF+GBDT, P/R/F1 |
-| VLM review | `infer_vlm.py`, `evaluate_vlm.py` | validated moderation JSON and retry metadata |
-| Full/cascaded pipeline | `run_pipeline.py`, `run_cascaded_pipeline.py` | final result, module statuses and timing |
-| Routing/fusion | evaluation, sweep, ablation and replay scripts | call-rate, safety and decision comparisons |
-| Benchmark/error analysis | benchmark and analyzer scripts | CSV/JSON reports, taxonomy and hard cases |
-| Serving | `run_api.py`, `smoke_test_api.py` | single/batch HTTP inference and metrics |
+| 检测器训练与评估 | `train_detector.py`、`evaluate_detector.py` | checkpoint、P/R/mAP、错误案例 |
+| OCR | `infer_ocr.py`、`infer_ocr_roi.py`、`evaluate_ocr.py` | 文字、置信度、polygon/bbox、CER |
+| 文本基线 | `train_text_baseline.py`、`evaluate_text_baseline.py` | TF-IDF+GBDT 模型、P/R/F1 |
+| VLM 审核 | `infer_vlm.py`、`evaluate_vlm.py` | 结构化审核 JSON、重试信息 |
+| 完整/级联推理 | `run_pipeline.py`、`run_cascaded_pipeline.py` | 最终结论、模块状态和耗时 |
+| 路由与融合 | evaluate、sweep、ablation、replay 脚本 | 调用率、安全性和策略比较 |
+| Benchmark | `benchmark_pipeline.py` 等 | CSV/JSON 性能报告 |
+| 错误分析 | `analyze_pipeline_errors.py` 等 | 失败分类、hard case 和回归结果 |
+| 推理服务 | `run_api.py`、`smoke_test_api.py` | 单图 HTTP 审核服务 |
 
-Detailed commands and parameters live in the [CLI reference](docs/cli_reference.md), not in this front page.
+所有命令和参数见 [CLI 命令手册](docs/cli_reference.md)。
 
-## Quick start
+## 快速开始
 
-Python 3.10+ is required. A CUDA-capable environment is recommended for real VLM inference. Install a PyTorch build that matches the host driver first, then install this project:
+### 1. 安装
+
+需要 Python 3.10 或更高版本。真实 VLM 推理建议使用支持 CUDA 的 NVIDIA 显卡，并先安装与本机驱动匹配的 PyTorch。
 
 ```bash
 python -m venv .venv
-# Windows: .venv\Scripts\activate
-# Linux/macOS: source .venv/bin/activate
+# Windows PowerShell：.venv\Scripts\Activate.ps1
+# Linux/macOS：source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install -e ".[dev]"
 ```
 
-Run deterministic unit tests without loading large models:
+### 2. 运行测试
+
+下面的测试不会加载大型真实模型：
 
 ```bash
 pytest
 ```
 
-Validate the VLM contract with the lightweight mock provider:
+### 3. 用 Mock VLM 检查结构化输出
 
 ```bash
 python scripts/infer_vlm.py --image data/vlm_eval/risky.png --mock
 ```
 
-For real end-to-end inference, place your detector checkpoint outside Git, copy the public configs to ignored local overrides, update model paths, and run:
+### 4. 运行真实级联推理
+
+模型权重不会提交到 Git。请先复制公开配置为本机配置，再填写自己的模型路径：
 
 ```bash
 cp configs/detector.yaml configs/local_detector.yaml
@@ -110,125 +131,138 @@ python scripts/run_cascaded_pipeline.py \
   --vlm-config configs/local_vlm.yaml
 ```
 
-Start the inference service after creating `configs/api.local.yaml` from `configs/api.yaml`:
+Windows PowerShell 可使用 `Copy-Item` 代替 `cp`。
+
+### 5. 启动 API
+
+从 `configs/api.yaml` 复制并修改本机专用的 `configs/api.local.yaml`，然后运行：
 
 ```bash
 python scripts/run_api.py --config configs/api.local.yaml
 ```
 
-See [reproducibility](docs/reproducibility.md), [configuration](docs/configuration.md) and the [CLI reference](docs/cli_reference.md) for the complete workflow.
+启动成功后，可以在本机浏览器打开 `http://127.0.0.1:8000/docs`。
 
-## Structured result contract
+更完整的环境、模型和实验步骤见[复现指南](docs/reproducibility.md)与[配置说明](docs/configuration.md)。
 
-Internal stages exchange Pydantic models rather than free-form text. The final result includes risk, categories, confidence, review requirement and traceable evidence:
+## 结构化审核结果
+
+系统内部不把自由文本当作主要程序接口。最终结果会经过 Pydantic 校验，例如：
 
 ```json
 {
   "risk_level": "high",
   "categories": ["sensitive_text"],
-  "reason": "OCR and VLM evidence agree on policy-sensitive content.",
+  "reason": "OCR 与 VLM 证据共同表明图片包含策略敏感内容。",
   "confidence_score": 0.91,
   "requires_manual_review": false
 }
 ```
 
-The VLM output is treated as untrusted input: it is parsed, normalized, validated and rejected or repaired within bounded retries before entering fusion.
+VLM 生成内容会被当作不可信输入，依次经过 JSON 提取、字段归一化、Schema 校验和有限次数重试，之后才能进入风险融合。
 
-## Experiment snapshot
+## 实验结果摘要
 
-The repository distinguishes engineering smoke checks from quality evidence. The included datasets are synthetic and deliberately tiny; the numbers below demonstrate that the pipeline is measurable, not that it is production-accurate.
+本仓库区分“小样本工程验证”和“Smoke Test”。下面的数据证明对应链路能够运行和测量，**不代表真实出版场景的生产准确率**。
 
-| Component | Result | Evidence level | Interpretation |
+| 模块 | 实际记录结果 | 证据等级 | 应如何理解 |
 |---|---:|---|---|
-| YOLO smoke test | test mAP@0.5 `0.0603`; mAP@0.5:0.95 `0.0498` | Smoke, 2 test images | End-to-end train/eval path works; model quality is intentionally poor. |
-| OCR | CER `0.0` | Smoke, 1 synthetic image | OCR evaluation path works; not a language benchmark. |
-| Text baseline | validation F1 `0.8571` | Small engineering experiment, 8 validation texts | Useful comparison baseline; synthetic split is too small for generalization claims. |
-| VLM structured output | success rate `100%` | Smoke, 3 images | Schema path worked; mean latency was `6.61 s` on the recorded machine. |
-| Cascaded routing | VLM calls `100% → 66.7%`; mean latency `20.13 s → 13.05 s` | Small engineering experiment, 3 images | A `35.2%` observed mean-latency reduction, with no unsafe fast pass in this tiny set. |
-| Risk fusion | risk accuracy/category F1 `1.0/1.0` | Small engineering experiment, 3 images | Confirms evaluation and ablation mechanics only. |
+| YOLO | 测试 mAP@0.5 `0.0603`；mAP@0.5:0.95 `0.0498` | Smoke，2 张测试图 | 训练评估链路可运行；模型质量很差 |
+| OCR | CER `0.0` | Smoke，1 张合成图 | CER 评估链路可运行；不是 OCR Benchmark |
+| 文本基线 | 验证集 F1 `0.8571` | 小样本工程验证，8 条验证文本 | 可作为传统方法对照，不能说明泛化能力 |
+| VLM | 3/3 结构化结果校验成功 | Smoke，3 张图 | Schema 链路有效；平均耗时约 `6.61 秒` |
+| 级联路由 | VLM 调用率 `100% → 66.7%`；平均延迟 `20.13 → 13.05 秒` | 3 样本工程验证 | 观察到 `35.15%` 延迟下降，不是通用性能结论 |
+| 风险融合 | Risk Accuracy / Category F1 为 `1.0 / 1.0` | 3 个合成样本 | 只证明评估、回放与消融机制工作正常 |
 
-Phase 10 performance profiling used one measured run over two samples. VLM occupied about `91.2%` of full-pipeline latency; cascaded mode called VLM for both samples and was `1.0%` slower, so it showed no speedup in that run. This is intentionally reported separately from the Phase 8 routing experiment.
+Phase 10 的两样本单次性能分析中，VLM 占完整链路耗时约 `91.2%`。该次级联模式的两张图片都调用了 VLM，因此没有提高吞吐量，反而慢约 `1.0%`。这说明级联推理的收益取决于实际输入中能够安全跳过 VLM 的样本比例。
 
-Full provenance, sample counts, configurations and caveats are in [Experiments](docs/experiments.md) and the [Final experiment summary](docs/final_experiment_summary.md).
+完整数据来源、配置、硬件与限制见[实验记录](docs/experiments.md)和[最终实验摘要](docs/final_experiment_summary.md)。
 
-## Routing and fusion boundaries
+## 为什么把 Routing 和 Fusion 分开
 
-Routing answers **whether expensive semantic inference is needed**; fusion answers **what the final risk decision should be**. Keeping them separate enables:
+- **Routing（路由）**只回答：“这张图片是否需要调用昂贵的 VLM？”
+- **Fusion（融合）**回答：“综合现有证据后，最终风险等级是什么？”
 
-- conservative fast-path safety constraints;
-- threshold sweeps without changing fusion semantics;
-- fusion replay and ablation without rerunning models;
-- independent error attribution for detection, OCR, routing, VLM and decision logic.
+分开设计后，可以独立调整 VLM 调用策略、重放融合实验、分析不安全快速放行，并避免成本阈值直接改变最终审核标准。详细取舍见[设计决策](docs/design_decisions.md)。
 
-The main trade-offs are documented in [Design decisions](docs/design_decisions.md).
+## 评估与错误分析
 
-## Evaluation and error analysis
+不同模块使用不同指标：
 
-Evaluation covers detector precision/recall/mAP, OCR CER, text precision/recall/F1, VLM structural success, routing call rate and unsafe-fast-pass rate, fusion accuracy/category F1, and latency/throughput/memory.
+- 检测器：Precision、Recall、mAP@0.5、mAP@0.5:0.95；
+- OCR：CER；
+- 文本基线：Precision、Recall、F1；
+- VLM：结构化输出成功率、风险/类别一致性；
+- Routing：VLM 调用率、跳过率、不安全快速放行率；
+- Fusion：风险准确率、类别 F1、人工复核率；
+- 系统性能：延迟、P50/P95、吞吐量和 GPU 显存。
 
-The unified error analyzer maps failures into 84 typed failure codes under nine top-level stages. It exports JSONL records, visual evidence, verified hard cases and regression candidates. In the recorded Phase 11 validation, three ground-truth samples produced two diagnostic cases, two hard cases and one eligible regression candidate; this validates the workflow, not failure prevalence.
+统一错误分析模块包含 9 个顶层阶段、84 个失败类型，可以保存模块证据、生成 hard case，并在不重新执行模型的情况下回放部分策略。当前 Phase 11 只有 3 条 Ground Truth，因此重点是错误分析框架，而不是错误率数字。
 
-## API surface
+## FastAPI 推理服务
 
-The service is inference-only:
+当前代码真实提供以下接口：
 
-- `POST /predict`
-- `POST /predict/batch`
-- `GET /health`
-- `GET /metrics`
+- `POST /v1/review`：上传一张 JPEG、PNG 或 WebP 图片进行审核；
+- `GET /health/live`：检查服务进程是否存活；
+- `GET /health/ready`：检查模型是否已经加载完成；
+- `GET /meta`：查看服务版本和能力信息；
+- `GET /docs`：打开 FastAPI 自动生成的交互式说明页面。
 
-Models are created once during application lifespan and warmed before readiness. The service deliberately avoids authentication, user management and databases; those are deployment concerns outside this AI/CV portfolio scope. Real single-GPU execution uses one process because multiple workers duplicate model memory.
+模型在应用 lifespan 中只初始化一次，并在就绪前执行可配置的 warmup。默认单 GPU 环境一次只执行一个完整推理请求，避免多个 VLM 请求同时占满显存。
 
-## Engineering principles
+这里实现的是 **production-style inference service（生产风格推理服务）**，不是已经部署到生产环境的产品。项目没有用户登录、权限、数据库、限流或分布式任务队列。
 
-- Provider adapters isolate Ultralytics, PaddleOCR and local VLM implementation details.
-- Pydantic schemas form stable boundaries between independently testable stages.
-- Configuration controls model paths, thresholds, policies and artifact locations.
-- Saved intermediate records support replay, ablation and regression without needless GPU work.
-- Artifact manifests capture provenance while weights, private data and machine-local overrides stay out of Git.
-- Unit tests mock heavyweight providers; explicit smoke commands validate real model integration.
+## 主要工程设计
 
-## Tech stack
+- 使用 Provider/Adapter 隔离 Ultralytics、PaddleOCR 和具体 VLM 实现；
+- 使用 Pydantic Schema 固定模块之间的数据契约；
+- 模型路径、阈值、策略和产物目录全部配置化；
+- 保存中间证据，支持离线回放、消融实验和错误归因；
+- 单元测试使用 Mock Provider，真实大模型由独立 Smoke Test 验证；
+- 权重、私有数据、本机配置和实验 artifacts 不提交 Git。
 
-Python, PyTorch, Ultralytics YOLO, OpenCV, PaddleOCR/PaddlePaddle, scikit-learn, Transformers with Qwen3-VL, Pydantic, FastAPI/Uvicorn and pytest. Only technologies exercised by the repository are listed.
+## 技术栈
 
-## Known limitations
+Python、PyTorch、Ultralytics YOLO、OpenCV、PaddleOCR/PaddlePaddle、scikit-learn、Transformers、Qwen3-VL、Pydantic、FastAPI/Uvicorn、pytest。
 
-1. Public fixtures are synthetic; there is no large, independently annotated publishing benchmark.
-2. The smoke detector is not a usable moderation model, and current quality metrics do not establish generalization.
-3. OCR execution and local VLM generation are sequential in the measured pipeline; layout reading order is basic.
-4. Local VLM latency is high and depends strongly on GPU, precision, image size and token length.
-5. `risk_score` is an engineering score, not a calibrated probability.
-6. Routing is rule-based and was observed on only three labeled examples.
-7. Fusion is rule/weight based rather than learned or calibrated on representative data.
-8. The HTTP timeout cannot hard-cancel an already running CUDA/model call.
-9. The default service uses one GPU and one full-inference concurrency slot.
-10. Benchmark percentiles from one measured run are smoke signals, not stable estimates.
-11. Authentication, rate limiting, persistent audit storage and production governance are out of scope.
-12. There is no distributed deployment, external queue or multi-GPU scheduler; third-party licenses need separate review.
+## 当前限制
 
-## Roadmap
+1. 公开数据是小规模合成样本，缺少大规模、独立人工标注的出版内容评测集。
+2. 当前 smoke detector 不是可投入使用的审核模型，现有指标不能证明泛化能力。
+3. OCR 和本地 VLM 在已测链路中仍以顺序执行为主，复杂版面阅读顺序也较基础。
+4. 本地 VLM 延迟较高，并受 GPU、精度、图片尺寸和输出长度明显影响。
+5. `risk_score` 是工程融合分数，不是经过校准的概率。
+6. Routing 是规则驱动，并且当前只在极小样本上完成验证。
+7. Fusion 使用规则和人工权重，尚未在代表性数据上学习或校准。
+8. HTTP 超时不能强制终止已经运行的 CUDA kernel 或模型调用。
+9. 默认服务只面向单 GPU、单个完整推理并发。
+10. 单次 smoke run 产生的 P50/P95 不能视为稳定性能估计。
+11. 项目没有生产身份认证、限流、持久化审计和治理系统。
+12. 项目没有分布式部署、外部任务队列或多 GPU 调度。
 
-- Curate a larger rights-cleared engineering evaluation set and strengthen OCR/layout evaluation.
-- Calibrate scores and thresholds; consider learned routing/fusion only after enough labeled data exists.
-- Evaluate VLM batching, compression, quantization and serving optimization such as TensorRT where compatible.
-- Run repeated batch-size 1/4/8/16 benchmarks with controlled warmup and power state.
-- Expand category-specific hard cases, regression gates and drift monitoring.
-- Add distributed scheduling, authentication, rate limiting and audit retention only for a concrete deployment.
+## 后续可研究方向
 
-## Documentation
+- 建立更大、经过授权和人工复核的工程评测集；
+- 加强复杂版面、扫描件和多字体 OCR 评估；
+- 在充足数据上进行置信度校准，并研究可学习的 Routing/Fusion；
+- 比较 VLM batching、模型压缩、量化和 TensorRT 等推理优化；
+- 完成 batch size 1/4/8/16 的多轮稳定 Benchmark；
+- 扩充 hard case 与类别级回归测试，监控数据漂移。
 
-- [Architecture](docs/architecture.md)
-- [Design decisions](docs/design_decisions.md)
-- [Experiments](docs/experiments.md)
-- [Final experiment summary](docs/final_experiment_summary.md)
-- [Reproducibility](docs/reproducibility.md)
-- [Configuration](docs/configuration.md)
-- [CLI reference](docs/cli_reference.md)
-- [Project report](docs/project_report.md)
-- [Technical review](docs/visionguard_technical_review.md)
-- [Resume wording](docs/resume_project.md)
+## 文档索引
 
-## License
+- [系统架构](docs/architecture.md)
+- [设计决策](docs/design_decisions.md)
+- [完整实验记录](docs/experiments.md)
+- [最终实验摘要](docs/final_experiment_summary.md)
+- [复现指南](docs/reproducibility.md)
+- [配置说明](docs/configuration.md)
+- [CLI 命令手册](docs/cli_reference.md)
+- [项目技术报告](docs/project_report.md)
+- [Phase 1–12 技术复盘](docs/visionguard_technical_review.md)
+- [简历项目描述](docs/resume_project.md)
 
-Project source code is released under the [MIT License](LICENSE). Model weights and datasets retain their own licenses and are not redistributed here.
+## 许可证
+
+项目源码采用 [MIT License](LICENSE)。模型权重与数据集仍分别受其原始许可证约束，本仓库不重新分发这些内容。

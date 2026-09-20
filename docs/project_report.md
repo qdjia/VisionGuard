@@ -56,7 +56,7 @@ The unified analyzer compares prediction records with ground truth, attributes f
 
 ## 14. Inference API
 
-FastAPI exposes `/predict`, `/predict/batch`, `/health` and `/metrics`. Application lifespan initializes one pipeline and performs warmup before readiness. A bounded admission controller prevents unbounded GPU contention; request and model timeouts are distinct. Batch responses can report per-item partial failures. Authentication and persistence remain deployment responsibilities.
+FastAPI exposes `POST /v1/review`, `GET /health/live`, `GET /health/ready`, `GET /meta`, and interactive `/docs`. Application lifespan initializes one shared pipeline and performs warmup before readiness. A bounded admission controller prevents unbounded GPU contention, while request and model timeouts remain distinct. Authentication and persistence remain deployment responsibilities.
 
 ## 15. Evaluation strategy
 
@@ -77,4 +77,3 @@ The next research steps are rights-cleared data curation, stronger annotations, 
 ## 19. Conclusion
 
 VisionGuard's contribution is not a claim of production moderation accuracy. It is a coherent experimental system that makes multimodal decisions measurable, replaceable, explainable and testable. It demonstrates the full path from model components to evaluation, performance diagnosis, failure feedback and serving.
-

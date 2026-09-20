@@ -137,7 +137,7 @@ This document is a phase-by-phase review for project defense and interviews. Met
 ## Phase 12 — FastAPI inference service
 
 - **Goal:** expose the pipeline with production-style lifecycle and failure semantics.
-- **Implementation:** single/batch endpoints, health, Prometheus text metrics, lifespan load/warmup, bounded concurrency, timeouts, request validation and structured errors.
+- **Implementation:** single-image review, liveness/readiness/meta endpoints, interactive OpenAPI docs, lifespan load/warmup, bounded concurrency, timeouts, request validation and structured errors.
 - **Design:** one process owns one model set on a single GPU; library pipeline remains independent from HTTP.
 - **Concepts:** application lifecycle, backpressure, readiness, observability and partial batch failure.
 - **Problem encountered:** multiple workers or unbounded requests duplicate/exhaust GPU memory.
