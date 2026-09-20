@@ -1,0 +1,3 @@
+{"image": "safe.png", "risk_level": "low", "categories": []}
+{"image": "text.png", "risk_level": "low", "categories": []}
+{"image": "risky.png", "risk_level": "high", "categories": ["sensitive_text"]}

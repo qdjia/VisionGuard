@@ -20,10 +20,10 @@ api:
   docs_enabled: true
 
 services:
-  detector_config: local_detector.yaml
+  detector_config: detector.yaml
   ocr_config: ocr.yaml
   baseline_config: baseline_text.yaml
-  vlm_config: local_vlm.yaml
+  vlm_config: vlm.yaml
   moderation_policy: moderation_policy.yaml
   fusion_config: fusion.yaml
   routing_config: routing.yaml

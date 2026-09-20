@@ -1,5 +1,6 @@
 __pycache__/
 *.py[cod]
+*.cache
 .pytest_cache/
 pytest-cache-files-*/
 .test-tmp/
@@ -27,8 +28,26 @@ data/benchmark/*
 !data/hard_cases/
 data/hard_cases/*
 !data/hard_cases/manifest.jsonl
+# Small, script-generated public fixtures used by smoke tests and tracked manifests.
+!data/vlm_eval/
+!data/vlm_eval/manifest.jsonl
+!data/vlm_eval/*.png
+!data/ocr_smoke/
+!data/ocr_smoke/*.png
+!data/ocr_eval/
+!data/ocr_eval/ground_truth.jsonl
+!data/visionguard_smoke/
+!data/visionguard_smoke/images/
+!data/visionguard_smoke/images/**/
+!data/visionguard_smoke/images/**/*.jpg
+!data/visionguard_smoke/labels/
+!data/visionguard_smoke/labels/**/
+!data/visionguard_smoke/labels/**/*.txt
 *.joblib
 *.safetensors
+*.gguf
+*.onnx
+*.engine
 .huggingface/
 *.csv
 !data/text_moderation/sample/*.csv
@@ -40,3 +59,9 @@ runs/
 # Local secrets and overrides
 .env
 configs/local*.yaml
+
+# Local portfolio preparation notes (not part of the public repository)
+docs/interview_3min.md
+docs/interview_10min.md
+docs/interview_questions.md
+docs/github_public_readiness.md

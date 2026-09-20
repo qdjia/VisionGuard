@@ -1,5 +1,6 @@
 """Small synthetic train/save/load/predict smoke test, not an accuracy experiment."""
 
+import argparse
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -7,7 +8,13 @@ from visionguard.baseline import TextBaselineTrainer, TextModerationBaseline, lo
 from visionguard.core.logging import configure_logging
 
 
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    return parser.parse_args()
+
+
 def main() -> int:
+    parse_args()
     configure_logging()
     with TemporaryDirectory(dir="artifacts", prefix="text_smoke_") as temporary:
         config = load_baseline_config("configs/baseline_text.yaml").model_copy(
