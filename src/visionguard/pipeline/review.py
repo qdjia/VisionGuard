@@ -97,7 +97,10 @@ class MultimodalReviewPipeline:
         if missing:
             raise ValueError(f"enabled pipeline dependencies are missing: {', '.join(missing)}")
 
-    def run(self, source: ImageInput) -> ReviewResult:
+    def run(self, source: ImageInput, *, save_artifacts: bool | None = None) -> ReviewResult:
+        should_save_artifacts = (
+            self.config.save_artifacts if save_artifacts is None else save_artifacts
+        )
         run_id = uuid4().hex
         started = perf_counter()
         timestamp = _now()
@@ -277,10 +280,8 @@ class MultimodalReviewPipeline:
             timing=timing,
             routing_signals=signals,
             artifacts=ArtifactStatus(
-                status=ArtifactState.PENDING
-                if self.config.save_artifacts
-                else ArtifactState.SKIPPED,
-                error_message=None if self.config.save_artifacts else "artifact saving disabled",
+                status=ArtifactState.PENDING if should_save_artifacts else ArtifactState.SKIPPED,
+                error_message=None if should_save_artifacts else "artifact saving disabled",
             ),
             metadata=ReviewMetadata(
                 pipeline_version=self.config.pipeline_version,
@@ -292,7 +293,7 @@ class MultimodalReviewPipeline:
                 component_versions=self._component_versions(detection, ocr),
             ),
         )
-        if self.config.save_artifacts:
+        if should_save_artifacts:
             artifact_started = perf_counter()
             try:
                 expected = self.artifact_store.directory_for(run_id)

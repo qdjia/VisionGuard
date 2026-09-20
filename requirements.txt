@@ -1,4 +1,7 @@
 # Phase 2 runtime dependencies.
+fastapi>=0.115,<1
+uvicorn>=0.32,<1
+python-multipart>=0.0.18,<1
 numpy>=1.26,<3
 # PaddleOCR/PaddleX requires the contrib build; do not mix cv2 distributions.
 opencv-contrib-python==4.10.0.84

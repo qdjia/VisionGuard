@@ -859,3 +859,136 @@ token。性能结论只适用于记录的单消费级 GPU、软件版本和工�
 Full 反而有约 1.02% 的正常测量波动，不能宣称性能提升。VLM 占 Full 约 91.21%、Cascaded 约
 90.57% 的模块时间，是当前明确瓶颈。由于每组只有一次正式测量，P50/P95/P99 数值相同；正式结论
 必须使用 `configs/benchmark.yaml` 的多次测量和覆盖 Fast Path/VLM Path 的更大真实工作负载。
+
+## FastAPI 推理服务（Phase 12）
+
+Phase 12 将现有同步 Pipeline 封装为单进程、单 GPU 推理服务。模型在 FastAPI lifespan
+启动阶段只初始化一次，Full 与 Cascaded Pipeline 共享同一组 Detector、OCR、Baseline、VLM、
+Policy 和 Fusion 实例；请求只负责图片校验、模式选择、排队、推理及稳定 API Schema 转换。
+
+安装与配置：
+
+```bash
+pip install -e .
+python scripts/run_api.py --config configs/api.yaml
+```
+
+真实模型 smoke 或性能检查不要开启 reload，也不要使用多个 Uvicorn worker。每个 worker 都会
+独立加载模型并重复占用显存。默认 `max_concurrent_inference: 1`，整个同步 Pipeline 在
+`asyncio.Semaphore` 内通过 worker thread 执行，避免阻塞 HTTP event loop，也避免 Qwen3-VL、
+PaddleOCR 和 YOLO 在未验证线程安全与显存边界前并行执行。主要配置位于
+`configs/api.yaml`，包括上传大小、图片维度、超时、并发、默认 Pipeline 模式、artifact 和 warmup。
+
+健康检查与元数据：
+
+```bash
+curl http://127.0.0.1:8000/health/live
+curl http://127.0.0.1:8000/health/ready
+curl http://127.0.0.1:8000/v1/meta
+```
+
+`live` 只验证进程可响应；`ready` 只读取启动状态，不运行模型；`meta` 返回服务、Pipeline、策略、
+Prompt 版本和经过脱敏的模型标识，不返回本地绝对路径。OpenAPI 位于 `/docs` 和
+`/openapi.json`，可通过 `docs_enabled` 关闭。
+
+Review API 默认使用 Cascaded Pipeline，也可显式选择 Full：
+
+```bash
+curl -X POST \
+  "http://127.0.0.1:8000/v1/review?pipeline_mode=cascaded&include_details=false" \
+  -H "accept: application/json" \
+  -F "file=@data/example.png"
+
+curl -X POST \
+  "http://127.0.0.1:8000/v1/review?pipeline_mode=full&save_artifacts=false" \
+  -F "file=@data/example.png"
+```
+
+Python 客户端示例：
+
+```python
+import requests
+
+with open("data/example.png", "rb") as image:
+    response = requests.post(
+        "http://127.0.0.1:8000/v1/review",
+        params={"pipeline_mode": "cascaded", "include_details": False},
+        files={"file": ("example.png", image, "image/png")},
+        timeout=120,
+    )
+response.raise_for_status()
+print(response.json())
+```
+
+成功响应使用固定 `api_version: v1`，包含独立的 `request_id` 与 Pipeline `run_id`、最终风险结论、
+Routing 摘要、模块状态、版本信息及以下时间：
+
+```json
+{
+  "request_id": "http-request-id",
+  "run_id": "pipeline-run-id",
+  "status": "completed",
+  "result": {
+    "risk_level": "low",
+    "risk_score": 0.12,
+    "categories": [],
+    "requires_manual_review": false,
+    "reason": "...",
+    "decision_source": "fusion"
+  },
+  "timing": {
+    "request_total_ms": 8100.0,
+    "queue_wait_ms": 120.0,
+    "inference_ms": 7900.0,
+    "response_serialization_ms": 1.0,
+    "pipeline_total_ms": 7850.0,
+    "detector_ms": 40.0,
+    "ocr_ms": 300.0,
+    "baseline_ms": 2.0,
+    "routing_ms": 1.0,
+    "vlm_ms": 7100.0,
+    "fusion_ms": 1.0
+  }
+}
+```
+
+`queue_wait_ms` 是等待推理信号量的时间，不属于模型推理时间。`include_details=true` 仅增加检测框、
+OCR 计数/长度/平均置信度、Baseline/VLM 摘要和 Fusion provenance；不会返回完整 OCR 文本、原始
+VLM 输出、Prompt 或秘密配置。上传采用有界分块读取并在内存中解码，不接受服务器文件路径，也不
+创建临时图片。
+
+已知错误统一返回：
+
+```json
+{
+  "error": {
+    "code": "INVALID_IMAGE",
+    "message": "Uploaded file is not a valid image.",
+    "request_id": "...",
+    "run_id": null,
+    "details": null
+  }
+}
+```
+
+HTTP 映射为：无效输入 400、上传过大 413、不支持 MIME 415、请求 Schema 422、未就绪 503、
+服务层超时 504、Pipeline/未知异常 500。Pipeline 返回 partial 仍是 HTTP 200，并通过
+`requires_manual_review` 表达降级结果。服务超时不是 GPU hard cancellation：已经进入 worker
+thread 的推理可能继续运行，并继续持有 semaphore，直到同步 Pipeline 自然结束。关闭服务时会先
+停止接收新推理并在 grace period 内等待活动任务；只有任务结束后才释放模型引用和清理 CUDA cache。
+
+默认 API artifact 复用 `artifacts/pipeline/{run_id}`，响应只返回 `artifact_id=run_id`，不暴露
+服务器路径。Pipeline 默认 `save_input_copy=false`，因此不会因 API 上传自动永久保存原图。
+
+Mock API 测试与真实服务 smoke：
+
+```bash
+pytest tests/test_api_*.py
+
+python scripts/smoke_test_api.py \
+  --safe-image data/examples/safe.png \
+  --risky-image data/examples/risky.png
+```
+
+当前服务不包含认证、CORS、数据库、Redis/Celery、动态 batching、多 worker 模型共享、分布式或
+多 GPU 调度。正式公网部署前仍需在服务边界外增加 TLS、认证、流量限制及受控来源策略。

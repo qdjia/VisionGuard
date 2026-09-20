@@ -1,0 +1,31 @@
+api:
+  service_name: VisionGuard API
+  service_version: 0.1.0
+  api_version: v1
+  host: 127.0.0.1
+  port: 8000
+  default_pipeline_mode: cascaded
+  allowed_pipeline_modes: [full, cascaded]
+  max_upload_mb: 15
+  upload_chunk_kb: 1024
+  allowed_image_types: [image/jpeg, image/png, image/webp]
+  max_image_dimension: 12000
+  max_image_pixels: 40000000
+  request_timeout_seconds: 90
+  shutdown_grace_seconds: 120
+  max_concurrent_inference: 1
+  save_artifacts: true
+  warmup_on_startup: true
+  expose_internal_errors: false
+  docs_enabled: true
+
+services:
+  detector_config: local_detector.yaml
+  ocr_config: ocr.yaml
+  baseline_config: baseline_text.yaml
+  vlm_config: local_vlm.yaml
+  moderation_policy: moderation_policy.yaml
+  fusion_config: fusion.yaml
+  routing_config: routing.yaml
+  full_pipeline_config: pipeline.yaml
+  cascaded_pipeline_config: pipeline_cascaded.yaml
