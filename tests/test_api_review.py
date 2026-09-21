@@ -21,7 +21,19 @@ def test_review_modes_details_artifacts_and_ids():
     assert default_response.json()["details"] is None
     body = full_response.json()
     assert body["metadata"]["pipeline_mode"] == "full"
+    assert body["details"]["image_width"] == 48
+    assert body["details"]["image_height"] == 32
     assert body["details"]["ocr_block_count"] == 1
+    assert body["details"]["ocr_full_text"] == "test"
+    assert body["details"]["ocr_blocks"][0]["text"] == "test"
+    assert body["details"]["ocr_blocks"][0]["polygon"] == [
+        [1.0, 1.0],
+        [9.0, 1.0],
+        [9.0, 8.0],
+        [1.0, 8.0],
+    ]
+    assert body["details"]["vlm_evidence"] == []
+    assert body["details"]["fusion_scores"] is None
     assert body["artifact_saved"] is True
     assert body["artifact_id"] == body["run_id"]
     assert body["request_id"] == full_response.headers["X-Request-ID"]

@@ -67,16 +67,53 @@ class APIDetectionDetail(SchemaModel):
     bbox: BoundingBox
 
 
+class APIOCRBlockDetail(SchemaModel):
+    text: str
+    confidence: float = Field(ge=0, le=1)
+    polygon: list[tuple[float, float]] = Field(min_length=4)
+    bbox: BoundingBox
+
+
+class APIVLMEvidenceDetail(SchemaModel):
+    type: str
+    description: str
+    bbox: BoundingBox | None = None
+    text: str | None = None
+
+
+class APIFusionEvidenceDetail(SchemaModel):
+    source: str
+    description: str
+    score: float | None = Field(default=None, ge=0, le=1)
+    category: str | None = None
+
+
+class APIFusionValues(SchemaModel):
+    visual: float | None = Field(default=None, ge=0, le=1)
+    text: float | None = Field(default=None, ge=0, le=1)
+    vlm: float | None = Field(default=None, ge=0, le=1)
+
+
 class APIDetails(SchemaModel):
+    image_width: int = Field(gt=0)
+    image_height: int = Field(gt=0)
     detections: list[APIDetectionDetail] = Field(default_factory=list)
     ocr_block_count: int = Field(ge=0)
     ocr_text_length: int = Field(ge=0)
     mean_ocr_confidence: float | None = Field(default=None, ge=0, le=1)
+    ocr_blocks: list[APIOCRBlockDetail] = Field(default_factory=list)
+    ocr_full_text: str = ""
     baseline_label: str | None = None
     baseline_probability: float | None = Field(default=None, ge=0, le=1)
     vlm_risk_level: str | None = None
     vlm_categories: list[str] = Field(default_factory=list)
     vlm_confidence: float | None = Field(default=None, ge=0, le=1)
+    vlm_reason: str | None = None
+    vlm_evidence: list[APIVLMEvidenceDetail] = Field(default_factory=list)
+    fusion_scores: APIFusionValues | None = None
+    fusion_weights: APIFusionValues | None = None
+    fusion_reason_codes: list[str] = Field(default_factory=list)
+    fusion_evidence: list[APIFusionEvidenceDetail] = Field(default_factory=list)
     fusion_sources: list[str] = Field(default_factory=list)
 
 

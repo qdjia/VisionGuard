@@ -26,11 +26,15 @@ from visionguard.api.schemas import (
     APICategory,
     APIDetails,
     APIDetectionDetail,
+    APIFusionEvidenceDetail,
+    APIFusionValues,
+    APIOCRBlockDetail,
     APIResponseMetadata,
     APIReviewDecision,
     APIReviewResponse,
     APIRoutingSummary,
     APITiming,
+    APIVLMEvidenceDetail,
 )
 from visionguard.pipeline.exceptions import PipelineError
 from visionguard.pipeline.schemas import ReviewResult
@@ -216,10 +220,12 @@ def _details(review: ReviewResult) -> APIDetails:
     detections = review.detection.detections if review.detection else []
     blocks = review.ocr.blocks if review.ocr else []
     confidences = [item.confidence for item in blocks]
-    fusion_sources = sorted(
-        {evidence.source for evidence in (review.fusion.evidence_summary if review.fusion else [])}
-    )
+    vlm_evidence = review.vlm.evidence if review.vlm else []
+    fusion_evidence = review.fusion.evidence_summary if review.fusion else []
+    fusion_sources = sorted({evidence.source for evidence in fusion_evidence})
     return APIDetails(
+        image_width=review.image.width,
+        image_height=review.image.height,
         detections=[
             APIDetectionDetail(
                 class_name=item.class_name,
@@ -231,10 +237,60 @@ def _details(review: ReviewResult) -> APIDetails:
         ocr_block_count=len(blocks),
         ocr_text_length=len(review.ocr.full_text) if review.ocr else 0,
         mean_ocr_confidence=(sum(confidences) / len(confidences) if confidences else None),
+        ocr_blocks=[
+            APIOCRBlockDetail(
+                text=item.text,
+                confidence=item.confidence,
+                polygon=item.polygon,
+                bbox=item.bbox,
+            )
+            for item in blocks
+        ],
+        ocr_full_text=review.ocr.full_text if review.ocr else "",
         baseline_label=review.baseline.label if review.baseline else None,
         baseline_probability=review.baseline.probability if review.baseline else None,
         vlm_risk_level=review.vlm.risk_level if review.vlm else None,
         vlm_categories=[item.name for item in review.vlm.categories] if review.vlm else [],
         vlm_confidence=review.vlm.confidence_score if review.vlm else None,
+        vlm_reason=review.vlm.reason if review.vlm else None,
+        vlm_evidence=[
+            APIVLMEvidenceDetail(
+                type=item.type,
+                description=item.description,
+                bbox=item.bbox,
+                text=item.text,
+            )
+            for item in vlm_evidence
+        ],
+        fusion_scores=(
+            APIFusionValues(
+                visual=review.fusion.scores.visual,
+                text=review.fusion.scores.text,
+                vlm=review.fusion.scores.vlm,
+            )
+            if review.fusion
+            else None
+        ),
+        fusion_weights=(
+            APIFusionValues(
+                visual=review.fusion.weights.visual,
+                text=review.fusion.weights.text,
+                vlm=review.fusion.weights.vlm,
+            )
+            if review.fusion
+            else None
+        ),
+        fusion_reason_codes=[str(item) for item in review.fusion.reason_codes]
+        if review.fusion
+        else [],
+        fusion_evidence=[
+            APIFusionEvidenceDetail(
+                source=item.source,
+                description=item.description,
+                score=item.score,
+                category=item.category,
+            )
+            for item in fusion_evidence
+        ],
         fusion_sources=fusion_sources,
     )

@@ -59,6 +59,7 @@ runs/
 # Local secrets and overrides
 .env
 configs/local*.yaml
+configs/*.local.yaml
 
 # Local portfolio preparation notes (not part of the public repository)
 docs/interview_3min.md
@@ -66,3 +67,10 @@ docs/interview_10min.md
 docs/interview_questions.md
 docs/github_public_readiness.md
 docs/beginner_user_guide_zh.md
+
+# Desktop development outputs and local transport configuration
+desktop/node_modules/
+desktop/dist/
+desktop/coverage/
+desktop/.env.local
+desktop/src-tauri/target/

@@ -1,5 +1,21 @@
 # VisionGuard
 
+## Desktop Application（开发预览）
+
+VisionGuard 现在提供基于 Tauri v2、React 和 TypeScript 的原生桌面工作台开发预览。它支持系统文件选择器、拖放图片、本地预览、快速/深度审核，以及 Detection、OCR、VLM、Routing、Fusion 和耗时证据视图。当前阶段不是可下载的正式安装包；FastAPI AI Runtime 仍需在开发环境中单独启动。
+
+```powershell
+# 终端 1：仓库根目录
+python scripts/run_api.py --config configs/api.local.yaml
+
+# 终端 2
+cd desktop
+npm install
+npm run tauri:dev
+```
+
+浏览器前端预览可使用 `npm run dev`，但原生文件对话框和系统拖放需要 `npm run tauri:dev`。桌面分层、最小权限方案、动态端口与 Sidecar 预留见 [Desktop 架构说明](docs/desktop_architecture.md)。
+
 > 基于视觉语言模型的多模态出版内容智能审校系统<br>
 > Multimodal Publishing Content Moderation System Based on Vision-Language Models
 
@@ -206,7 +222,7 @@ Phase 10 的两样本单次性能分析中，VLM 占完整链路耗时约 `91.2%
 - `POST /v1/review`：上传一张 JPEG、PNG 或 WebP 图片进行审核；
 - `GET /health/live`：检查服务进程是否存活；
 - `GET /health/ready`：检查模型是否已经加载完成；
-- `GET /meta`：查看服务版本和能力信息；
+- `GET /v1/meta`：查看服务版本和能力信息；
 - `GET /docs`：打开 FastAPI 自动生成的交互式说明页面。
 
 模型在应用 lifespan 中只初始化一次，并在就绪前执行可配置的 warmup。默认单 GPU 环境一次只执行一个完整推理请求，避免多个 VLM 请求同时占满显存。

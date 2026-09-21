@@ -1,0 +1,21 @@
+[package]
+name = "visionguard-desktop"
+version = "0.1.0"
+description = "VisionGuard desktop shell"
+authors = ["VisionGuard contributors"]
+edition = "2021"
+
+[lib]
+name = "visionguard_desktop_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "=2.6.3", features = [] }
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tauri = { version = "=2.11.6", features = [] }
+tauri-plugin-dialog = "=2.7.3"
+tauri-plugin-fs = "=2.5.2"
+tauri-plugin-http = "=2.6.1"
