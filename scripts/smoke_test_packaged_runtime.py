@@ -55,7 +55,7 @@ def _wait_url(url: str, timeout: float) -> dict:
     raise TimeoutError(f"health timeout for {url}: {last_error}")
 
 
-def _review(endpoint: str, image: Path, timeout: float) -> dict:
+def _review(endpoint: str, image: Path, timeout: float, mode: str) -> dict:
     boundary = f"----VisionGuard{secrets.token_hex(12)}"
     mime = mimetypes.guess_type(image.name)[0] or "application/octet-stream"
     body = b"".join(
@@ -70,7 +70,7 @@ def _review(endpoint: str, image: Path, timeout: float) -> dict:
         ]
     )
     request = urllib.request.Request(
-        f"{endpoint}/v1/review?pipeline_mode=cascaded&include_details=false",
+        f"{endpoint}/v1/review?pipeline_mode={mode}&include_details=false",
         data=body,
         headers={"Content-Type": f"multipart/form-data; boundary={boundary}"},
         method="POST",
@@ -86,16 +86,13 @@ def main() -> None:
         type=Path,
         default=ROOT / "runtime-dist" / "visionguard-runtime" / "visionguard-runtime.exe",
     )
-    parser.add_argument(
-        "--models", type=Path, default=ROOT / "models" / "models-v1"
-    )
-    parser.add_argument(
-        "--work-dir", type=Path, default=ROOT / "artifacts" / "runtime-smoke"
-    )
+    parser.add_argument("--models", type=Path, default=ROOT / "models" / "models-v1")
+    parser.add_argument("--work-dir", type=Path, default=ROOT / "artifacts" / "runtime-smoke")
     parser.add_argument("--timeout", type=float, default=180)
     parser.add_argument("--validate-only", action="store_true")
     parser.add_argument("--skip-review", action="store_true")
     parser.add_argument("--image", type=Path, default=ROOT / "data" / "vlm_eval" / "safe.png")
+    parser.add_argument("--mode", choices=("cascaded", "full"), default="cascaded")
     args = parser.parse_args()
 
     runtime = args.runtime.resolve()
@@ -137,9 +134,7 @@ def main() -> None:
     try:
         status = _wait_status(status_path, args.timeout, {"ready", "failed"})
         if status["state"] == "failed":
-            raise RuntimeError(
-                f"{status.get('error_code')}: {status.get('error_message')}"
-            )
+            raise RuntimeError(f"{status.get('error_code')}: {status.get('error_message')}")
         if args.validate_only:
             return_code = process.wait(timeout=10)
             if return_code:
@@ -152,7 +147,7 @@ def main() -> None:
             review = (
                 None
                 if args.skip_review
-                else _review(endpoint, args.image.resolve(), args.timeout)
+                else _review(endpoint, args.image.resolve(), args.timeout, args.mode)
             )
             review_result = review.get("result", review) if review is not None else None
             print(
@@ -166,9 +161,8 @@ def main() -> None:
                         else {
                             "request_id": review.get("request_id"),
                             "risk_level": review_result.get("risk_level"),
-                            "vlm_called": (review.get("routing") or {}).get(
-                                "call_vlm"
-                            ),
+                            "vlm_called": (review.get("routing") or {}).get("call_vlm"),
+                            "mode": args.mode,
                         },
                     },
                     ensure_ascii=False,

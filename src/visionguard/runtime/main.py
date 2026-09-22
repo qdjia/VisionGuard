@@ -7,6 +7,7 @@ import hmac
 import logging
 import os
 import platform
+import shutil
 import socket
 from pathlib import Path
 from typing import Any
@@ -25,6 +26,12 @@ from visionguard.runtime.paths import resolve_resources
 from visionguard.runtime.status import StatusWriter
 
 LOGGER = logging.getLogger(__name__)
+
+
+class HardwarePreflightError(RuntimeError):
+    def __init__(self, code: str, message: str) -> None:
+        super().__init__(message)
+        self.code = code
 
 
 class RuntimeControl:
@@ -71,11 +78,44 @@ def _diagnostics() -> dict[str, Any]:
                 "cuda_available": torch.cuda.is_available(),
                 "cuda_version": torch.version.cuda,
                 "gpu_name": torch.cuda.get_device_name(0) if torch.cuda.is_available() else None,
+                "gpu_memory_bytes": (
+                    torch.cuda.get_device_properties(0).total_memory
+                    if torch.cuda.is_available()
+                    else None
+                ),
             }
         )
     except Exception as exc:
         values["torch_error"] = type(exc).__name__
     return values
+
+
+def _hardware_preflight(config) -> dict[str, Any]:
+    """Fail before model construction when this release cannot run safely."""
+
+    diagnostics = _diagnostics()
+    diagnostics["runtime_edition"] = config.runtime_edition
+    system = str(diagnostics.get("platform", "")).lower()
+    architecture = str(diagnostics.get("architecture", "")).lower()
+    if system != "windows" or architecture not in {"amd64", "x86_64"}:
+        raise HardwarePreflightError(
+            "PLATFORM_NOT_SUPPORTED",
+            "This VisionGuard release requires 64-bit Windows.",
+        )
+    if config.runtime_edition == "gpu" and not diagnostics.get("cuda_available", False):
+        raise HardwarePreflightError(
+            "GPU_REQUIREMENT_NOT_SATISFIED",
+            "The GPU edition requires an NVIDIA GPU and a compatible driver.",
+        )
+    config.user_data_dir.mkdir(parents=True, exist_ok=True)
+    free_disk = shutil.disk_usage(config.user_data_dir).free
+    diagnostics["user_data_free_disk_bytes"] = free_disk
+    if free_disk < config.minimum_free_disk_bytes:
+        raise HardwarePreflightError(
+            "RUNTIME_DISK_SPACE_INSUFFICIENT",
+            "Insufficient free disk space for VisionGuard runtime data.",
+        )
+    return diagnostics
 
 
 def _offline_environment(cache_root: Path) -> None:
@@ -103,7 +143,9 @@ def run(argv: list[str] | None = None) -> int:
             backup_count=config.log_backup_count,
         )
         _offline_environment(resources.cache_dir)
-        status.update(state="validating_models", diagnostics=_diagnostics())
+        status.update(state="checking_hardware")
+        diagnostics = _hardware_preflight(config)
+        status.update(state="validating_models", diagnostics=diagnostics)
         manifest, validation = validate_model_bundle(
             resources.model_bundle_dir,
             runtime_version=RUNTIME_VERSION,
@@ -183,6 +225,15 @@ def run(argv: list[str] | None = None) -> int:
         server.run(sockets=[listener])
         status.update(state="stopping")
         return 0
+    except HardwarePreflightError as exc:
+        LOGGER.error("VisionGuard hardware preflight failed: %s", exc.code)
+        status.update(
+            state="failed",
+            error_code=exc.code,
+            error_message=str(exc),
+            diagnostics=_diagnostics(),
+        )
+        return 3
     except Exception as exc:
         logging.getLogger(__name__).exception("VisionGuard runtime failed")
         status.update(

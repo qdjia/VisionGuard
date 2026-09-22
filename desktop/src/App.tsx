@@ -41,7 +41,7 @@ export function App({ backend, imageSource, runtime }: { backend: VisionGuardBac
   const completed = state.status === "completed" || state.status === "partial";
 
   if (runtime && runtimeStatus.snapshot?.state !== "ready") {
-    return <RuntimeSetup snapshot={runtimeStatus.snapshot} onRestart={runtimeStatus.restart} />;
+    return <RuntimeSetup snapshot={runtimeStatus.snapshot} controller={runtime} onRestart={runtimeStatus.restart} />;
   }
 
   return <AppShell health={health} onSettings={() => setSettingsOpen(true)} onAbout={() => setAboutOpen(true)}><div className={styles.page}>

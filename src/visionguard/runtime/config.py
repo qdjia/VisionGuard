@@ -32,6 +32,8 @@ class RuntimeConfig(StrictConfigModel):
     log_backup_count: int = Field(default=3, ge=1, le=20)
     model_validation: Literal["quick", "full"] = "quick"
     readiness_timeout_seconds: float = Field(default=120, gt=0, le=900)
+    runtime_edition: Literal["gpu", "cpu"] = "gpu"
+    minimum_free_disk_bytes: int = Field(default=512 * 1024 * 1024, ge=0)
 
     @model_validator(mode="after")
     def absolute_paths(self) -> RuntimeConfig:

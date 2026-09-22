@@ -68,18 +68,14 @@ def _bundle(root: Path) -> Path:
 
 def test_quick_and_full_model_validation_support_unicode_paths(tmp_path):
     bundle = _bundle(tmp_path)
-    manifest, result = validate_model_bundle(
-        bundle, runtime_version="0.1.0", full_hash=True
-    )
+    manifest, result = validate_model_bundle(bundle, runtime_version="0.1.0", full_hash=True)
     assert manifest is not None
     assert result.status == "ready"
     assert all(value == "ready" for value in result.components.values())
 
 
 def test_validation_detects_missing_and_hash_mismatch(tmp_path):
-    missing_manifest, missing = validate_model_bundle(
-        tmp_path / "missing", runtime_version="0.1.0"
-    )
+    missing_manifest, missing = validate_model_bundle(tmp_path / "missing", runtime_version="0.1.0")
     assert missing_manifest is None
     assert missing.status == "missing"
 

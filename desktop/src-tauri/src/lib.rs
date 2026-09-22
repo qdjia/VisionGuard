@@ -1,5 +1,8 @@
+mod models;
 mod runtime;
 
+use models::{ModelBundleInfo, ModelInstallResult, ModelInstallStatus, ModelInstaller};
+use models::{RuntimeInstallResult, RuntimeInstallStatus, RuntimeInstaller, RuntimePackageInfo};
 use runtime::{RuntimeManager, RuntimeSnapshot};
 use std::sync::Arc;
 use tauri::{Manager, WindowEvent};
@@ -20,17 +23,79 @@ async fn restart_runtime(manager: tauri::State<'_, Arc<RuntimeManager>>) -> Resu
     manager.restart().await.map_err(|error| error.to_string())
 }
 
+#[tauri::command]
+fn get_model_install_status(
+    installer: tauri::State<'_, Arc<ModelInstaller>>,
+) -> ModelInstallStatus {
+    installer.status()
+}
+
+#[tauri::command]
+async fn inspect_model_bundle(
+    source: String,
+    installer: tauri::State<'_, Arc<ModelInstaller>>,
+) -> Result<ModelBundleInfo, String> {
+    installer.inspect(source).await
+}
+
+#[tauri::command]
+async fn install_model_bundle(
+    source: String,
+    installer: tauri::State<'_, Arc<ModelInstaller>>,
+    manager: tauri::State<'_, Arc<RuntimeManager>>,
+) -> Result<ModelInstallResult, String> {
+    manager.stop().await;
+    installer.install(source).await
+}
+
+#[tauri::command]
+fn get_runtime_install_status(
+    installer: tauri::State<'_, Arc<RuntimeInstaller>>,
+) -> RuntimeInstallStatus {
+    installer.status()
+}
+
+#[tauri::command]
+async fn inspect_runtime_bundle(
+    source: String,
+    installer: tauri::State<'_, Arc<RuntimeInstaller>>,
+) -> Result<RuntimePackageInfo, String> {
+    installer.inspect(source).await
+}
+
+#[tauri::command]
+async fn install_runtime_bundle(
+    source: String,
+    installer: tauri::State<'_, Arc<RuntimeInstaller>>,
+    manager: tauri::State<'_, Arc<RuntimeManager>>,
+) -> Result<RuntimeInstallResult, String> {
+    manager.stop().await;
+    installer.install(source).await
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let app = tauri::Builder::default()
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.unminimize();
+                let _ = window.show();
+                let _ = window.set_focus();
+            }
+        }))
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_http::init())
-        .plugin(tauri_plugin_shell::init())
         .invoke_handler(tauri::generate_handler![
             get_runtime_status,
             get_runtime_endpoint,
-            restart_runtime
+            restart_runtime,
+            get_model_install_status,
+            inspect_model_bundle,
+            install_model_bundle,
+            get_runtime_install_status,
+            inspect_runtime_bundle,
+            install_runtime_bundle
         ])
         .on_window_event(|window, event| {
             if window.label() != "main" {
@@ -55,7 +120,11 @@ pub fn run() {
         })
         .setup(|app| {
             let manager = RuntimeManager::new(app.handle().clone());
+            let installer = ModelInstaller::new(app.handle().clone());
+            let runtime_installer = RuntimeInstaller::new(app.handle().clone());
             app.manage(Arc::clone(&manager));
+            app.manage(installer);
+            app.manage(runtime_installer);
             tauri::async_runtime::spawn(async move {
                 let _ = manager.start().await;
             });

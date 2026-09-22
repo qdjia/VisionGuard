@@ -15,6 +15,7 @@ from visionguard.config.models import StrictConfigModel
 
 RuntimePhase = Literal[
     "starting",
+    "checking_hardware",
     "validating_models",
     "launching",
     "waiting_for_ready",

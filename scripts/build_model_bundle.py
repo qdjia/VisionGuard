@@ -80,9 +80,7 @@ def parser() -> argparse.ArgumentParser:
     cache = root / "artifacts" / "paddlex_cache" / "official_models"
     value.add_argument("--ocr-detection", type=Path, default=cache / "PP-OCRv6_medium_det")
     value.add_argument("--ocr-recognition", type=Path, default=cache / "PP-OCRv6_medium_rec")
-    value.add_argument(
-        "--ocr-orientation", type=Path, default=cache / "PP-LCNet_x1_0_textline_ori"
-    )
+    value.add_argument("--ocr-orientation", type=Path, default=cache / "PP-LCNet_x1_0_textline_ori")
     value.add_argument(
         "--baseline",
         type=Path,
@@ -141,9 +139,7 @@ def main() -> None:
         "schema_version": 1,
         "bundle_version": args.bundle_version,
         "compatible_runtime": {"min_inclusive": "0.1.0", "max_exclusive": "0.2.0"},
-        "models": {
-            name: artifact(path, output) for name, path in destinations.items()
-        },
+        "models": {name: artifact(path, output) for name, path in destinations.items()},
     }
     manifest_path = output / "manifest.json"
     manifest_path.write_text(

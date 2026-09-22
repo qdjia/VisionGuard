@@ -39,6 +39,14 @@ describe("HTTP backend adapter", () => {
       status: vi.fn(),
       endpoint: vi.fn().mockResolvedValue("http://127.0.0.1:43125"),
       restart: vi.fn(),
+      chooseModelBundle: vi.fn(),
+      inspectModelBundle: vi.fn(),
+      installModelBundle: vi.fn(),
+      modelInstallStatus: vi.fn(),
+      chooseRuntimeBundle: vi.fn(),
+      inspectRuntimeBundle: vi.fn(),
+      installRuntimeBundle: vi.fn(),
+      runtimeInstallStatus: vi.fn(),
     };
     const transport = vi.fn()
       .mockResolvedValueOnce(jsonResponse({ status: "ok" }))

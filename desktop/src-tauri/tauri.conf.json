@@ -28,7 +28,6 @@
     }
   },
   "bundle": {
-    "active": false,
-    "externalBin": ["binaries/visionguard-runtime"]
+    "active": false
   }
 }

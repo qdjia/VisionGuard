@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import platform
@@ -16,6 +17,39 @@ ROOT = Path(__file__).resolve().parents[1]
 BUILD_ROOT = ROOT / "runtime-build"
 DIST_ROOT = ROOT / "runtime-dist"
 TAURI_BIN = ROOT / "desktop" / "src-tauri" / "binaries"
+RUNTIME_VERSION = "0.1.0"
+
+
+def sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(4 * 1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def write_runtime_manifest(root: Path) -> Path:
+    files = []
+    for item in sorted(root.rglob("*")):
+        if item.is_file() and item.name != "runtime-manifest.json":
+            files.append(
+                {
+                    "path": item.relative_to(root).as_posix(),
+                    "size_bytes": item.stat().st_size,
+                    "sha256": sha256(item),
+                }
+            )
+    manifest = {
+        "schema_version": 1,
+        "runtime_version": RUNTIME_VERSION,
+        "platform": "windows",
+        "architecture": "x86_64",
+        "entrypoint": "visionguard-runtime.exe",
+        "files": files,
+    }
+    target = root / "runtime-manifest.json"
+    target.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+    return target
 
 
 def link_or_copy(source: Path, target: Path) -> None:
@@ -95,6 +129,7 @@ def main() -> None:
     executable = source / "visionguard-runtime.exe"
     if not executable.is_file():
         raise FileNotFoundError(f"PyInstaller output missing: {executable}")
+    manifest_path = write_runtime_manifest(source)
     triple = target_triple()
     TAURI_BIN.mkdir(parents=True, exist_ok=True)
     support = TAURI_BIN / "_internal"
@@ -107,7 +142,7 @@ def main() -> None:
     staged_executable.unlink(missing_ok=True)
     link_or_copy(executable, staged_executable)
     metadata = {
-        "runtime_version": "0.1.0",
+        "runtime_version": RUNTIME_VERSION,
         "python_version": platform.python_version(),
         "build_timestamp": datetime.now(UTC).isoformat(),
         "git_commit": git_commit(),
@@ -122,7 +157,12 @@ def main() -> None:
     size = sum(item.stat().st_size for item in source.rglob("*") if item.is_file())
     print(
         json.dumps(
-            {"runtime": str(source), "staged": str(staged_executable), "size_bytes": size}
+            {
+                "runtime": str(source),
+                "staged": str(staged_executable),
+                "manifest": str(manifest_path),
+                "size_bytes": size,
+            }
         )
     )
 

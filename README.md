@@ -1,8 +1,28 @@
 # VisionGuard
 
+> 基于视觉语言模型的多模态出版内容智能审校系统
+> Multimodal Publishing Content Moderation System Based on Vision-Language Models
+
+## 下载与安装（Windows GPU 候选版）
+
+VisionGuard 的目标用户不需要安装 Python、Conda、Node、Rust，也不需要手动启动 FastAPI。正式分发流程是：
+
+1. 从 GitHub Releases 下载 Windows 安装器、独立 GPU Runtime 和独立模型包；
+2. 校验 `SHA256SUMS.txt`；
+3. 双击安装器，通过 Start Menu 或桌面快捷方式启动；
+4. 首次启动时先选择 GPU Runtime ZIP 或已解压目录；
+5. 随后选择模型 ZIP 或已解压的 `models-v1` 目录；
+6. 等待本机完成兼容性、磁盘空间和 SHA-256 校验，显示 Ready 后选择图片审核。
+
+**目前尚未发布可下载的公开安装包。** Phase 16 已具备本地 NSIS 候选包构建、首次模型安装和 release 校验能力，但 Ultralytics/detector 与 CUDA 二进制再分发许可、代码签名、干净 Windows 验收以及 GitHub 单资产体积仍是公开发行门禁。请勿把本地候选产物上传为正式 Release。
+
+当前仅构建 Windows x86_64 GPU Edition。已通过开发验证的机器使用 RTX 4060 Laptop GPU 8 GiB；这不是最低配置。最低 VRAM 和内存将在多硬件实测后公布。完整安装架构与限制见[Windows 分发架构](docs/distribution_architecture.md)，许可状态见[模型再分发审计](docs/model_distribution_licenses.md)。
+
+当前候选版安装后的 Desktop + GPU Runtime + Models 约占 `9.08 GiB`。如果三个下载包和安装后文件同时保留，按实测资产体积再预留 15% 安全余量，建议安装前准备至少 `22 GiB` 可用磁盘空间；安装完成并验证正常后可删除下载的 ZIP。该数字是磁盘容量计算，不是最低 RAM/VRAM 结论。
+
 ## Desktop Application（本地 AI Runtime）
 
-VisionGuard 提供基于 Tauri v2、React 和 TypeScript 的原生桌面工作台。它支持系统文件选择器、拖放图片、本地预览、快速/深度审核，以及 Detection、OCR、VLM、Routing、Fusion 和耗时证据视图。桌面端现在可以自动启动 PyInstaller 打包的 Python Sidecar、等待模型就绪、动态注入本机端点，并在退出时回收进程。当前仍是开发构建，不是可下载的正式安装包。
+VisionGuard 提供基于 Tauri v2、React 和 TypeScript 的原生桌面工作台。它支持系统文件选择器、拖放图片、本地预览、快速/深度审核，以及 Detection、OCR、VLM、Routing、Fusion 和耗时证据视图。桌面端可以自动启动 PyInstaller 打包的 Python Runtime、等待模型就绪、动态注入本机端点，并在退出时回收进程。Phase 16 增加了轻量 NSIS 按用户安装、单实例、首次 Runtime/模型导入与发布候选校验。
 
 ### Sidecar 开发模式（推荐验证 Phase 15）
 
@@ -16,6 +36,23 @@ npm run tauri:dev
 ```
 
 模型真实权重、生成的 Runtime 和运行日志均由 Git 忽略。打包方式、目录布局、离线校验和 smoke test 见 [Runtime 打包说明](docs/runtime_packaging.md)。
+
+### 构建 Windows Release Candidate
+
+在已准备好本地模型与打包环境的 Windows 开发机上运行：
+
+```powershell
+python scripts/build_release.py --version 0.1.0-rc.1
+python scripts/validate_release.py release/v0.1.0-rc.1
+```
+
+`--public` 是更严格的公开发布门禁；当前因为许可和人工验收事项未解除，预期不会通过：
+
+```powershell
+python scripts/validate_release.py release/v0.1.0-rc.1 --public
+```
+
+干净机安装、GUI、卸载、重装与升级请逐项执行[Windows 发布验收清单](docs/release_acceptance_checklist.md)。
 
 ### External Backend 开发模式
 
@@ -35,14 +72,11 @@ npm run tauri:dev
 
 浏览器前端预览可使用 `npm run dev`，但原生文件对话框、系统拖放和 Sidecar 生命周期需要 `npm run tauri:dev`。完整设计见 [Desktop 架构说明](docs/desktop_architecture.md)。
 
-> 基于视觉语言模型的多模态出版内容智能审校系统<br>
-> Multimodal Publishing Content Moderation System Based on Vision-Language Models
-
 VisionGuard 是一个面向 AI / Computer Vision 算法实习作品集的研究型项目。它把目标检测、OCR 文字识别、传统文本分类、视觉语言模型（VLM）、动态路由和风险融合组织成一条完整、可评估、可复现的推理链路。
 
 项目重点是展示工业界常见的算法研发过程，而不是开发用户系统、权限管理、数据库或复杂后台页面。
 
-当前自动化测试规模：**Python 150 个、Desktop 前端 37 个、Rust Runtime 生命周期 11 个**。仓库中的公开样本均为小规模合成数据；实验数字用于证明工程链路可运行，不能代表真实生产审核准确率。
+当前自动化测试规模：**Python 155 个、Desktop 前端 39 个、Rust 19 个**。Rust 测试除 Runtime 生命周期外，还覆盖模型/Runtime 包的路径安全、完整哈希校验与活动版本指针。仓库中的公开样本均为小规模合成数据；实验数字用于证明工程链路可运行，不能代表真实生产审核准确率。
 
 ## 项目要解决什么问题
 

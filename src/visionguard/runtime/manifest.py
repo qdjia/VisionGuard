@@ -184,6 +184,5 @@ def validate_model_bundle(
 
 def resolved_model_paths(bundle_dir: Path, manifest: ModelBundleManifest) -> dict[str, Path]:
     return {
-        name: (bundle_dir / artifact.path).resolve()
-        for name, artifact in manifest.models.items()
+        name: (bundle_dir / artifact.path).resolve() for name, artifact in manifest.models.items()
     }

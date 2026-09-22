@@ -105,7 +105,7 @@ cargo test --manifest-path desktop/src-tauri/Cargo.toml
 
 | 项目 | 大小 |
 |---|---:|
-| Runtime one-folder | 5,310,364,687 bytes（约 4.95 GiB） |
+| Runtime one-folder | 5,311,923,777 bytes（约 4.95 GiB） |
 | Model bundle models-v1 | 4,418,141,986 bytes（约 4.11 GiB） |
 
 Runtime 中约 4.0 GiB 来自 CUDA PyTorch。此数字是首个可工作的发布基线，不是假装优化后的指标。本机完整 cold start、全部组件 ready、安全图片 review 与 graceful shutdown 共 35.25 秒；构建机和显卡不同会明显变化。
@@ -127,9 +127,9 @@ PaddleOCR/PaddleX 在冻结环境中仍会通过包元数据定位 OCR 核心依
 
 ## 已知限制
 
-- PyInstaller 会包含 PaddleX 和 CUDA PyTorch 的较大依赖闭包，体积仍需在 Phase 16 前专项优化；
-- 当前不构建安装器，不复制模型到最终安装位置；开发模式从仓库 `models/models-v1` 回退；
-- `_internal` 当前由 `build.rs` 增量暂存到开发可执行文件旁；Phase 16 的安装器构建必须通过发布专用资源装配把它纳入安装目录，不能只分发 sidecar exe；
+- PyInstaller 会包含 PaddleX 和 CUDA PyTorch 的较大依赖闭包；Phase 16 采用独立 Runtime ZIP，尚未完成 CUDA/Paddle 依赖裁剪；
+- 发布模式由首次启动安装器把已校验的 Runtime 与模型分别激活到应用数据目录；开发模式仍可从仓库生成目录回退；
+- Runtime 不再内嵌进 NSIS。应用通过活动版本指针启动独立 Runtime，避免 NSIS 对超大文件映射失败；
 - shutdown control 面受 token 保护，但审核接口仍为 loopback-only，无逐请求 session token；
 - smoke 脚本默认审核 `data/vlm_eval/safe.png`；只验证生命周期时可加 `--skip-review`；
 - Windows 平台产物必须在 Windows 上构建，PyInstaller 不是跨平台编译器。

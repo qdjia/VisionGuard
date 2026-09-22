@@ -18,3 +18,5 @@ def test_runtime_config_accepts_operating_system_assigned_port(tmp_path: Path) -
     assert config.port == 0
     assert assigned.port == 43125
     assert assigned.warmup_on_startup is False
+    assert assigned.runtime_edition == "gpu"
+    assert assigned.minimum_free_disk_bytes == 512 * 1024 * 1024

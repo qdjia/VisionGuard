@@ -6,6 +6,7 @@ use std::collections::HashMap;
 pub enum RuntimeState {
     Stopped,
     Starting,
+    CheckingHardware,
     ValidatingModels,
     Launching,
     WaitingForLive,

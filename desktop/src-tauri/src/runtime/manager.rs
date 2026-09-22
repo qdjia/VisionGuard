@@ -1,18 +1,16 @@
 use super::state::{RuntimeError, RuntimeSnapshot, RuntimeState};
+use crate::models::{active_bundle_path, active_runtime_executable};
 use reqwest::Client;
 use serde::Deserialize;
 use std::{
     collections::HashMap,
     path::{Path, PathBuf},
+    process::{Child, Command, Stdio},
     sync::atomic::{AtomicBool, Ordering},
     sync::{Arc, Mutex, RwLock},
     time::{Duration, Instant},
 };
 use tauri::{AppHandle, Manager};
-use tauri_plugin_shell::{
-    process::{CommandChild, CommandEvent},
-    ShellExt,
-};
 use tokio::sync::Mutex as AsyncMutex;
 use uuid::Uuid;
 
@@ -57,7 +55,7 @@ struct MetaResponse {
 pub struct RuntimeManager {
     app: AppHandle,
     status: Arc<RwLock<RuntimeSnapshot>>,
-    child: Arc<Mutex<Option<CommandChild>>>,
+    child: Arc<Mutex<Option<Child>>>,
     operation: AsyncMutex<()>,
     started: Mutex<Option<Instant>>,
     control_token: Mutex<Option<String>>,
@@ -118,7 +116,10 @@ impl RuntimeManager {
                     "runtime startup cancelled",
                 ));
             }
-            if matches!(error.code, "MODEL_BUNDLE_MISSING" | "MODEL_BUNDLE_INVALID") {
+            if matches!(
+                error.code,
+                "RUNTIME_COMPONENT_MISSING" | "MODEL_BUNDLE_MISSING" | "MODEL_BUNDLE_INVALID"
+            ) {
                 self.fail(&error);
                 return Err(error);
             }
@@ -156,12 +157,13 @@ impl RuntimeManager {
     }
 
     async fn start_sidecar_once(&self) -> Result<(), RuntimeError> {
-        self.update(|state| state.state = RuntimeState::ValidatingModels);
         let data_dir = self
             .app
             .path()
             .app_local_data_dir()
             .map_err(|error| RuntimeError::new("RUNTIME_START_FAILED", error.to_string()))?;
+        let runtime_executable = self.resolve_runtime_executable(&data_dir)?;
+        self.update(|state| state.state = RuntimeState::ValidatingModels);
         let model_dir = self.resolve_model_bundle(&data_dir);
         let manifest = self.quick_validate_manifest(&model_dir)?;
         self.update(|state| {
@@ -192,7 +194,9 @@ impl RuntimeManager {
             "max_concurrent_inference": 1,
             "save_artifacts": false,
             "warmup_on_startup": false,
-            "model_validation": "quick"
+            "model_validation": "quick",
+            "runtime_edition": "gpu",
+            "minimum_free_disk_bytes": 536870912
         });
         std::fs::write(
             &config_path,
@@ -201,52 +205,57 @@ impl RuntimeManager {
         .map_err(|error| RuntimeError::new("RUNTIME_START_FAILED", error.to_string()))?;
 
         let token = Uuid::new_v4().simple().to_string();
-        let command = self
-            .app
-            .shell()
-            .sidecar("visionguard-runtime")
-            .map_err(|error| RuntimeError::new("RUNTIME_START_FAILED", error.to_string()))?
-            .args([
-                "--config",
-                &config_path.to_string_lossy(),
-                "--status-file",
-                &status_path.to_string_lossy(),
-            ])
+        let mut command = Command::new(runtime_executable);
+        command
+            .args(["--config"])
+            .arg(&config_path)
+            .args(["--status-file"])
+            .arg(&status_path)
             .env("VISIONGUARD_CONTROL_TOKEN", &token)
-            .env("YOLO_AUTOINSTALL", "false");
-        let (mut events, child) = command
+            .env("YOLO_AUTOINSTALL", "false")
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null());
+        #[cfg(windows)]
+        {
+            use std::os::windows::process::CommandExt;
+            command.creation_flags(0x08000000);
+        }
+        let child = command
             .spawn()
             .map_err(|error| RuntimeError::new("RUNTIME_START_FAILED", error.to_string()))?;
-        let pid = child.pid();
+        let pid = child.id();
         *self.child.lock().expect("runtime child poisoned") = Some(child);
         *self.control_token.lock().expect("runtime token poisoned") = Some(token);
         self.update(|state| state.pid = Some(pid));
 
         let status = Arc::clone(&self.status);
+        let child = Arc::clone(&self.child);
         tauri::async_runtime::spawn(async move {
-            while let Some(event) = events.recv().await {
-                match event {
-                    CommandEvent::Terminated(payload) => {
-                        let mut snapshot = status.write().expect("runtime status poisoned");
-                        snapshot.last_exit_code = payload.code;
-                        snapshot.pid = None;
-                        if snapshot.state == RuntimeState::Stopping {
-                            snapshot.state = RuntimeState::Stopped;
-                        } else if snapshot.state != RuntimeState::Stopped {
-                            snapshot.state = RuntimeState::Failed;
-                            snapshot.error_code = Some("RUNTIME_EXITED".to_string());
-                            snapshot.error_message =
-                                Some("VisionGuard AI Runtime stopped unexpectedly.".to_string());
-                        }
-                        break;
+            loop {
+                let exit_code = {
+                    let mut current = child.lock().expect("runtime child poisoned");
+                    current
+                        .as_mut()
+                        .and_then(|process| process.try_wait().ok().flatten())
+                        .map(|exit| exit.code())
+                };
+                if let Some(exit_code) = exit_code {
+                    child.lock().expect("runtime child poisoned").take();
+                    let mut snapshot = status.write().expect("runtime status poisoned");
+                    snapshot.last_exit_code = exit_code;
+                    snapshot.pid = None;
+                    if snapshot.state == RuntimeState::Stopping {
+                        snapshot.state = RuntimeState::Stopped;
+                    } else if snapshot.state != RuntimeState::Stopped {
+                        snapshot.state = RuntimeState::Failed;
+                        snapshot.error_code = Some("RUNTIME_EXITED".to_string());
+                        snapshot.error_message =
+                            Some("VisionGuard AI Runtime stopped unexpectedly.".to_string());
                     }
-                    CommandEvent::Error(message) => {
-                        let mut snapshot = status.write().expect("runtime status poisoned");
-                        snapshot.error_message = Some(message);
-                    }
-                    CommandEvent::Stdout(_) | CommandEvent::Stderr(_) => {}
-                    _ => {}
+                    break;
                 }
+                tokio::time::sleep(Duration::from_millis(200)).await;
             }
         });
 
@@ -435,14 +444,44 @@ impl RuntimeManager {
     }
 
     fn force_kill(&self) {
-        if let Some(child) = self.child.lock().expect("runtime child poisoned").take() {
+        if let Some(mut child) = self.child.lock().expect("runtime child poisoned").take() {
             let _ = child.kill();
+            let _ = child.wait();
         }
+    }
+
+    fn resolve_runtime_executable(&self, data_dir: &Path) -> Result<PathBuf, RuntimeError> {
+        if let Ok(path) = std::env::var("VISIONGUARD_RUNTIME_EXECUTABLE") {
+            let path = PathBuf::from(path);
+            if path.is_file() {
+                return Ok(path);
+            }
+        }
+        if let Some(path) = active_runtime_executable(data_dir) {
+            return Ok(path);
+        }
+        #[cfg(debug_assertions)]
+        {
+            let triple = option_env!("TAURI_ENV_TARGET_TRIPLE").unwrap_or("x86_64-pc-windows-msvc");
+            let source = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                .join("binaries")
+                .join(format!("visionguard-runtime-{triple}.exe"));
+            if source.is_file() {
+                return Ok(source);
+            }
+        }
+        Err(RuntimeError::new(
+            "RUNTIME_COMPONENT_MISSING",
+            "VisionGuard GPU Runtime is not installed.",
+        ))
     }
 
     fn resolve_model_bundle(&self, data_dir: &Path) -> PathBuf {
         if let Ok(path) = std::env::var("VISIONGUARD_MODEL_BUNDLE") {
             return PathBuf::from(path);
+        }
+        if let Some(active) = active_bundle_path(data_dir) {
+            return active;
         }
         let installed = data_dir.join("models").join("models-v1");
         if installed.is_dir() {
@@ -565,6 +604,9 @@ fn runtime_file_error(status: &RuntimeFileStatus) -> RuntimeError {
         Some("MODEL_VALIDATION_FAILED") => "MODEL_VALIDATION_FAILED",
         Some("RUNTIME_VERSION_MISMATCH") => "RUNTIME_VERSION_MISMATCH",
         Some("RUNTIME_NOT_READY") => "RUNTIME_NOT_READY",
+        Some("GPU_REQUIREMENT_NOT_SATISFIED") => "GPU_REQUIREMENT_NOT_SATISFIED",
+        Some("PLATFORM_NOT_SUPPORTED") => "PLATFORM_NOT_SUPPORTED",
+        Some("RUNTIME_DISK_SPACE_INSUFFICIENT") => "RUNTIME_DISK_SPACE_INSUFFICIENT",
         _ => "RUNTIME_START_FAILED",
     };
     RuntimeError::new(
