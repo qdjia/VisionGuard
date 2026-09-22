@@ -87,15 +87,18 @@ async def shutdown_container(container: ServiceContainer) -> None:
     LOGGER.info("VisionGuard service resources released")
 
 
-def create_lifespan(config: APIConfig, container_factory=build_service_container):
-    @asynccontextmanager
-    async def lifespan(app):
-        LOGGER.info("VisionGuard service startup started")
-        container = await _create_container(container_factory, config)
-        app.state.services = container
+def create_lifespan(
+    config: APIConfig,
+    container_factory=build_service_container,
+    *,
+    startup_observer=None,
+):
+    async def initialize(app):
+        if startup_observer is not None:
+            startup_observer("waiting_for_ready", None)
         try:
-            # Some ML runtimes reconfigure the root logger while loading. Restore
-            # application logging after bootstrap so request/run correlation remains visible.
+            container = await _create_container(container_factory, config)
+            app.state.services = container
             configure_logging()
             logging.getLogger("visionguard").disabled = False
             logging.getLogger("visionguard").setLevel(logging.INFO)
@@ -105,13 +108,48 @@ def create_lifespan(config: APIConfig, container_factory=build_service_container
                 container.startup_info["service_warmup_ms"] = (perf_counter() - started) * 1000
             container.ready = True
             container.accepting_requests = True
+            app.state.startup_error = None
+            app.state.startup_phase = "ready"
+            if startup_observer is not None:
+                startup_observer("ready", container.startup_info)
             LOGGER.info(
                 "VisionGuard service ready init_count=%d concurrency=%d",
                 container.initialization_count,
                 config.api.max_concurrent_inference,
             )
+            return container
+        except Exception as exc:
+            app.state.startup_phase = "failed"
+            app.state.startup_error = exc
+            if startup_observer is not None:
+                startup_observer("failed", exc)
+            LOGGER.exception("VisionGuard service initialization failed")
+            raise
+
+    @asynccontextmanager
+    async def lifespan(app):
+        LOGGER.info("VisionGuard service startup started")
+        app.state.services = None
+        app.state.startup_phase = "waiting_for_ready"
+        app.state.startup_error = None
+        startup_task = None
+        container = None
+        try:
+            if config.api.deferred_startup:
+                startup_task = asyncio.create_task(initialize(app))
+                startup_task.add_done_callback(
+                    lambda task: task.exception() if not task.cancelled() else None
+                )
+            else:
+                container = await initialize(app)
             yield
         finally:
-            await shutdown_container(container)
+            container = getattr(app.state, "services", container)
+            if container is not None:
+                await shutdown_container(container)
+            elif startup_task is not None and not startup_task.done():
+                startup_task.cancel()
+            if startup_observer is not None:
+                startup_observer("stopping", None)
 
     return lifespan

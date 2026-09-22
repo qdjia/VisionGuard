@@ -48,4 +48,6 @@ async def metadata(
             "vlm": _identifier(getattr(vlm_config, "model_name_or_path", None)),
         },
         max_concurrent_inference=container.config.api.max_concurrent_inference,
+        runtime_version=container.config.api.runtime_version,
+        model_bundle_version=container.config.api.model_bundle_version,
     )

@@ -43,6 +43,7 @@ class LocalVLMProvider(StructuredProvider):
             self.processor = AutoProcessor.from_pretrained(
                 config.model_name_or_path,
                 cache_dir=str(config.cache_dir),
+                local_files_only=config.local_files_only,
                 trust_remote_code=False,
                 revision=config.model_revision,
             )
@@ -50,6 +51,7 @@ class LocalVLMProvider(StructuredProvider):
                 Qwen3VLForConditionalGeneration.from_pretrained(
                     config.model_name_or_path,
                     cache_dir=str(config.cache_dir),
+                    local_files_only=config.local_files_only,
                     dtype=self.dtype,
                     attn_implementation="sdpa",
                     trust_remote_code=False,

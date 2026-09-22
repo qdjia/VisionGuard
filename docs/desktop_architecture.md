@@ -2,117 +2,100 @@
 
 ## 目标与边界
 
-Phase 14 把已有 AI Pipeline 包装成可操作的桌面工作台。桌面端负责选择与预览图片、发起审核、展示结构化证据和运行状态；它不重新实现模型逻辑，也不读取内部 artifact。当前是开发预览，不包含安装器、Python Sidecar 打包、自动更新、模型下载或代码签名。
+Phase 15 将 Phase 14 的桌面工作台升级为 local-first 应用：Tauri 负责启动和回收独立 Python AI Runtime，React 只消费稳定的 `VisionGuardBackend` 接口。用户不需要了解 Python、Conda、Uvicorn、端口或模型路径。本阶段不包含安装器、签名、自动更新、模型下载或 GitHub Release，这些属于 Phase 16。
 
-## 当前结构
+## 运行结构
 
 ```mermaid
 flowchart LR
     U[用户] --> T[Tauri v2 Shell]
-    T --> R[React + TypeScript Workspace]
-    R --> B[VisionGuardBackend 接口]
-    B --> H[HttpVisionGuardBackend]
-    H --> A[本机 FastAPI]
-    A --> P[VisionGuard AI Pipeline]
-    P --> A --> R
+    T --> M[RuntimeManager]
+    M -->|spawn/stop/restart| S[PyInstaller Sidecar]
+    M -->|动态 endpoint| B[RuntimeManagedBackend]
+    S --> A[FastAPI v1]
+    A --> P[AI Pipeline]
+    B --> A
+    R[React Workspace] --> B
+    M --> Q[Runtime Setup UI]
 ```
 
-- Tauri Shell：提供原生窗口、文件选择器和系统拖放事件；能力清单按最小权限配置。
-- React Workspace：使用判别联合类型状态机管理 `idle → image_selected → submitting → analyzing → completed/partial/failed`，避免互相矛盾的布尔状态。
-- Backend Client：集中实现 health、meta、review 和错误映射。React 组件不直接访问 URL，也不直接调用 `fetch`。
-- FastAPI：继续承担模型生命周期、输入二次校验、并发保护和统一响应契约。
+- `RuntimeManager`：校验模型 manifest、生成用户态配置、启动 Sidecar、轮询 live/ready、检查 API major version、检测崩溃并负责 graceful stop/force kill。
+- Python Runtime：只绑定 `127.0.0.1`，在预绑定的动态端口上运行 Uvicorn；模型只随服务容器初始化一次。
+- `RuntimeManagedBackend`：每次请求从 Rust command 获取当前 endpoint，不把动态端口编译进 JavaScript bundle。
+- React Runtime Setup：显示真实状态和已耗时，不伪造进度；失败时提供重启和去敏诊断。
+- External 模式：保留独立 FastAPI 开发工作流，便于逐层调试，不改变主 UI。
 
-## UI 工作区
-
-主界面是一张连续工作台，而不是传统后台：
-
-1. 初始区提供原生文件选择和拖放入口；
-2. 选择后只显示文件名、尺寸和大小，不显示绝对路径；
-3. 快速模式映射到 `pipeline_mode=cascaded`，深度模式映射到 `pipeline_mode=full`；
-4. 分析时显示真实经过时间，不伪造阶段百分比；
-5. 完成后用总览、目标检测、文字识别、AI 审核、技术详情五个视图复用同一份结果，不重复请求；
-6. `partial` 是合法结果并显示醒目的人工复核提示；
-7. OCR 与模型文本由 React 普通文本节点渲染，不允许 `dangerouslySetInnerHTML`。
-
-## API 契约扩展
-
-桌面端只依赖 `/v1/review?include_details=true` 的公开响应。Phase 14 在原有 `details` 中增量加入图片尺寸、OCR block/polygon/full text、VLM reason/evidence、融合分数/权重/reason codes/evidence。既有字段和端点保持不变，因此旧调用方继续兼容。
-
-## 文件访问与最小权限
-
-`src-tauri/capabilities/default.json` 只授权：
-
-- 默认窗口能力；
-- 打开原生文件对话框；
-- 读取用户明确选择或拖入的文件；
-- 访问 `http://127.0.0.1:*` 的本机 HTTP 服务。
-
-当前没有 shell、Sidecar、文件写入、更新器或广泛网络权限。前端校验扩展名、MIME、大小和解码结果，后端仍独立执行安全校验。
-
-## 可替换传输层
-
-```ts
-interface VisionGuardBackend {
-  health(signal?: AbortSignal): Promise<BackendHealth>;
-  meta(signal?: AbortSignal): Promise<MetaResponse>;
-  review(input: ReviewInput, signal?: AbortSignal): Promise<ReviewResponse>;
-}
-```
-
-当前由 `HttpVisionGuardBackend` 实现，开发地址来自 `VITE_VISIONGUARD_API_URL`，默认值只存在于 client 工厂内部，普通 UI 不显示地址。Phase 15 可在 Tauri 启动 Sidecar 后选择空闲回环端口，再把运行时 endpoint 注入同一工厂；UI、状态机和结果组件无需修改。若以后改用 Tauri IPC，也可新增实现并保持接口不变。
-
-## Phase 15 Sidecar 生命周期预留
-
-建议后续流程：
+## 启动状态机
 
 ```text
-Tauri 启动
-  → 校验 Runtime/模型清单
-  → 启动 PyInstaller 或 Nuitka 产物
-  → Sidecar 选择空闲回环端口并返回握手信息
-  → 注入 Backend Client
-  → readiness 成功后开放 Analyze
-  → App 退出时温和终止 Sidecar
+stopped → starting → validating_models → launching
+        → waiting_for_live → waiting_for_ready → ready
+
+任一阶段异常 → failed → 用户触发 restart → starting
+应用退出     → stopping → stopped
 ```
 
-Sidecar 必须绑定回环地址、使用一次性握手信息、限制允许的来源，并把日志写入应用数据目录。Phase 14 没有提前开放 `shell:*` 权限。
+Sidecar 首先写入原子状态文件，发布 PID、动态 endpoint、版本、模型校验和去敏诊断；Rust 再访问 `/health/live` 与 `/health/ready`。模型后台加载失败时，Runtime 同时更新状态文件，避免桌面端只能等待超时。
 
-## 版本与更新边界
+## 动态端口与资源定位
 
-下列版本概念保持分离：
+Python 先将 socket 绑定到 `127.0.0.1:0`，由操作系统选择端口，然后把同一个 socket 交给 Uvicorn，消除“先探测、后占用”的端口竞争。endpoint 只存在于当前 Runtime 状态中。
 
-| 版本 | 负责内容 | 未来更新通道 |
+Runtime 不依赖启动目录：PyInstaller 资源从 `_MEIPASS/resources` 定位；模型目录和用户数据目录由绝对路径配置传入。日志、缓存、临时配置和可选 artifacts 写入 Tauri 的应用本地数据目录，模型目录只读。
+
+## 模型包与离线优先
+
+模型和 Runtime 独立版本化。`models-v1/manifest.json` 记录 detector、三个 OCR 模型、baseline 和 VLM 的相对路径、字节数与 SHA-256。启动使用快速校验（存在性与大小），发布验收可使用完整哈希校验。
+
+运行时设置 Hugging Face 离线环境，VLM 使用 `local_files_only`，PaddleOCR 接收显式本地目录，YOLO 接收 manifest 中的本地权重。因此首次 Analyze 不会隐式联网下载模型。
+
+| 层 | 当前版本来源 | 兼容边界 |
 |---|---|---|
-| App Version | Tauri Shell 与前端 | 签名的 Tauri Updater |
-| Runtime Version | Python 可执行环境 | 安装器或独立 Runtime 包 |
-| Model Bundle Version | YOLO/OCR/Baseline/VLM 权重集合 | 独立模型清单与校验下载 |
-| Pipeline Version | 编排与输出语义 | Runtime 元数据 |
-| Routing/Fusion/Prompt Version | 策略和提示词 | Runtime/策略包元数据 |
+| App | `tauri.conf.json` | Tauri Shell 与前端 |
+| Runtime | `visionguard.runtime.RUNTIME_VERSION` | Python 依赖和服务实现 |
+| API | `/v1/meta.api_version` | Desktop 当前要求 `v1` |
+| Models | `manifest.json.bundle_version` | manifest 声明 Runtime 版本范围 |
+| Pipeline | API metadata | 编排与输出语义 |
 
-模型文件不与 App Updater 强绑定。未来模型管理器应支持 manifest、哈希校验、断点续传、可用空间检查、原子切换和回滚；首次运行流程可扩展为 Runtime Check → Model Check → Download → Ready。本阶段只消费 readiness 和 meta，不下载任何内容。
+## 生命周期与异常处理
+
+正常关闭时，Rust 以仅保存在内存中的一次性 control token 调用隐藏的 shutdown route；超过 5 秒则强制终止子进程。Sidecar event stream 监视非预期退出并映射为 `RUNTIME_EXITED`。启动失败自动重试一次；模型缺失或损坏不会盲目重试。
+
+错误码包括 `RUNTIME_START_FAILED`、`RUNTIME_EXITED`、`RUNTIME_NOT_READY`、`MODEL_BUNDLE_MISSING`、`MODEL_BUNDLE_INVALID`、`MODEL_VALIDATION_FAILED` 和 `RUNTIME_VERSION_MISMATCH`。UI 不展示 Python traceback 或 control token。
+
+## 权限与安全边界
+
+Tauri capability 只允许主窗口读取用户选择的文件、访问 `127.0.0.1:*`，以及使用固定参数形状启动 `visionguard-runtime` Sidecar。Runtime 不监听局域网地址。当前 control token 只保护 shutdown 控制面；审核 API 仍是 loopback HTTP，同机其他进程理论上可以访问，这是进入正式发行前需要继续收紧的边界。
 
 ## 开发运行
 
-先启动已有 FastAPI：
+Sidecar 模式：
 
 ```powershell
-python scripts/run_api.py --config configs/api.local.yaml
-```
-
-再启动原生开发窗口：
-
-```powershell
+python scripts/build_model_bundle.py --hardlink --force
+python scripts/build_runtime.py
 cd desktop
-npm install
 npm run tauri:dev
 ```
 
-仅开发环境需要切换端点时，复制 `.env.example` 为 `.env.local`。不要把本机配置提交到 Git。
+External 模式：
 
-## 当前限制
+```powershell
+python scripts/run_api.py --config configs/api.local.yaml
+cd desktop
+$env:VISIONGUARD_BACKEND_MODE="external"
+$env:VISIONGUARD_API_URL="http://127.0.0.1:8000"
+npm run tauri:dev
+```
 
-- API 尚无 SSE/WebSocket 阶段事件，UI 只显示真实耗时和总体分析状态；
-- HTTP Runtime 需由开发者单独启动，尚未由桌面应用管理；
-- 尚无安装器、签名、更新器、模型管理器和首次运行向导；
-- 无历史数据库、账号、遥测、报告导出或 GPU 硬取消；
-- 视觉覆盖层基于稳定的 API 坐标，不解析内部 pipeline artifact。
+详细打包和验证命令见 [Runtime 打包说明](runtime_packaging.md)。
+
+## Phase 16 准备情况与当前限制
+
+Runtime、模型、App 已拆分版本和目录，sidecar target-triple 命名及 Tauri resource 复制已就绪，可作为安装器输入。Phase 16 仍需完成磁盘空间预检、模型安装/修复流程、签名、安装/卸载、快捷方式和发布渠道。
+
+- 当前完整 Runtime 受 CUDA PyTorch 影响体积较大；正式发行可评估精简 CUDA runtime 或 CPU/GPU 双包。
+- Readiness 等待上限为 120 秒；低配机器可能需要配置化。
+- 尚无模型下载 UI、原子模型升级或回滚。
+- 尚无 SSE/WebSocket 逐阶段进度与 GPU 级硬取消。
+- 本阶段不提供 Windows Installer。

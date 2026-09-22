@@ -37,6 +37,9 @@ class APISettings(StrictConfigModel):
     warmup_on_startup: bool = True
     expose_internal_errors: bool = False
     docs_enabled: bool = True
+    deferred_startup: bool = False
+    runtime_version: str | None = None
+    model_bundle_version: str | None = None
 
     @model_validator(mode="after")
     def validate_modes_and_types(self) -> "APISettings":

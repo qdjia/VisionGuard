@@ -34,7 +34,8 @@ class PaddleOCRProvider:
                 raise ValueError(
                     "PaddleOCR 3.x general OCR pipeline requires det_enabled and rec_enabled"
                 )
-            # Keep model artifacts inside the project when the caller has not chosen a cache.
+            # The cache is a fallback for source development. Packaged runtime configs
+            # provide explicit, validated local model directories.
             os.environ.setdefault(
                 "PADDLE_PDX_CACHE_HOME", str(Path("artifacts/paddlex_cache").resolve())
             )
@@ -48,6 +49,33 @@ class PaddleOCRProvider:
             self.device = "gpu:0" if requested == "auto" and gpu_available else requested
             if self.device == "auto" or (self.device.startswith("gpu") and not gpu_available):
                 self.device = "cpu"
+            local_model_args = {
+                "text_detection_model_dir": (
+                    str(config.text_detection_model_dir)
+                    if config.text_detection_model_dir is not None
+                    else None
+                ),
+                "text_recognition_model_dir": (
+                    str(config.text_recognition_model_dir)
+                    if config.text_recognition_model_dir is not None
+                    else None
+                ),
+                "textline_orientation_model_dir": (
+                    str(config.textline_orientation_model_dir)
+                    if config.textline_orientation_model_dir is not None
+                    else None
+                ),
+            }
+            if config.local_models_only:
+                missing = [
+                    value
+                    for value in local_model_args.values()
+                    if value is None or not Path(value).is_dir()
+                ]
+                if missing:
+                    raise FileNotFoundError(
+                        "one or more configured PaddleOCR model directories are missing"
+                    )
             self._backend = PaddleOCR(
                 lang=config.lang,
                 device=self.device,
@@ -57,6 +85,7 @@ class PaddleOCRProvider:
                 text_det_limit_side_len=config.max_side_len,
                 text_det_limit_type="max",
                 text_rec_score_thresh=0.0,
+                **{key: value for key, value in local_model_args.items() if value is not None},
             )
         except Exception as exc:
             raise OCREngineLoadError(

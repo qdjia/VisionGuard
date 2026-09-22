@@ -24,3 +24,22 @@ h1, h2, h3, h4, p { margin-top: 0; }
 .error-panel { max-width: 680px; margin: 50px auto; padding: 32px; border: 1px solid color-mix(in srgb, var(--red) 30%, var(--line)); border-radius: var(--radius); background: var(--surface); }.error-panel > span { color: var(--red); font-weight: 800; }.error-panel h2 { margin-top: 8px; }.error-panel .button { margin-right: 8px; }
 .modal-backdrop { position: fixed; z-index: 50; inset: 0; display: grid; place-items: center; padding: 24px; background: rgba(10,13,20,.55); backdrop-filter: blur(5px); }.modal { width: min(520px, 100%); max-height: 80vh; overflow: auto; padding: 24px; border: 1px solid var(--line); border-radius: 20px; background: var(--surface); box-shadow: 0 30px 80px rgba(0,0,0,.3); }.settings-list label { padding: 16px 0; display: flex; align-items: center; justify-content: space-between; gap: 20px; border-bottom: 1px solid var(--line); }.settings-list span strong, .settings-list span small { display: block; }.settings-list small { margin-top: 4px; color: var(--text-2); }.settings-list select { padding: 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--text); }
 @media (max-width: 900px) { .selection-grid, .split-panel, .overview-grid, .details-grid { grid-template-columns: 1fr; }.mode-switch { min-width: 0; }.health { font-size: 0; }.app-header { padding: 0 14px; }.metrics { grid-template-columns: 1fr; } }
+
+.runtime-setup { min-height: 100vh; display: grid; place-items: center; padding: 32px; }
+.runtime-card { width: min(620px, 100%); padding: 52px; text-align: center; border: 1px solid var(--line); border-radius: 28px; background: var(--surface); box-shadow: var(--shadow); }
+.runtime-mark { display: grid; place-items: center; width: 56px; height: 56px; margin: 0 auto 24px; }
+.runtime-card h1 { margin: 12px 0 16px; font-size: clamp(28px, 4vw, 42px); }
+.runtime-card p { color: var(--text-2); line-height: 1.7; }
+.runtime-spinner { width: 34px; height: 34px; margin: 24px auto; border: 3px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: spin .9s linear infinite; }
+.runtime-components { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 28px; text-align: left; }
+.runtime-components span { display: flex; justify-content: space-between; padding: 12px 14px; border-radius: 12px; background: var(--surface-2); text-transform: capitalize; }
+.runtime-components b { color: var(--text-2); }
+.runtime-components .component-ready b { color: var(--green); }
+.runtime-components .component-missing b, .runtime-components .component-invalid b { color: var(--red); }
+.runtime-failure { display: grid; gap: 14px; justify-items: center; margin-top: 24px; }
+.runtime-failure code { color: var(--red); }
+.runtime-failure .button { margin: 4px; }
+.runtime-diagnostics { width: 100%; margin: 12px 0 0; padding: 14px; text-align: left; border-radius: 12px; background: var(--surface-2); }
+.runtime-diagnostics div { display: grid; grid-template-columns: 120px 1fr; padding: 5px 0; }
+.runtime-diagnostics dt { color: var(--text-2); }
+.runtime-diagnostics dd { margin: 0; overflow-wrap: anywhere; }

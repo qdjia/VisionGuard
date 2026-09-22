@@ -11,6 +11,7 @@ import type {
   ReviewResponse,
   VisionGuardBackend,
 } from "./types";
+import type { RuntimeController } from "../runtime/types";
 
 export type FetchTransport = (input: string | URL | Request, init?: RequestInit) => Promise<Response>;
 
@@ -85,4 +86,34 @@ export class HttpVisionGuardBackend implements VisionGuardBackend {
 export function createBackend(baseUrl?: string, transport?: FetchTransport): VisionGuardBackend {
   const resolved = baseUrl ?? import.meta.env.VITE_VISIONGUARD_API_URL ?? DEFAULT_API_URL;
   return new HttpVisionGuardBackend(resolved, transport);
+}
+
+export class RuntimeManagedBackend implements VisionGuardBackend {
+  constructor(
+    private readonly runtime: RuntimeController,
+    private readonly transport: FetchTransport = tauriFetch,
+  ) {}
+
+  private async client(): Promise<HttpVisionGuardBackend> {
+    return new HttpVisionGuardBackend(await this.runtime.endpoint(), this.transport);
+  }
+
+  async health(signal?: AbortSignal): Promise<BackendHealth> {
+    return (await this.client()).health(signal);
+  }
+
+  async meta(signal?: AbortSignal): Promise<MetaResponse> {
+    return (await this.client()).meta(signal);
+  }
+
+  async review(input: ReviewInput, signal?: AbortSignal): Promise<ReviewResponse> {
+    return (await this.client()).review(input, signal);
+  }
+}
+
+export function createRuntimeManagedBackend(
+  runtime: RuntimeController,
+  transport?: FetchTransport,
+): VisionGuardBackend {
+  return new RuntimeManagedBackend(runtime, transport);
 }

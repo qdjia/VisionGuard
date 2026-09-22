@@ -74,3 +74,14 @@ desktop/dist/
 desktop/coverage/
 desktop/.env.local
 desktop/src-tauri/target/
+
+# Phase 15 generated local runtime and model bundles
+runtime-build/
+runtime-dist/
+models/*
+!models/README.md
+desktop/src-tauri/binaries/*.exe
+desktop/src-tauri/binaries/_internal/
+desktop/src-tauri/binaries/runtime_build.json
+*.spec.bak
+visionguard-runtime.log*

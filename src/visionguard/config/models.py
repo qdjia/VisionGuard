@@ -66,6 +66,10 @@ class OCRConfig(StrictConfigModel):
     max_side_len: int = Field(default=1920, gt=0)
     warmup_enabled: bool = True
     fallback_full_image: bool = True
+    text_detection_model_dir: Path | None = None
+    text_recognition_model_dir: Path | None = None
+    textline_orientation_model_dir: Path | None = None
+    local_models_only: bool = False
     preprocessing: OCRPreprocessingConfig = Field(default_factory=OCRPreprocessingConfig)
 
     @model_validator(mode="after")
@@ -76,6 +80,13 @@ class OCRConfig(StrictConfigModel):
             )
         if not self.device.strip():
             raise ValueError("OCR device must not be empty")
+        local_paths = (
+            self.text_detection_model_dir,
+            self.text_recognition_model_dir,
+            self.textline_orientation_model_dir,
+        )
+        if self.local_models_only and any(path is None for path in local_paths):
+            raise ValueError("local_models_only requires all PaddleOCR model directories")
         return self
 
 

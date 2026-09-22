@@ -1,6 +1,6 @@
 import type { APIErrorResponse } from "./types";
 
-export type DesktopErrorCode = "INVALID_IMAGE" | "UPLOAD_TOO_LARGE" | "UNSUPPORTED_MEDIA_TYPE" | "INVALID_PIPELINE_MODE" | "PIPELINE_NOT_READY" | "INFERENCE_TIMEOUT" | "PIPELINE_FAILURE" | "BACKEND_UNAVAILABLE" | "NETWORK_ERROR" | "UNKNOWN_ERROR";
+export type DesktopErrorCode = "INVALID_IMAGE" | "UPLOAD_TOO_LARGE" | "UNSUPPORTED_MEDIA_TYPE" | "INVALID_PIPELINE_MODE" | "PIPELINE_NOT_READY" | "INFERENCE_TIMEOUT" | "PIPELINE_FAILURE" | "BACKEND_UNAVAILABLE" | "NETWORK_ERROR" | "RUNTIME_START_FAILED" | "RUNTIME_EXITED" | "RUNTIME_NOT_READY" | "MODEL_BUNDLE_MISSING" | "MODEL_BUNDLE_INVALID" | "MODEL_VALIDATION_FAILED" | "RUNTIME_VERSION_MISMATCH" | "UNKNOWN_ERROR";
 
 const messages: Record<DesktopErrorCode, string> = {
   INVALID_IMAGE: "无法读取这张图片，请选择有效的 PNG、JPEG 或 WebP 图片。",
@@ -12,6 +12,13 @@ const messages: Record<DesktopErrorCode, string> = {
   PIPELINE_FAILURE: "VisionGuard 未能完成这次分析。",
   BACKEND_UNAVAILABLE: "VisionGuard AI Runtime 当前不可用。",
   NETWORK_ERROR: "无法连接到 VisionGuard AI Runtime。",
+  RUNTIME_START_FAILED: "无法启动 VisionGuard AI Runtime。",
+  RUNTIME_EXITED: "VisionGuard AI Runtime 意外停止。",
+  RUNTIME_NOT_READY: "VisionGuard AI Runtime 尚未完成模型加载。",
+  MODEL_BUNDLE_MISSING: "VisionGuard AI 模型尚未安装。",
+  MODEL_BUNDLE_INVALID: "VisionGuard AI 模型包无效或不完整。",
+  MODEL_VALIDATION_FAILED: "VisionGuard AI 模型校验失败。",
+  RUNTIME_VERSION_MISMATCH: "Desktop 与 AI Runtime 版本不兼容。",
   UNKNOWN_ERROR: "发生了未预期的问题，请稍后重试。",
 };
 

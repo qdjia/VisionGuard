@@ -1,8 +1,25 @@
 # VisionGuard
 
-## Desktop Application（开发预览）
+## Desktop Application（本地 AI Runtime）
 
-VisionGuard 现在提供基于 Tauri v2、React 和 TypeScript 的原生桌面工作台开发预览。它支持系统文件选择器、拖放图片、本地预览、快速/深度审核，以及 Detection、OCR、VLM、Routing、Fusion 和耗时证据视图。当前阶段不是可下载的正式安装包；FastAPI AI Runtime 仍需在开发环境中单独启动。
+VisionGuard 提供基于 Tauri v2、React 和 TypeScript 的原生桌面工作台。它支持系统文件选择器、拖放图片、本地预览、快速/深度审核，以及 Detection、OCR、VLM、Routing、Fusion 和耗时证据视图。桌面端现在可以自动启动 PyInstaller 打包的 Python Sidecar、等待模型就绪、动态注入本机端点，并在退出时回收进程。当前仍是开发构建，不是可下载的正式安装包。
+
+### Sidecar 开发模式（推荐验证 Phase 15）
+
+先构建独立模型包与 Runtime，随后桌面应用会自行管理后端，无需手动运行 FastAPI：
+
+```powershell
+python scripts/build_model_bundle.py --hardlink --force
+python scripts/build_runtime.py
+cd desktop
+npm run tauri:dev
+```
+
+模型真实权重、生成的 Runtime 和运行日志均由 Git 忽略。打包方式、目录布局、离线校验和 smoke test 见 [Runtime 打包说明](docs/runtime_packaging.md)。
+
+### External Backend 开发模式
+
+需要单独调试 Python API 时，可以保留原有方式：
 
 ```powershell
 # 终端 1：仓库根目录
@@ -10,11 +27,13 @@ python scripts/run_api.py --config configs/api.local.yaml
 
 # 终端 2
 cd desktop
+$env:VISIONGUARD_BACKEND_MODE="external"
+$env:VISIONGUARD_API_URL="http://127.0.0.1:8000"
 npm install
 npm run tauri:dev
 ```
 
-浏览器前端预览可使用 `npm run dev`，但原生文件对话框和系统拖放需要 `npm run tauri:dev`。桌面分层、最小权限方案、动态端口与 Sidecar 预留见 [Desktop 架构说明](docs/desktop_architecture.md)。
+浏览器前端预览可使用 `npm run dev`，但原生文件对话框、系统拖放和 Sidecar 生命周期需要 `npm run tauri:dev`。完整设计见 [Desktop 架构说明](docs/desktop_architecture.md)。
 
 > 基于视觉语言模型的多模态出版内容智能审校系统<br>
 > Multimodal Publishing Content Moderation System Based on Vision-Language Models
@@ -23,7 +42,7 @@ VisionGuard 是一个面向 AI / Computer Vision 算法实习作品集的研究�
 
 项目重点是展示工业界常见的算法研发过程，而不是开发用户系统、权限管理、数据库或复杂后台页面。
 
-当前质量检查：**144 个自动化测试全部通过**。仓库中的公开样本均为小规模合成数据；实验数字用于证明工程链路可运行，不能代表真实生产审核准确率。
+当前自动化测试规模：**Python 150 个、Desktop 前端 37 个、Rust Runtime 生命周期 11 个**。仓库中的公开样本均为小规模合成数据；实验数字用于证明工程链路可运行，不能代表真实生产审核准确率。
 
 ## 项目要解决什么问题
 
@@ -82,9 +101,12 @@ src/visionguard/
 ├── fusion/          # 证据归一化与最终风险决策
 ├── benchmarking/    # 延迟、吞吐量和资源分析
 ├── error_analysis/  # 错误归因、失败分类与回归样本
-└── api/             # 仅用于模型推理的 FastAPI 服务
+├── api/             # 仅用于模型推理的 FastAPI 服务
+└── runtime/         # 独立本地 Runtime 入口、资源定位与模型校验
 configs/             # 可公开的默认配置；本机配置由 Git 忽略
 scripts/             # 训练、推理、评估、Benchmark 和分析命令
+packaging/           # PyInstaller spec 与模型清单模板
+desktop/             # Tauri Shell、React UI 与 RuntimeManager
 tests/               # 单元测试与接口契约测试
 docs/                # 架构、实验、配置、复现与技术报告
 data/                # 只保存可公开的小型合成样本

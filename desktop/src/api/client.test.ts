@@ -1,4 +1,4 @@
-import { HttpVisionGuardBackend } from "./client";
+import { HttpVisionGuardBackend, RuntimeManagedBackend } from "./client";
 import { selectedImage } from "../test/fixtures";
 
 function jsonResponse(body: unknown, status = 200): Response {
@@ -32,5 +32,23 @@ describe("HTTP backend adapter", () => {
   it("maps an unavailable service", async () => {
     const transport = vi.fn().mockRejectedValue(new TypeError("connection refused"));
     await expect(new HttpVisionGuardBackend("http://127.0.0.1:8000", transport).health()).rejects.toMatchObject({ code: "BACKEND_UNAVAILABLE" });
+  });
+
+  it("injects the endpoint published by the runtime manager", async () => {
+    const runtime = {
+      status: vi.fn(),
+      endpoint: vi.fn().mockResolvedValue("http://127.0.0.1:43125"),
+      restart: vi.fn(),
+    };
+    const transport = vi.fn()
+      .mockResolvedValueOnce(jsonResponse({ status: "ok" }))
+      .mockResolvedValueOnce(jsonResponse({ status: "ready", components: {} }));
+    await new RuntimeManagedBackend(runtime, transport).health();
+    expect(runtime.endpoint).toHaveBeenCalledOnce();
+    expect(transport).toHaveBeenNthCalledWith(
+      1,
+      "http://127.0.0.1:43125/health/live",
+      expect.anything(),
+    );
   });
 });

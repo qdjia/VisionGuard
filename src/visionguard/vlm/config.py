@@ -24,6 +24,7 @@ class VLMConfig(StrictConfigModel):
     max_ocr_blocks: int = Field(default=50, ge=0)
     max_ocr_chars: int = Field(default=4000, ge=0)
     warmup_enabled: bool = False
+    local_files_only: bool = False
     cache_dir: Path = Path("artifacts/huggingface_cache")
     prompts_dir: Path = Path("prompts/vlm")
     artifacts_dir: Path = Path("artifacts/vlm")

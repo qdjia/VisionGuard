@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "bundle_version": "models-v1",
+  "compatible_runtime": {
+    "min_inclusive": "0.1.0",
+    "max_exclusive": "0.2.0"
+  },
+  "models": {
+    "detector": {},
+    "ocr_detection": {},
+    "ocr_recognition": {},
+    "ocr_orientation": {},
+    "baseline": {},
+    "vlm": {}
+  }
+}

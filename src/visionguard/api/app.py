@@ -50,6 +50,8 @@ def create_app(
     *,
     config: APIConfig | None = None,
     container_factory=build_service_container,
+    startup_observer=None,
+    runtime_control=None,
 ) -> FastAPI:
     resolved = config or load_api_config(config_path or DEFAULT_CONFIG)
     docs_url = "/docs" if resolved.api.docs_enabled else None
@@ -59,13 +61,27 @@ def create_app(
         docs_url=docs_url,
         redoc_url="/redoc" if resolved.api.docs_enabled else None,
         openapi_url="/openapi.json" if resolved.api.docs_enabled else None,
-        lifespan=create_lifespan(resolved, container_factory),
+        lifespan=create_lifespan(resolved, container_factory, startup_observer=startup_observer),
     )
     app.state.api_config = resolved
     app.add_middleware(RequestContextMiddleware)
     app.include_router(health_router)
     app.include_router(meta_router)
     app.include_router(review_router)
+
+    if runtime_control is not None:
+        from fastapi import Header
+
+        @app.post("/_runtime/shutdown", include_in_schema=False)
+        async def runtime_shutdown(
+            request: Request,
+            x_visionguard_control: str | None = Header(default=None),
+        ):
+            client_host = request.client.host if request.client is not None else ""
+            if not runtime_control.authorized(client_host, x_visionguard_control):
+                raise HTTPException(status_code=404)
+            runtime_control.request_shutdown()
+            return {"status": "stopping"}
 
     @app.exception_handler(APIServiceError)
     async def handle_service_error(request: Request, exc: APIServiceError):

@@ -10,6 +10,21 @@
     {
       "identifier": "http:default",
       "allow": [{ "url": "http://127.0.0.1:*" }]
+    },
+    {
+      "identifier": "shell:allow-spawn",
+      "allow": [
+        {
+          "name": "binaries/visionguard-runtime",
+          "sidecar": true,
+          "args": [
+            "--config",
+            { "validator": ".+" },
+            "--status-file",
+            { "validator": ".+" }
+          ]
+        }
+      ]
     }
   ]
 }

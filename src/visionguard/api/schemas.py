@@ -206,3 +206,5 @@ class MetaResponse(SchemaModel):
     prompt_version: str | None
     model_identifiers: dict[str, str | None]
     max_concurrent_inference: int
+    runtime_version: str | None = None
+    model_bundle_version: str | None = None

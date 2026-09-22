@@ -154,6 +154,7 @@ export interface MetaResponse {
   model_identifiers: Record<string, string | null>;
   max_concurrent_inference: number;
   model_bundle_version?: string | null;
+  runtime_version?: string | null;
 }
 
 export interface SelectedImage {

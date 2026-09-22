@@ -3,12 +3,15 @@ import { useEffect, useState } from "react";
 import type { VisionGuardBackend } from "./api/types";
 import { AnalysisProgress } from "./components/AnalysisProgress";
 import { AppShell } from "./components/AppShell";
+import { RuntimeSetup } from "./components/RuntimeSetup";
 import { ImageDropzone } from "./components/ImageDropzone";
 import { ImagePreview } from "./components/ImagePreview";
 import { ReviewWorkspace } from "./features/review/ReviewWorkspace";
 import { useBackendHealth } from "./hooks/useBackendHealth";
+import { useRuntimeStatus } from "./hooks/useRuntimeStatus";
 import { useReview } from "./hooks/useReview";
 import type { ImageSource } from "./platform/imageSource";
+import type { RuntimeController } from "./runtime/types";
 import styles from "./styles/App.module.css";
 
 type Theme = "system" | "light" | "dark";
@@ -17,7 +20,8 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
   return <div className="modal-backdrop" role="presentation" onMouseDown={onClose}><section className="modal" role="dialog" aria-modal="true" aria-label={title} onMouseDown={(event) => event.stopPropagation()}><div className="section-heading"><h2>{title}</h2><button className="icon-button" onClick={onClose} aria-label="关闭">关闭</button></div>{children}</section></div>;
 }
 
-export function App({ backend, imageSource }: { backend: VisionGuardBackend; imageSource: ImageSource }) {
+export function App({ backend, imageSource, runtime }: { backend: VisionGuardBackend; imageSource: ImageSource; runtime?: RuntimeController }) {
+  const runtimeStatus = useRuntimeStatus(runtime);
   const { status: health, meta, refresh } = useBackendHealth(backend);
   const defaultMode = (localStorage.getItem("visionguard.defaultMode") as "cascaded" | "full" | null) ?? "cascaded";
   const { state, selectImage, analyze, setMode } = useReview(backend, imageSource, defaultMode);
@@ -35,6 +39,10 @@ export function App({ backend, imageSource }: { backend: VisionGuardBackend; ima
   const hasImage = "image" in state && Boolean(state.image);
   const busy = state.status === "submitting" || state.status === "analyzing";
   const completed = state.status === "completed" || state.status === "partial";
+
+  if (runtime && runtimeStatus.snapshot?.state !== "ready") {
+    return <RuntimeSetup snapshot={runtimeStatus.snapshot} onRestart={runtimeStatus.restart} />;
+  }
 
   return <AppShell health={health} onSettings={() => setSettingsOpen(true)} onAbout={() => setAboutOpen(true)}><div className={styles.page}>
     <section className={styles.intro}><div><span className="eyebrow">LOCAL-FIRST MULTIMODAL REVIEW</span><h1>让每一次出版审核<br />更清晰、更可追溯</h1><p>融合目标检测、OCR、文本基线与视觉语言模型，用结构化证据辅助内容审核。</p></div><div className="mode-switch" aria-label="审核模式"><button className={state.mode === "cascaded" ? "active" : ""} onClick={() => setMode("cascaded")} disabled={busy}>快速模式<small>智能级联，优先低延迟</small></button><button className={state.mode === "full" ? "active" : ""} onClick={() => setMode("full")} disabled={busy}>深度模式<small>执行完整多模态链路</small></button></div></section>
