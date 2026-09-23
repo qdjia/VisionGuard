@@ -78,6 +78,8 @@ desktop/src-tauri/target/
 # Phase 15 generated local runtime and model bundles
 runtime-build/
 runtime-dist/
+runtime-build-core/
+runtime-dist-core/
 release/
 release-staging/
 models/*

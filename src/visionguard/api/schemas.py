@@ -208,3 +208,4 @@ class MetaResponse(SchemaModel):
     max_concurrent_inference: int
     runtime_version: str | None = None
     model_bundle_version: str | None = None
+    capabilities: dict[str, bool] = Field(default_factory=dict)

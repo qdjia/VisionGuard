@@ -42,8 +42,9 @@ class RuntimeCompatibility(StrictConfigModel):
 
 
 class ModelBundleManifest(StrictConfigModel):
-    schema_version: Literal[1] = 1
-    bundle_version: str = Field(pattern=r"^models-v[0-9]+(?:\.[0-9]+)*$")
+    schema_version: Literal[1, 2] = 1
+    bundle_version: str = Field(pattern=r"^(?:(?:core|vlm)-)?models-v[0-9]+(?:\.[0-9]+)*$")
+    bundle_type: Literal["full", "core", "vlm"] = "full"
     compatible_runtime: RuntimeCompatibility
     models: dict[str, ModelArtifact]
 
@@ -63,6 +64,7 @@ REQUIRED_MODELS = {
     "baseline",
     "vlm",
 }
+CORE_MODELS = REQUIRED_MODELS - {"vlm"}
 
 
 def _version_tuple(value: str) -> tuple[int, ...]:
@@ -119,7 +121,14 @@ def validate_model_bundle(
             components={key: "invalid" for key in components},
             errors=("MODEL_BUNDLE_INVALID",),
         )
-    missing_keys = REQUIRED_MODELS.difference(manifest.models)
+    required = (
+        CORE_MODELS
+        if manifest.bundle_type == "core"
+        else {"vlm"}
+        if manifest.bundle_type == "vlm"
+        else REQUIRED_MODELS
+    )
+    missing_keys = required.difference(manifest.models)
     if missing_keys:
         errors.append("missing manifest entries: " + ", ".join(sorted(missing_keys)))
         for name in missing_keys:
@@ -169,8 +178,17 @@ def validate_model_bundle(
                 elif full_hash and _sha256(child) != item.sha256:
                     components[_component(name)] = "invalid"
                     errors.append(f"{name}: SHA-256 mismatch for {item.path}")
+    if manifest.bundle_type == "core" and "vlm" not in manifest.models:
+        components["vlm"] = "missing"
     status = "ready"
-    if any(value == "missing" for value in components.values()):
+    required_components = (
+        {"detector", "ocr", "baseline"}
+        if manifest.bundle_type == "core"
+        else {"vlm"}
+        if manifest.bundle_type == "vlm"
+        else {"detector", "ocr", "baseline", "vlm"}
+    )
+    if any(components[value] == "missing" for value in required_components):
         status = "missing"
     elif errors:
         status = "invalid"

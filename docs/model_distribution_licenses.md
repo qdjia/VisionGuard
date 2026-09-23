@@ -25,3 +25,7 @@
 5. 由项目所有者或法律顾问复核，不以本审计表替代法律判断。
 
 Release builder 将模型资产标记为 `publishable: false`，公开模式校验必须失败，以防误上传。
+
+## Phase 17 deployment boundary update
+
+The Core Runtime now executes the exported detector through ONNX Runtime and no longer bundles the Ultralytics Python package or detector-side PyTorch/CUDA libraries. ONNX Runtime is MIT-licensed and is listed in `THIRD_PARTY_NOTICES.md`. This changes only the runtime dependency boundary; it does **not** clear the detector weight. Because the weight was derived through the Ultralytics training/export path, its provenance and redistribution permission remain a release blocker pending written confirmation or replacement with a clearly licensed detector.

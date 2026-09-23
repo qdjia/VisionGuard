@@ -39,13 +39,19 @@ class PaddleOCRProvider:
             os.environ.setdefault(
                 "PADDLE_PDX_CACHE_HOME", str(Path("artifacts/paddlex_cache").resolve())
             )
-            # Windows loads overlapping runtime DLLs safely when PyTorch is initialized first.
-            import torch  # noqa: F401, I001
+            requested = config.device.lower()
+            # GPU development/full builds initialize PyTorch first to avoid
+            # overlapping Windows CUDA DLL issues. CPU core builds deliberately
+            # do not depend on PyTorch.
+            if requested != "cpu":
+                try:
+                    import torch  # noqa: F401, I001
+                except ImportError:
+                    pass
             import paddle
             from paddleocr import PaddleOCR
 
             gpu_available = paddle.is_compiled_with_cuda() and paddle.device.cuda.device_count() > 0
-            requested = config.device.lower()
             self.device = "gpu:0" if requested == "auto" and gpu_available else requested
             if self.device == "auto" or (self.device.startswith("gpu") and not gpu_available):
                 self.device = "cpu"

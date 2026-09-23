@@ -28,7 +28,7 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def write_runtime_manifest(root: Path) -> Path:
+def write_runtime_manifest(root: Path, *, profile: str = "full") -> Path:
     files = []
     for item in sorted(root.rglob("*")):
         if item.is_file() and item.name != "runtime-manifest.json":
@@ -45,6 +45,7 @@ def write_runtime_manifest(root: Path) -> Path:
         "platform": "windows",
         "architecture": "x86_64",
         "entrypoint": "visionguard-runtime.exe",
+        "profile": profile,
         "files": files,
     }
     target = root / "runtime-manifest.json"
@@ -103,10 +104,18 @@ def safe_clean(path: Path) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--no-clean", action="store_true")
+    parser.add_argument("--profile", choices=("core", "full"), default="full")
+    parser.add_argument(
+        "--stage-tauri",
+        action="store_true",
+        help="Replace the desktop sidecar staging area after a successful build.",
+    )
     args = parser.parse_args()
+    build_root = BUILD_ROOT if args.profile == "full" else ROOT / "runtime-build-core"
+    dist_root = DIST_ROOT if args.profile == "full" else ROOT / "runtime-dist-core"
     if not args.no_clean:
-        safe_clean(BUILD_ROOT)
-        safe_clean(DIST_ROOT)
+        safe_clean(build_root)
+        safe_clean(dist_root)
     build_environment = os.environ.copy()
     build_environment["YOLO_AUTOINSTALL"] = "false"
     subprocess.run(
@@ -116,31 +125,43 @@ def main() -> None:
             "PyInstaller",
             "--noconfirm",
             "--workpath",
-            str(BUILD_ROOT),
+            str(build_root),
             "--distpath",
-            str(DIST_ROOT),
-            str(ROOT / "packaging" / "runtime" / "visionguard-runtime.spec"),
+            str(dist_root),
+            str(
+                ROOT
+                / "packaging"
+                / "runtime"
+                / (
+                    "visionguard-core-runtime.spec"
+                    if args.profile == "core"
+                    else "visionguard-runtime.spec"
+                )
+            ),
         ],
         cwd=ROOT,
         env=build_environment,
         check=True,
     )
-    source = DIST_ROOT / "visionguard-runtime"
-    executable = source / "visionguard-runtime.exe"
+    runtime_name = "visionguard-core-runtime" if args.profile == "core" else "visionguard-runtime"
+    source = dist_root / runtime_name
+    executable = source / f"{runtime_name}.exe"
     if not executable.is_file():
         raise FileNotFoundError(f"PyInstaller output missing: {executable}")
-    manifest_path = write_runtime_manifest(source)
+    manifest_path = write_runtime_manifest(source, profile=args.profile)
+    staged_executable = None
     triple = target_triple()
-    TAURI_BIN.mkdir(parents=True, exist_ok=True)
-    support = TAURI_BIN / "_internal"
-    if support.exists():
-        shutil.rmtree(support)
-    internal = source / "_internal"
-    if internal.is_dir():
-        link_or_copy_tree(internal, support)
-    staged_executable = TAURI_BIN / f"visionguard-runtime-{triple}.exe"
-    staged_executable.unlink(missing_ok=True)
-    link_or_copy(executable, staged_executable)
+    if args.stage_tauri:
+        TAURI_BIN.mkdir(parents=True, exist_ok=True)
+        support = TAURI_BIN / "_internal"
+        if support.exists():
+            shutil.rmtree(support)
+        internal = source / "_internal"
+        if internal.is_dir():
+            link_or_copy_tree(internal, support)
+        staged_executable = TAURI_BIN / f"visionguard-runtime-{triple}.exe"
+        staged_executable.unlink(missing_ok=True)
+        link_or_copy(executable, staged_executable)
     metadata = {
         "runtime_version": RUNTIME_VERSION,
         "python_version": platform.python_version(),
@@ -150,16 +171,18 @@ def main() -> None:
         "platform": platform.system(),
         "architecture": platform.machine(),
         "target_triple": triple,
+        "profile": args.profile,
     }
-    (TAURI_BIN / "runtime_build.json").write_text(
-        json.dumps(metadata, indent=2) + "\n", encoding="utf-8"
-    )
+    if args.stage_tauri:
+        (TAURI_BIN / "runtime_build.json").write_text(
+            json.dumps(metadata, indent=2) + "\n", encoding="utf-8"
+        )
     size = sum(item.stat().st_size for item in source.rglob("*") if item.is_file())
     print(
         json.dumps(
             {
                 "runtime": str(source),
-                "staged": str(staged_executable),
+                "staged": str(staged_executable) if staged_executable else None,
                 "manifest": str(manifest_path),
                 "size_bytes": size,
             }

@@ -91,3 +91,25 @@ def test_validation_rejects_incompatible_runtime(tmp_path):
     _, result = validate_model_bundle(bundle, runtime_version="1.0.0")
     assert result.status == "invalid"
     assert "RUNTIME_VERSION_MISMATCH" in result.errors
+
+
+def test_core_bundle_is_ready_without_optional_vlm(tmp_path):
+    bundle = _bundle(tmp_path)
+    manifest_path = bundle / "manifest.json"
+    payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    payload.update(
+        {
+            "schema_version": 2,
+            "bundle_version": "core-models-v1",
+            "bundle_type": "core",
+        }
+    )
+    payload["models"].pop("vlm")
+    manifest_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    manifest, result = validate_model_bundle(bundle, runtime_version="0.1.0", full_hash=True)
+
+    assert manifest is not None
+    assert manifest.bundle_type == "core"
+    assert result.status == "ready"
+    assert result.components["vlm"] == "missing"

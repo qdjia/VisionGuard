@@ -50,4 +50,5 @@ async def metadata(
         max_concurrent_inference=container.config.api.max_concurrent_inference,
         runtime_version=container.config.api.runtime_version,
         model_bundle_version=container.config.api.model_bundle_version,
+        capabilities=container.capabilities(),
     )

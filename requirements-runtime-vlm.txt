@@ -1,0 +1,6 @@
+# Optional Advanced AI Pack. Kept separate from the always-installed core runtime.
+transformers>=4.57,<5
+accelerate>=1,<2
+torch>=2.2
+Pillow>=10,<13
+pydantic>=2.7,<3

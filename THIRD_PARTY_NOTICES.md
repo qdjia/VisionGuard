@@ -9,6 +9,7 @@ VisionGuard 自有源代码使用 MIT License。下表记录 Windows GPU 候选�
 | PyInstaller | Python one-folder packaging | GPL-2.0-or-later with bootloader exception — https://pyinstaller.org/en/stable/license.html |
 | FastAPI | Local inference API | MIT — https://github.com/fastapi/fastapi |
 | Uvicorn | Local ASGI server | BSD-3-Clause — https://github.com/encode/uvicorn |
+| ONNX Runtime | Core detector inference runtime | MIT — https://github.com/microsoft/onnxruntime |
 | PyTorch | Tensor and CUDA inference runtime | BSD-style plus bundled third-party notices — https://github.com/pytorch/pytorch/blob/main/LICENSE |
 | Transformers | VLM model runtime | Apache-2.0 — https://github.com/huggingface/transformers |
 | Qwen3-VL-2B-Instruct | Vision-language model weights | Apache-2.0 — https://huggingface.co/Qwen/Qwen3-VL-2B-Instruct |

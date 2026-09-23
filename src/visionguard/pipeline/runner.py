@@ -5,7 +5,7 @@ from time import perf_counter
 
 from visionguard.baseline import TextModerationBaseline, load_baseline_config
 from visionguard.config import load_config
-from visionguard.detection import YOLODetector
+from visionguard.detection import OnnxYoloDetector
 from visionguard.fusion import RiskFusionEngine, load_fusion_config
 from visionguard.moderation.policy import load_policy
 from visionguard.ocr import OCREngine, load_ocr_config
@@ -33,9 +33,14 @@ def build_pipeline(
     config = load_pipeline_config(pipeline_config)
     timings = startup_timings if startup_timings is not None else {}
     started = perf_counter()
-    detector = (
-        YOLODetector(load_config(detector_config).detection) if config.enable_detector else None
-    )
+    detection_config = load_config(detector_config).detection
+    if detection_config.provider == "onnx":
+        detector_class = OnnxYoloDetector
+    else:
+        from visionguard.detection.detector import YOLODetector
+
+        detector_class = YOLODetector
+    detector = detector_class(detection_config) if config.enable_detector else None
     timings["detector"] = (perf_counter() - started) * 1000
     started = perf_counter()
     ocr_engine = OCREngine(load_ocr_config(ocr_config)) if config.enable_ocr else None

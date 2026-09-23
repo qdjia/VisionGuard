@@ -35,6 +35,11 @@ export function App({ backend, imageSource, runtime }: { backend: VisionGuardBac
   }, [theme]);
   useEffect(() => localStorage.setItem("visionguard.showTechnical", String(showTechnical)), [showTechnical]);
   useEffect(() => localStorage.setItem("visionguard.defaultMode", state.mode), [state.mode]);
+  useEffect(() => {
+    if (meta?.capabilities?.deep_review === false && state.mode === "full") {
+      setMode("cascaded");
+    }
+  }, [meta?.capabilities?.deep_review, setMode, state.mode]);
 
   const hasImage = "image" in state && Boolean(state.image);
   const busy = state.status === "submitting" || state.status === "analyzing";
@@ -46,6 +51,7 @@ export function App({ backend, imageSource, runtime }: { backend: VisionGuardBac
 
   return <AppShell health={health} onSettings={() => setSettingsOpen(true)} onAbout={() => setAboutOpen(true)}><div className={styles.page}>
     <section className={styles.intro}><div><span className="eyebrow">LOCAL-FIRST MULTIMODAL REVIEW</span><h1>让每一次出版审核<br />更清晰、更可追溯</h1><p>融合目标检测、OCR、文本基线与视觉语言模型，用结构化证据辅助内容审核。</p></div><div className="mode-switch" aria-label="审核模式"><button className={state.mode === "cascaded" ? "active" : ""} onClick={() => setMode("cascaded")} disabled={busy}>快速模式<small>智能级联，优先低延迟</small></button><button className={state.mode === "full" ? "active" : ""} onClick={() => setMode("full")} disabled={busy}>深度模式<small>执行完整多模态链路</small></button></div></section>
+    {meta?.capabilities && <section className="panel" aria-label="Advanced AI status"><div className="section-heading"><div><span className="eyebrow">ADVANCED AI</span><h2>{meta.capabilities.vlm_available ? "已安装" : "未安装"}</h2></div><span className={meta.capabilities.vlm_available ? "status-dot online" : "status-dot"} aria-hidden="true" /></div>{!meta.capabilities.vlm_available && <p>快速审核可正常使用；深度审核需要安装 Advanced AI Pack。</p>}</section>}
     {!hasImage && <ImageDropzone onSelect={() => void selectImage()} />}
     {hasImage && !completed && <div className="selection-grid"><section className="panel"><ImagePreview image={state.image!} /></section><section className="panel action-card"><span className="eyebrow">READY TO REVIEW</span><h2>{state.image!.name}</h2><p>{state.mode === "cascaded" ? "系统将先执行快速审核，仅在证据不足或冲突时调用 VLM。" : "系统将执行包括 VLM 在内的完整分析链路。"}</p>{busy ? <AnalysisProgress startedAt={state.startedAt} /> : <><button className="button button-primary button-large" type="button" onClick={() => void analyze()} disabled={health !== "ready"}>开始审核</button><button className="button button-secondary" type="button" onClick={() => void selectImage()}>更换图片</button>{health !== "ready" && <div className="warning"><span>AI Runtime 尚未就绪。</span><button type="button" onClick={() => void refresh()}>重新检测</button></div>}</>}</section></div>}
     {completed && <><div className="workspace-actions"><button className="button button-secondary" onClick={() => void selectImage()}>审核另一张图片</button></div><ReviewWorkspace image={state.image} review={state.result} showTechnical={showTechnical} /></>}

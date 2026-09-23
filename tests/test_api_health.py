@@ -13,6 +13,12 @@ def test_liveness_readiness_meta_and_openapi():
     assert ready.status_code == 200
     assert all(ready.json()["components"].values())
     assert meta.json()["model_identifiers"]["detector"] == "mock.pt"
+    assert meta.json()["capabilities"] == {
+        "core_ready": True,
+        "vlm_available": True,
+        "fast_review": True,
+        "deep_review": True,
+    }
     assert "D:" not in meta.text
     assert openapi.status_code == 200
     assert "/v1/review" in openapi.json()["paths"]

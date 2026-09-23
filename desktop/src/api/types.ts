@@ -155,6 +155,12 @@ export interface MetaResponse {
   max_concurrent_inference: number;
   model_bundle_version?: string | null;
   runtime_version?: string | null;
+  capabilities?: {
+    core_ready: boolean;
+    vlm_available: boolean;
+    fast_review: boolean;
+    deep_review: boolean;
+  };
 }
 
 export interface SelectedImage {

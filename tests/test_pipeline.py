@@ -206,6 +206,25 @@ def test_vlm_failure_never_defaults_to_low(policy, tmp_path):
     assert result.vlm is None
 
 
+def test_core_only_deep_review_is_partial_and_fail_safe(policy, tmp_path):
+    calls = []
+    pipeline = MultimodalReviewPipeline(
+        FakeDetector(calls),
+        FakeOCR(calls),
+        FakeBaseline(calls),
+        None,
+        policy,
+        PipelineConfig(save_artifacts=False, enable_vlm=False),
+        fusion_engine=RiskFusionEngine(load_fusion_config("configs/fusion.yaml")),
+    )
+    result = pipeline.run(image())
+    assert calls == ["detector", "ocr", "baseline"]
+    assert result.review_status == "partial"
+    assert result.final.risk_level != "low"
+    assert result.final.requires_manual_review
+    assert result.module_status["vlm"].error_message == "Advanced AI Pack is not installed"
+
+
 def test_image_load_is_fatal_and_fail_fast_stops(policy, tmp_path):
     pipeline, _, _ = make_pipeline(policy, tmp_path)
     with pytest.raises(PipelineFatalError) as fatal:

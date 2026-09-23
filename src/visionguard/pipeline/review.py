@@ -10,6 +10,7 @@ from uuid import uuid4
 import numpy as np
 
 from visionguard.fusion import RiskFusionEngine, build_fusion_signals
+from visionguard.fusion.schemas import FusionReasonCode
 from visionguard.moderation.policy import ModerationPolicy
 from visionguard.pipeline.adapters import (
     DetectorProtocol,
@@ -42,6 +43,7 @@ from visionguard.routing.schemas import (
     RoutingReasonCode,
     RoutingSignals,
 )
+from visionguard.schemas import RiskLevel
 from visionguard.utils.image import ImageInput, load_image
 from visionguard.vlm import VLMProvider, build_context
 
@@ -247,9 +249,39 @@ class MultimodalReviewPipeline:
             self.fusion_engine.config,
         )
         fusion = self.fusion_engine.decide(fusion_signals)
+        vlm_required_but_unavailable = (
+            routing.call_vlm
+            and (not self.config.enable_vlm or self.vlm_provider is None)
+            and any(status.status == ModuleState.SUCCESS for status in statuses.values())
+        )
+        if vlm_required_but_unavailable:
+            reason_codes = list(fusion.reason_codes)
+            if FusionReasonCode.INSUFFICIENT_EVIDENCE not in reason_codes:
+                reason_codes.append(FusionReasonCode.INSUFFICIENT_EVIDENCE)
+            fusion = fusion.model_copy(
+                update={
+                    "risk_level": RiskLevel.MEDIUM
+                    if fusion.risk_level == RiskLevel.LOW
+                    else fusion.risk_level,
+                    "requires_manual_review": True,
+                    "reason": "Advanced AI Pack is required for this review.",
+                    "reason_codes": reason_codes,
+                    "explanation": (
+                        fusion.explanation
+                        + " The route requires VLM evidence, but the Advanced AI Pack "
+                        "is not installed; the result is fail-safe and requires manual review."
+                    ),
+                }
+            )
+            statuses["vlm"] = ReviewModuleStatus(
+                status=ModuleState.SKIPPED,
+                error_message="Advanced AI Pack is not installed",
+            )
         fusion_ms += (perf_counter() - fusion_started) * 1000
         final = fusion
-        review_status = self._review_status(statuses)
+        review_status = (
+            ReviewStatus.PARTIAL if vlm_required_but_unavailable else self._review_status(statuses)
+        )
         decision_source = DecisionSource.FUSION
         aggregation_ms = (perf_counter() - aggregation_started) * 1000
         timing = PipelineTiming(
@@ -411,7 +443,10 @@ class MultimodalReviewPipeline:
     def _decide_route(self, signals: RoutingSignals) -> RoutingDecision:
         return RoutingDecision(
             route=Route.FULL_PIPELINE,
-            call_vlm=self.config.enable_vlm,
+            # Full/deep review semantically requires VLM even when the optional
+            # pack is absent. Keeping this intent lets the fail-safe boundary
+            # return PARTIAL instead of silently treating core-only as complete.
+            call_vlm=True,
             reason_codes=[RoutingReasonCode.FULL_PIPELINE],
             explanation="Phase 7 full pipeline always calls VLM when it is enabled.",
             signals=signals,

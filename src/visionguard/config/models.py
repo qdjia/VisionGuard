@@ -1,6 +1,7 @@
 """Strongly typed configuration models shared by all pipeline stages."""
 
 from pathlib import Path
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -19,6 +20,7 @@ class ProjectConfig(StrictConfigModel):
 
 
 class DetectionConfig(StrictConfigModel):
+    provider: Literal["ultralytics", "onnx"] = "ultralytics"
     classes_file: Path
     class_names: tuple[str, ...] = ()
     model_path: Path
@@ -31,6 +33,7 @@ class DetectionConfig(StrictConfigModel):
     warmup_enabled: bool = True
     warmup_runs: int = Field(default=1, ge=1, le=2)
     class_name_mapping: dict[str, str] = Field(default_factory=dict)
+    onnx_execution_provider: Literal["auto", "cpu", "cuda"] = "auto"
 
     @model_validator(mode="after")
     def validate_classes(self) -> "DetectionConfig":

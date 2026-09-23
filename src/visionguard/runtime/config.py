@@ -96,6 +96,11 @@ def materialize_api_config(
     detector["project"]["checkpoints_dir"] = str(model_paths["detector"].parent)
     detector["detection"]["classes_file"] = "classes.yaml"
     detector["detection"]["model_path"] = str(model_paths["detector"])
+    if model_paths["detector"].suffix.lower() == ".onnx":
+        detector["detection"]["provider"] = "onnx"
+        detector["detection"]["onnx_execution_provider"] = (
+            "cpu" if runtime.runtime_edition == "cpu" else "auto"
+        )
     _write_yaml(generated / "detector.yaml", detector)
 
     ocr = deepcopy(_read_yaml(source_configs / "ocr.yaml"))
@@ -105,6 +110,7 @@ def materialize_api_config(
             "text_recognition_model_dir": str(model_paths["ocr_recognition"]),
             "textline_orientation_model_dir": str(model_paths["ocr_orientation"]),
             "local_models_only": True,
+            "device": "cpu" if runtime.runtime_edition == "cpu" else "auto",
         }
     )
     _write_yaml(generated / "ocr.yaml", ocr)
@@ -117,10 +123,11 @@ def materialize_api_config(
         baseline["baseline"][key] = str(model_paths["baseline"] / f"unused-{key}.csv")
     _write_yaml(generated / "baseline.yaml", baseline)
 
+    vlm_available = "vlm" in model_paths
     vlm = deepcopy(_read_yaml(source_configs / "local_vlm.yaml"))
     vlm["vlm"].update(
         {
-            "model_name_or_path": str(model_paths["vlm"]),
+            "model_name_or_path": str(model_paths.get("vlm", run_dir / "vlm-not-installed")),
             "local_files_only": True,
             "cache_dir": str(runtime.cache_root / "huggingface"),
             "prompts_dir": str(resource_root / "prompts" / "vlm"),
@@ -138,6 +145,7 @@ def materialize_api_config(
                 "save_input_copy": False,
                 "save_intermediate_json": runtime.save_artifacts,
                 "save_visualizations": runtime.save_artifacts,
+                "enable_vlm": vlm_available,
             }
         )
         _write_yaml(generated / name, pipeline)

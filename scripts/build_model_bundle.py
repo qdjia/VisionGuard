@@ -92,6 +92,7 @@ def parser() -> argparse.ArgumentParser:
         default=root / "artifacts" / "modelscope" / "Qwen3-VL-2B-Instruct",
     )
     value.add_argument("--bundle-version", default="models-v1")
+    value.add_argument("--profile", choices=("core", "vlm", "full"), default="full")
     value.add_argument("--hardlink", action="store_true", help="Use hardlinks when possible")
     value.add_argument("--force", action="store_true")
     return value
@@ -117,17 +118,22 @@ def main() -> None:
         "baseline": args.baseline.resolve(),
         "vlm": args.vlm.resolve(),
     }
+    if args.profile == "core":
+        sources.pop("vlm")
+    elif args.profile == "vlm":
+        sources = {"vlm": sources["vlm"]}
     missing = [f"{name}: {path}" for name, path in sources.items() if not path.exists()]
     if missing:
         raise FileNotFoundError("missing model sources:\n" + "\n".join(missing))
-    destinations = {
-        "detector": output / "detector" / "model.pt",
+    all_destinations = {
+        "detector": output / "detector" / f"model{args.detector.suffix.lower()}",
         "ocr_detection": output / "ocr" / "text_detection",
         "ocr_recognition": output / "ocr" / "text_recognition",
         "ocr_orientation": output / "ocr" / "textline_orientation",
-        "baseline": output / "baseline" / sources["baseline"].name,
+        "baseline": output / "baseline" / args.baseline.name,
         "vlm": output / "vlm",
     }
+    destinations = {name: all_destinations[name] for name in sources}
     output.mkdir(parents=True)
     for name, source in sources.items():
         target = destinations[name]
@@ -136,8 +142,9 @@ def main() -> None:
         else:
             copy_tree(source, target, hardlink=args.hardlink)
     manifest = {
-        "schema_version": 1,
+        "schema_version": 2,
         "bundle_version": args.bundle_version,
+        "bundle_type": args.profile,
         "compatible_runtime": {"min_inclusive": "0.1.0", "max_exclusive": "0.2.0"},
         "models": {name: artifact(path, output) for name, path in destinations.items()},
     }

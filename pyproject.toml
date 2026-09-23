@@ -39,6 +39,16 @@ dev = [
 packaging = [
     "pyinstaller==6.22.3",
 ]
+runtime-core = [
+    "onnxruntime>=1.26,<2",
+    "paddleocr>=3.7,<4",
+    "paddlepaddle>=3.2,<4",
+]
+runtime-vlm = [
+    "transformers>=4.57,<5",
+    "accelerate>=1,<2",
+    "torch>=2.2",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]

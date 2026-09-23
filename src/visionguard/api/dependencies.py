@@ -78,6 +78,19 @@ class ServiceContainer:
             "cascaded_pipeline": cascaded is not None,
         }
 
+    def capabilities(self) -> dict[str, bool]:
+        components = self.components()
+        core_ready = all(
+            components[name] for name in ("detector", "ocr", "baseline", "routing", "fusion")
+        )
+        vlm_available = components["vlm"]
+        return {
+            "core_ready": core_ready,
+            "vlm_available": vlm_available,
+            "fast_review": core_ready,
+            "deep_review": core_ready and vlm_available,
+        }
+
     def track(self, task: asyncio.Task) -> None:
         self.active_tasks.add(task)
         task.add_done_callback(self._task_done)
