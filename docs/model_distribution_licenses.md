@@ -29,3 +29,7 @@ Release builder 将模型资产标记为 `publishable: false`，公开模式校�
 ## Phase 17 deployment boundary update
 
 The Core Runtime now executes the exported detector through ONNX Runtime and no longer bundles the Ultralytics Python package or detector-side PyTorch/CUDA libraries. ONNX Runtime is MIT-licensed and is listed in `THIRD_PARTY_NOTICES.md`. This changes only the runtime dependency boundary; it does **not** clear the detector weight. Because the weight was derived through the Ultralytics training/export path, its provenance and redistribution permission remain a release blocker pending written confirmation or replacement with a clearly licensed detector.
+
+## Phase 18 component boundary update
+
+Transformers、PyTorch/CUDA 和 Qwen 权重现在只属于可选 VLM Runtime / VLM Models，不再进入 Core。技术拆分不会自动授权公开再分发：VLM Runtime 仍需基于最终 PyInstaller 文件生成 SBOM 并逐项核对 PyTorch wheel 内第三方/NVIDIA 文件；VLM Models 必须携带 Qwen Apache-2.0 文本、模型卡、来源 revision 与完整哈希。分卷只解决托管大小，不改变许可义务。Core detector 权重阻塞仍未解除，因此当前 component manifest 继续标记 `public_release_ready: false`。

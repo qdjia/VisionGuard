@@ -37,7 +37,7 @@ def validate_release(root: Path, *, public: bool = False) -> list[str]:
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
         return [f"invalid release manifest: {exc}"]
-    if manifest.get("schema_version") != 1:
+    if manifest.get("schema_version") not in {1, 2}:
         errors.append("unsupported release manifest schema")
     release_version = str(manifest.get("release_version", ""))
     app_version = str(manifest.get("app_version", ""))

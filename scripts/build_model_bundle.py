@@ -148,6 +148,14 @@ def main() -> None:
         "compatible_runtime": {"min_inclusive": "0.1.0", "max_exclusive": "0.2.0"},
         "models": {name: artifact(path, output) for name, path in destinations.items()},
     }
+    if args.profile == "vlm":
+        manifest.update(
+            {
+                "compatible_api_major": 1,
+                "compatible_prompt_versions": ["v1"],
+                "quantization": "none-bf16-reference",
+            }
+        )
     manifest_path = output / "manifest.json"
     manifest_path.write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",

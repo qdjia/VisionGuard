@@ -123,11 +123,14 @@ def materialize_api_config(
         baseline["baseline"][key] = str(model_paths["baseline"] / f"unused-{key}.csv")
     _write_yaml(generated / "baseline.yaml", baseline)
 
-    vlm_available = "vlm" in model_paths
     vlm = deepcopy(_read_yaml(source_configs / "local_vlm.yaml"))
     vlm["vlm"].update(
         {
-            "model_name_or_path": str(model_paths.get("vlm", run_dir / "vlm-not-installed")),
+            "provider": "remote",
+            "model_name_or_path": "optional-advanced-ai",
+            "endpoint": None,
+            "session_token": None,
+            "api_version": 1,
             "local_files_only": True,
             "cache_dir": str(runtime.cache_root / "huggingface"),
             "prompts_dir": str(resource_root / "prompts" / "vlm"),
@@ -145,7 +148,9 @@ def materialize_api_config(
                 "save_input_copy": False,
                 "save_intermediate_json": runtime.save_artifacts,
                 "save_visualizations": runtime.save_artifacts,
-                "enable_vlm": vlm_available,
+                # A lightweight remote registry is always present. Availability
+                # changes at runtime without rebuilding either pipeline.
+                "enable_vlm": True,
             }
         )
         _write_yaml(generated / name, pipeline)

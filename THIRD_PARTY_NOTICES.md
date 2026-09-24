@@ -1,6 +1,6 @@
 # Third-Party Notices
 
-VisionGuard 自有源代码使用 MIT License。下表记录 Windows GPU 候选包的主要第三方组件；各组件继续适用其原始许可。本文件不重新许可任何第三方代码或模型。
+VisionGuard 自有源代码使用 MIT License。下表记录组件化 Windows 候选包的主要第三方组件；各组件继续适用其原始许可。本文件不重新许可任何第三方代码或模型。PyTorch、Transformers 与 Qwen 仅属于可选 Advanced AI 组件，Core 不包含它们。
 
 | Component | Purpose | License / upstream |
 |---|---|---|
@@ -23,4 +23,4 @@ VisionGuard 自有源代码使用 MIT License。下表记录 Windows GPU 候选�
 
 The public redistribution audit is **not cleared**. In particular, the current Ultralytics-based detector and the NVIDIA/CUDA binary inventory remain release blockers. See `docs/model_distribution_licenses.md`.
 
-Before any public binary release, generate a frozen dependency/SBOM inventory from the exact packaged Runtime and include all license and NOTICE files required by that inventory. This candidate notice is an engineering audit record, not legal advice.
+Before any public binary release, generate separate frozen dependency/SBOM inventories for Core Runtime and VLM Runtime, and include all license and NOTICE files required by each component. Split model parts remain one logical Qwen asset and must ship the same license, model-card and revision metadata. This candidate notice is an engineering audit record, not legal advice.

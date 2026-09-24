@@ -4,11 +4,9 @@ import html
 import logging
 from time import perf_counter
 
-import cv2
 from PIL import Image
 
 from visionguard.schemas import BoundingBox
-from visionguard.utils.image import load_image
 from visionguard.vlm.base import VLMProvider
 from visionguard.vlm.exceptions import VLMError, VLMInferenceError, VLMParseError, VLMTimeoutError
 from visionguard.vlm.parser import parse_result
@@ -45,9 +43,17 @@ class StructuredProvider(VLMProvider):
     def _analyze(self, image, context, policy):
         start = perf_counter()
         deadline = start + self.config.timeout_seconds
-        original = load_image(image)
-        height, width = original.shape[:2]
-        prepared_image = Image.fromarray(cv2.cvtColor(original, cv2.COLOR_BGR2RGB))
+        if isinstance(image, Image.Image):
+            prepared_image = image.convert("RGB")
+            width, height = prepared_image.size
+        else:
+            import cv2
+
+            from visionguard.utils.image import load_image
+
+            original = load_image(image)
+            height, width = original.shape[:2]
+            prepared_image = Image.fromarray(cv2.cvtColor(original, cv2.COLOR_BGR2RGB))
         prepared_image.thumbnail((self.config.image_max_side, self.config.image_max_side))
         prepared = perf_counter()
         prompt, metadata = self.builder.build(context, policy)

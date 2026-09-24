@@ -27,6 +27,22 @@ export interface RuntimeSnapshot {
   last_exit_code: number | null;
 }
 
+export type AdvancedAIState =
+  | "not_installed" | "installed" | "stopped" | "starting"
+  | "loading_model" | "ready" | "failed" | "stopping";
+
+export interface AdvancedAISnapshot {
+  state: AdvancedAIState;
+  endpoint: string | null;
+  pid: number | null;
+  runtime_version: string | null;
+  model_bundle_version: string | null;
+  model_loaded: boolean;
+  model_init_count: number;
+  error_code: string | null;
+  error_message: string | null;
+}
+
 export interface ModelBundleInfo {
   source_kind: "directory" | "zip";
   bundle_version: string;
@@ -87,4 +103,8 @@ export interface RuntimeController {
   inspectRuntimeBundle(source: string): Promise<RuntimePackageInfo>;
   installRuntimeBundle(source: string): Promise<RuntimeInstallResult>;
   runtimeInstallStatus(): Promise<RuntimeInstallStatus>;
+  advancedAIStatus?(): Promise<AdvancedAISnapshot>;
+  startAdvancedAI?(): Promise<void>;
+  restartAdvancedAI?(): Promise<void>;
+  stopAdvancedAI?(): Promise<void>;
 }

@@ -3,7 +3,7 @@ mod runtime;
 
 use models::{ModelBundleInfo, ModelInstallResult, ModelInstallStatus, ModelInstaller};
 use models::{RuntimeInstallResult, RuntimeInstallStatus, RuntimeInstaller, RuntimePackageInfo};
-use runtime::{RuntimeManager, RuntimeSnapshot};
+use runtime::{AdvancedAIManager, AdvancedAISnapshot, RuntimeManager, RuntimeSnapshot};
 use std::sync::Arc;
 use tauri::{Manager, WindowEvent};
 
@@ -21,6 +21,33 @@ fn get_runtime_endpoint(manager: tauri::State<'_, Arc<RuntimeManager>>) -> Resul
 async fn restart_runtime(manager: tauri::State<'_, Arc<RuntimeManager>>) -> Result<(), String> {
     let manager = Arc::clone(manager.inner());
     manager.restart().await.map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+async fn get_advanced_ai_status(
+    manager: tauri::State<'_, Arc<AdvancedAIManager>>,
+) -> Result<AdvancedAISnapshot, String> {
+    Ok(manager.refresh().await)
+}
+
+#[tauri::command]
+async fn start_advanced_ai(
+    manager: tauri::State<'_, Arc<AdvancedAIManager>>,
+) -> Result<(), String> {
+    manager.start().await
+}
+
+#[tauri::command]
+async fn restart_advanced_ai(
+    manager: tauri::State<'_, Arc<AdvancedAIManager>>,
+) -> Result<(), String> {
+    manager.restart().await
+}
+
+#[tauri::command]
+async fn stop_advanced_ai(manager: tauri::State<'_, Arc<AdvancedAIManager>>) -> Result<(), String> {
+    manager.stop().await;
+    Ok(())
 }
 
 #[tauri::command]
@@ -90,6 +117,10 @@ pub fn run() {
             get_runtime_status,
             get_runtime_endpoint,
             restart_runtime,
+            get_advanced_ai_status,
+            start_advanced_ai,
+            restart_advanced_ai,
+            stop_advanced_ai,
             get_model_install_status,
             inspect_model_bundle,
             install_model_bundle,
@@ -112,7 +143,9 @@ pub fn run() {
             if should_stop {
                 let handle = window.app_handle().clone();
                 let manager = Arc::clone(handle.state::<Arc<RuntimeManager>>().inner());
+                let advanced = Arc::clone(handle.state::<Arc<AdvancedAIManager>>().inner());
                 tauri::async_runtime::spawn(async move {
+                    advanced.stop().await;
                     manager.stop().await;
                     handle.exit(0);
                 });
@@ -120,13 +153,17 @@ pub fn run() {
         })
         .setup(|app| {
             let manager = RuntimeManager::new(app.handle().clone());
+            let advanced = AdvancedAIManager::new(app.handle().clone(), Arc::clone(&manager));
             let installer = ModelInstaller::new(app.handle().clone());
             let runtime_installer = RuntimeInstaller::new(app.handle().clone());
             app.manage(Arc::clone(&manager));
+            app.manage(Arc::clone(&advanced));
             app.manage(installer);
             app.manage(runtime_installer);
             tauri::async_runtime::spawn(async move {
-                let _ = manager.start().await;
+                if manager.start().await.is_ok() {
+                    let _ = advanced.start().await;
+                }
             });
             Ok(())
         })
@@ -139,6 +176,10 @@ pub fn run() {
         );
         if app_exiting {
             if let Some(manager) = handle.try_state::<Arc<RuntimeManager>>() {
+                if let Some(advanced) = handle.try_state::<Arc<AdvancedAIManager>>() {
+                    let advanced = Arc::clone(advanced.inner());
+                    tauri::async_runtime::block_on(async move { advanced.stop().await });
+                }
                 let manager = Arc::clone(manager.inner());
                 tauri::async_runtime::block_on(async move { manager.stop().await });
             }

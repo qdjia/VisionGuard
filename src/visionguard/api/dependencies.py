@@ -71,7 +71,7 @@ class ServiceContainer:
             "detector": self.detector is not None,
             "ocr": self.ocr is not None,
             "baseline": self.baseline is not None,
-            "vlm": self.vlm is not None,
+            "vlm": self.vlm is not None and bool(getattr(self.vlm, "available", True)),
             "routing": self.routing_policy is not None,
             "fusion": self.fusion_engine is not None,
             "full_pipeline": full is not None,
@@ -83,7 +83,7 @@ class ServiceContainer:
         core_ready = all(
             components[name] for name in ("detector", "ocr", "baseline", "routing", "fusion")
         )
-        vlm_available = components["vlm"]
+        vlm_available = components["vlm"] and bool(getattr(self.vlm, "available", True))
         return {
             "core_ready": core_ready,
             "vlm_available": vlm_available,

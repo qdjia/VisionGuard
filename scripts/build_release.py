@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DESKTOP = ROOT / "desktop"
 TAURI = DESKTOP / "src-tauri"
 RELEASE_ROOT = ROOT / "release"
-MODEL_ROOT = ROOT / "models" / "models-v1"
+MODEL_ROOT = ROOT / "models" / "core-models-v1"
 SEMVER = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?$")
 GITHUB_ASSET_LIMIT = 2 * 1024**3
 
@@ -67,7 +67,7 @@ def package_models(output: Path) -> tuple[Path, str, int]:
     manifest_path = MODEL_ROOT / "manifest.json"
     if not manifest_path.is_file():
         raise FileNotFoundError(
-            "models/models-v1 is missing; run scripts/build_model_bundle.py first"
+            "models/core-models-v1 is missing; build the Core model bundle first"
         )
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     bundle_version = str(manifest["bundle_version"])
@@ -81,14 +81,14 @@ def package_models(output: Path) -> tuple[Path, str, int]:
 
 
 def package_runtime(output: Path) -> tuple[Path, str, int]:
-    runtime_root = ROOT / "runtime-dist" / "visionguard-runtime"
+    runtime_root = ROOT / "runtime-dist-core" / "visionguard-core-runtime"
     manifest_path = runtime_root / "runtime-manifest.json"
     if not manifest_path.is_file():
         raise FileNotFoundError("runtime manifest is missing; run scripts/build_runtime.py first")
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     version = str(manifest["runtime_version"])
     directory_name = f"runtime-v{version}"
-    archive = output / f"VisionGuard-Runtime-GPU-{version}-windows-x64.zip"
+    archive = output / f"VisionGuard-Core-Runtime-{version}-windows-x64.zip"
     with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_STORED, allowZip64=True) as target:
         for item in sorted(runtime_root.rglob("*")):
             if item.is_file():
@@ -179,22 +179,22 @@ def main() -> None:
     output.mkdir(parents=True, exist_ok=True)
 
     if not args.skip_runtime:
-        run([sys.executable, "scripts/build_runtime.py"])
+        run([sys.executable, "scripts/build_runtime.py", "--profile", "core"])
     if not args.skip_installer:
         run(["npm.cmd", "run", "tauri:build:release"], cwd=DESKTOP)
 
     assets: list[dict[str, object]] = []
     installer_source = find_installer()
-    installer = output / f"VisionGuard-Setup-GPU-{args.version}.exe"
+    installer = output / f"VisionGuard-Setup-{args.version}.exe"
     shutil.copy2(installer_source, installer)
-    assets.append(asset_record(installer, kind="windows_gpu_installer", publishable=True))
+    assets.append(asset_record(installer, kind="windows_installer", publishable=True))
 
     runtime_archive, runtime_version, unpacked_runtime_size = package_runtime(output)
     assets.append(
         asset_record(
             runtime_archive,
-            kind="windows_gpu_runtime",
-            publishable=False,
+            kind="core_runtime",
+            publishable=True,
         )
     )
 
@@ -205,7 +205,7 @@ def main() -> None:
         assets.append(
             asset_record(
                 model_archive,
-                kind="model_bundle",
+                kind="core_models",
                 # Local packaging is permitted for verification; public redistribution is blocked.
                 publishable=False,
             )
@@ -222,7 +222,7 @@ def main() -> None:
     checksums = write_checksums(output, assets)
     notes = write_release_notes(output, args.version, assets)
     manifest = {
-        "schema_version": 1,
+        "schema_version": 2,
         "release_version": args.version,
         "release_channel": "release_candidate",
         "generated_at": datetime.now(UTC).isoformat(),
@@ -235,7 +235,13 @@ def main() -> None:
         "prompt_version": "v1",
         "platform": "windows",
         "architecture": "x86_64",
-        "edition": "gpu",
+        "edition": "componentized_cpu_core",
+        "components": {
+            "core_runtime": {"required": True, "version": runtime_version},
+            "core_models": {"required": True, "version": model_version},
+            "vlm_runtime": {"required": False, "version": None},
+            "vlm_models": {"required": False, "version": None},
+        },
         "distribution": {
             "installer": "thin_nsis_current_user",
             "runtime": "separate_local_import",

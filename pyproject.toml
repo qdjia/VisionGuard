@@ -29,6 +29,7 @@ dependencies = [
 
 [project.scripts]
 visionguard-runtime = "visionguard.runtime.main:main"
+visionguard-vlm-runtime = "visionguard.vlm_runtime.main:main"
 
 [project.optional-dependencies]
 dev = [

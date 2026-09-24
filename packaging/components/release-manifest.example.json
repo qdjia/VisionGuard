@@ -1,0 +1,16 @@
+{
+  "schema_version": 2,
+  "release_version": "0.1.0",
+  "components": {
+    "desktop": {"required": true, "version": "0.1.0"},
+    "core_runtime": {"required": true, "version": "0.1.0", "api_version": "v1"},
+    "core_models": {"required": true, "version": "core-models-v1"},
+    "vlm_runtime": {"required": false, "version": "0.1.0", "api_version": 1},
+    "vlm_models": {
+      "required": false,
+      "version": "vlm-models-v1",
+      "split_strategy": "ordered_parts_with_manifest_and_sha256"
+    }
+  },
+  "public_release_ready": false
+}

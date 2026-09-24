@@ -80,6 +80,8 @@ runtime-build/
 runtime-dist/
 runtime-build-core/
 runtime-dist-core/
+runtime-build-vlm/
+runtime-dist-vlm/
 release/
 release-staging/
 models/*

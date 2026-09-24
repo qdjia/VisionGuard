@@ -251,7 +251,12 @@ class MultimodalReviewPipeline:
         fusion = self.fusion_engine.decide(fusion_signals)
         vlm_required_but_unavailable = (
             routing.call_vlm
-            and (not self.config.enable_vlm or self.vlm_provider is None)
+            and (
+                not self.config.enable_vlm
+                or self.vlm_provider is None
+                or not bool(getattr(self.vlm_provider, "available", True))
+                or statuses["vlm"].status == ModuleState.FAILED
+            )
             and any(status.status == ModuleState.SUCCESS for status in statuses.values())
         )
         if vlm_required_but_unavailable:

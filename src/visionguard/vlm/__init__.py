@@ -10,6 +10,10 @@ def create_provider(config) -> VLMProvider:
         from visionguard.vlm.providers.mock import MockVLMProvider
 
         return MockVLMProvider(config)
+    if config.provider == "remote":
+        from visionguard.vlm.providers.remote import RemoteVLMProvider
+
+        return RemoteVLMProvider(config)
     from visionguard.vlm.providers.local import LocalVLMProvider
 
     return LocalVLMProvider(config)

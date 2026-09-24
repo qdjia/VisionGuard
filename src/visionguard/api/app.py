@@ -7,6 +7,7 @@ from uuid import uuid4
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 
 from visionguard.api.config import APIConfig, load_api_config
 from visionguard.api.errors import APIErrorCode, APIServiceError
@@ -18,6 +19,11 @@ from visionguard.pipeline.exceptions import PipelineError
 
 LOGGER = logging.getLogger(__name__)
 DEFAULT_CONFIG = Path(__file__).resolve().parents[3] / "configs" / "api.yaml"
+
+
+class VLMEndpointRegistration(BaseModel):
+    endpoint: str
+    session_token: str
 
 
 def _request_id(request: Request) -> str:
@@ -82,6 +88,37 @@ def create_app(
                 raise HTTPException(status_code=404)
             runtime_control.request_shutdown()
             return {"status": "stopping"}
+
+        @app.put("/_runtime/vlm", include_in_schema=False)
+        async def register_vlm(
+            registration: VLMEndpointRegistration,
+            request: Request,
+            x_visionguard_control: str | None = Header(default=None),
+        ):
+            client_host = request.client.host if request.client is not None else ""
+            if not runtime_control.authorized(client_host, x_visionguard_control):
+                raise HTTPException(status_code=404)
+            container = getattr(request.app.state, "services", None)
+            provider = getattr(container, "vlm", None)
+            if provider is None or not hasattr(provider, "configure"):
+                raise HTTPException(status_code=409, detail="remote VLM provider is unavailable")
+            return {
+                "status": "registered",
+                "meta": provider.configure(registration.endpoint, registration.session_token),
+            }
+
+        @app.delete("/_runtime/vlm", include_in_schema=False)
+        async def unregister_vlm(
+            request: Request,
+            x_visionguard_control: str | None = Header(default=None),
+        ):
+            client_host = request.client.host if request.client is not None else ""
+            if not runtime_control.authorized(client_host, x_visionguard_control):
+                raise HTTPException(status_code=404)
+            provider = getattr(getattr(request.app.state, "services", None), "vlm", None)
+            if provider is not None and hasattr(provider, "clear"):
+                provider.clear()
+            return {"status": "unregistered"}
 
     @app.exception_handler(APIServiceError)
     async def handle_service_error(request: Request, exc: APIServiceError):

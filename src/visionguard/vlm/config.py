@@ -8,7 +8,7 @@ from visionguard.config.models import StrictConfigModel
 
 
 class VLMConfig(StrictConfigModel):
-    provider: Literal["local", "mock"] = "local"
+    provider: Literal["local", "mock", "remote"] = "local"
     model_name_or_path: str = "Qwen/Qwen3-VL-2B-Instruct"
     model_revision: str | None = None
     device: str = "auto"
@@ -30,6 +30,9 @@ class VLMConfig(StrictConfigModel):
     artifacts_dir: Path = Path("artifacts/vlm")
     experiment_name: str = Field(default="qwen3_vl_2b_v1", pattern=r"^[a-z0-9][a-z0-9_-]{4,79}$")
     mock_mode: Literal["normal", "sensitive", "malformed", "timeout"] = "normal"
+    endpoint: str | None = None
+    session_token: str | None = None
+    api_version: int = 1
 
 
 def load_vlm_config(path: str | Path) -> VLMConfig:

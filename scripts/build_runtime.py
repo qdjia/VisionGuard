@@ -1,4 +1,4 @@
-"""Build and stage the PyInstaller one-folder runtime for Tauri Sidecar use."""
+"""Build component runtimes; the legacy monolith is explicit opt-in only."""
 
 from __future__ import annotations
 
@@ -28,7 +28,7 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def write_runtime_manifest(root: Path, *, profile: str = "full") -> Path:
+def write_runtime_manifest(root: Path, *, profile: str = "core") -> Path:
     files = []
     for item in sorted(root.rglob("*")):
         if item.is_file() and item.name != "runtime-manifest.json":
@@ -44,7 +44,8 @@ def write_runtime_manifest(root: Path, *, profile: str = "full") -> Path:
         "runtime_version": RUNTIME_VERSION,
         "platform": "windows",
         "architecture": "x86_64",
-        "entrypoint": "visionguard-runtime.exe",
+        "entrypoint": f"visionguard-{profile}-runtime.exe",
+        "component": "advanced_ai" if profile == "vlm" else "core",
         "profile": profile,
         "files": files,
     }
@@ -104,15 +105,16 @@ def safe_clean(path: Path) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--no-clean", action="store_true")
-    parser.add_argument("--profile", choices=("core", "full"), default="full")
+    parser.add_argument("--profile", choices=("core", "vlm", "full"), default="core")
     parser.add_argument(
         "--stage-tauri",
         action="store_true",
         help="Replace the desktop sidecar staging area after a successful build.",
     )
     args = parser.parse_args()
-    build_root = BUILD_ROOT if args.profile == "full" else ROOT / "runtime-build-core"
-    dist_root = DIST_ROOT if args.profile == "full" else ROOT / "runtime-dist-core"
+    suffix = "" if args.profile == "full" else f"-{args.profile}"
+    build_root = BUILD_ROOT if not suffix else ROOT / f"runtime-build{suffix}"
+    dist_root = DIST_ROOT if not suffix else ROOT / f"runtime-dist{suffix}"
     if not args.no_clean:
         safe_clean(build_root)
         safe_clean(dist_root)
@@ -135,6 +137,8 @@ def main() -> None:
                 / (
                     "visionguard-core-runtime.spec"
                     if args.profile == "core"
+                    else "visionguard-vlm-runtime.spec"
+                    if args.profile == "vlm"
                     else "visionguard-runtime.spec"
                 )
             ),
@@ -143,7 +147,9 @@ def main() -> None:
         env=build_environment,
         check=True,
     )
-    runtime_name = "visionguard-core-runtime" if args.profile == "core" else "visionguard-runtime"
+    runtime_name = (
+        "visionguard-runtime" if args.profile == "full" else f"visionguard-{args.profile}-runtime"
+    )
     source = dist_root / runtime_name
     executable = source / f"{runtime_name}.exe"
     if not executable.is_file():
@@ -159,7 +165,7 @@ def main() -> None:
         internal = source / "_internal"
         if internal.is_dir():
             link_or_copy_tree(internal, support)
-        staged_executable = TAURI_BIN / f"visionguard-runtime-{triple}.exe"
+        staged_executable = TAURI_BIN / f"{runtime_name}-{triple}.exe"
         staged_executable.unlink(missing_ok=True)
         link_or_copy(executable, staged_executable)
     metadata = {

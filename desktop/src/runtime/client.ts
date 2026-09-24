@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 
 import type {
+  AdvancedAISnapshot,
   ModelBundleInfo,
   ModelInstallResult,
   ModelInstallStatus,
@@ -40,4 +41,8 @@ export const tauriRuntimeController: RuntimeController = {
   inspectRuntimeBundle: (source) => invoke<RuntimePackageInfo>("inspect_runtime_bundle", { source }),
   installRuntimeBundle: (source) => invoke<RuntimeInstallResult>("install_runtime_bundle", { source }),
   runtimeInstallStatus: () => invoke<RuntimeInstallStatus>("get_runtime_install_status"),
+  advancedAIStatus: () => invoke<AdvancedAISnapshot>("get_advanced_ai_status"),
+  startAdvancedAI: () => invoke<void>("start_advanced_ai"),
+  restartAdvancedAI: () => invoke<void>("restart_advanced_ai"),
+  stopAdvancedAI: () => invoke<void>("stop_advanced_ai"),
 };

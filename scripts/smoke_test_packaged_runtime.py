@@ -93,6 +93,7 @@ def main() -> None:
     parser.add_argument("--skip-review", action="store_true")
     parser.add_argument("--image", type=Path, default=ROOT / "data" / "vlm_eval" / "safe.png")
     parser.add_argument("--mode", choices=("cascaded", "full"), default="cascaded")
+    parser.add_argument("--runtime-edition", choices=("cpu", "gpu"), default="cpu")
     args = parser.parse_args()
 
     runtime = args.runtime.resolve()
@@ -117,6 +118,7 @@ def main() -> None:
                 "warmup_on_startup": False,
                 "save_artifacts": False,
                 "model_validation": "quick",
+                "runtime_edition": args.runtime_edition,
             },
             indent=2,
         ),

@@ -1,0 +1,13 @@
+host: 127.0.0.1
+port: 0
+model_path: C:/VisionGuard/components/vlm-models/vlm-models-v1
+model_bundle_version: vlm-models-v1
+cache_root: C:/VisionGuard/cache/vlm
+log_root: C:/VisionGuard/logs/vlm
+prompts_dir: C:/VisionGuard/prompts/vlm
+prompt_version: v1
+device: auto
+dtype: auto
+timeout_seconds: 120
+load_timeout_seconds: 300
+max_new_tokens: 512

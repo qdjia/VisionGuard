@@ -3,39 +3,42 @@
 > 基于视觉语言模型的多模态出版内容智能审校系统
 > Multimodal Publishing Content Moderation System Based on Vision-Language Models
 
-## 下载与安装（Windows GPU 候选版）
+## 下载与安装（组件化 Windows 候选架构）
 
 VisionGuard 的目标用户不需要安装 Python、Conda、Node、Rust，也不需要手动启动 FastAPI。正式分发流程是：
 
-1. 从 GitHub Releases 下载 Windows 安装器、独立 GPU Runtime 和独立模型包；
+1. 下载 Windows 安装器、必需的 Core Runtime 与 Core Models；
 2. 校验 `SHA256SUMS.txt`；
 3. 双击安装器，通过 Start Menu 或桌面快捷方式启动；
-4. 首次启动时先选择 GPU Runtime ZIP 或已解压目录；
-5. 随后选择模型 ZIP 或已解压的 `models-v1` 目录；
+4. 首次启动时安装 Core Runtime 和 `core-models-v1`；
+5. 如需深度审核，再安装可选的 VLM Runtime 与 `vlm-models-v1` Advanced AI Pack；
 6. 等待本机完成兼容性、磁盘空间和 SHA-256 校验，显示 Ready 后选择图片审核。
 
-**目前尚未发布可下载的公开安装包。** Phase 16 已具备本地 NSIS 候选包构建、首次模型安装和 release 校验能力，但 Ultralytics/detector 与 CUDA 二进制再分发许可、代码签名、干净 Windows 验收以及 GitHub 单资产体积仍是公开发行门禁。请勿把本地候选产物上传为正式 Release。
+**目前尚未发布可下载的公开安装包。** Slim CPU Core 是发行基线：Core Runtime 约 `0.697 GiB`，Core Models 约 `0.146 GiB`，无需 VLM 也能启动和执行 Fast Review。Advanced AI 是独立可选组件，其约 `3.974 GiB` 的模型资产仍受托管、许可与干净机验收门禁约束。请勿把本地产物上传为正式 Release。
 
-当前仅构建 Windows x86_64 GPU Edition。已通过开发验证的机器使用 RTX 4060 Laptop GPU 8 GiB；这不是最低配置。最低 VRAM 和内存将在多硬件实测后公布。完整安装架构与限制见[Windows 分发架构](docs/distribution_architecture.md)，许可状态见[模型再分发审计](docs/model_distribution_licenses.md)。
+当前目标平台为 Windows x86_64。Core 使用 CPU ONNX Detector 与 PaddleOCR；可选 VLM 仍优先使用 NVIDIA GPU。RTX 4060 Laptop 8 GiB 是开发验证环境，不是最低配置。组件边界见[组件化 Runtime 架构](docs/componentized_runtime.md)，旧单体方案见[Legacy Full Runtime](docs/legacy_full_runtime.md)。
 
-当前候选版安装后的 Desktop + GPU Runtime + Models 约占 `9.08 GiB`。如果三个下载包和安装后文件同时保留，按实测资产体积再预留 15% 安全余量，建议安装前准备至少 `22 GiB` 可用磁盘空间；安装完成并验证正常后可删除下载的 ZIP。该数字是磁盘容量计算，不是最低 RAM/VRAM 结论。
+Core-only 安装实测约 `0.843 GiB`。Advanced AI 的独立 Runtime 体积、完整安装峰值和最低 VRAM 仍需以打包与干净机实测为准，不在 README 中用估算值冒充结果。
 
 ## Desktop Application（本地 AI Runtime）
 
 VisionGuard 提供基于 Tauri v2、React 和 TypeScript 的原生桌面工作台。它支持系统文件选择器、拖放图片、本地预览、快速/深度审核，以及 Detection、OCR、VLM、Routing、Fusion 和耗时证据视图。桌面端可以自动启动 PyInstaller 打包的 Python Runtime、等待模型就绪、动态注入本机端点，并在退出时回收进程。Phase 16 增加了轻量 NSIS 按用户安装、单实例、首次 Runtime/模型导入与发布候选校验。
 
-### Sidecar 开发模式（推荐验证 Phase 15）
+### 组件化 Sidecar 开发模式
 
 先构建独立模型包与 Runtime，随后桌面应用会自行管理后端，无需手动运行 FastAPI：
 
 ```powershell
-python scripts/build_model_bundle.py --hardlink --force
-python scripts/build_runtime.py
+python scripts/build_model_bundle.py --profile core --bundle-version core-models-v1 --output models/core-models-v1 --hardlink --force
+python scripts/build_runtime.py --profile core --stage-tauri
+# 可选 Advanced AI
+python scripts/build_model_bundle.py --profile vlm --bundle-version vlm-models-v1 --output models/vlm-models-v1 --hardlink --force
+python scripts/build_runtime.py --profile vlm
 cd desktop
 npm run tauri:dev
 ```
 
-模型真实权重、生成的 Runtime 和运行日志均由 Git 忽略。打包方式、目录布局、离线校验和 smoke test 见 [Runtime 打包说明](docs/runtime_packaging.md)。
+模型真实权重、生成的 Runtime 和运行日志均由 Git 忽略。`build_runtime.py` 默认构建 Core；旧 Full Runtime 必须显式使用 `--profile full`，且仅用于回归参考。
 
 ### 构建 Windows Release Candidate
 

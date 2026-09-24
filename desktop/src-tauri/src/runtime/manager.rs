@@ -99,6 +99,48 @@ impl RuntimeManager {
         })
     }
 
+    pub async fn register_vlm(
+        &self,
+        endpoint: &str,
+        session_token: &str,
+    ) -> Result<(), RuntimeError> {
+        let core = self.endpoint()?;
+        let token = self
+            .control_token
+            .lock()
+            .expect("runtime token poisoned")
+            .clone()
+            .ok_or_else(|| RuntimeError::new("RUNTIME_NOT_READY", "core control token missing"))?;
+        Client::new()
+            .put(format!("{core}/_runtime/vlm"))
+            .header("X-VisionGuard-Control", token)
+            .json(&serde_json::json!({"endpoint": endpoint, "session_token": session_token}))
+            .timeout(Duration::from_secs(10))
+            .send()
+            .await
+            .map_err(|error| RuntimeError::new("VLM_RUNTIME_START_FAILED", error.to_string()))?
+            .error_for_status()
+            .map_err(|error| RuntimeError::new("VLM_CONTRACT_INCOMPATIBLE", error.to_string()))?;
+        Ok(())
+    }
+
+    pub async fn unregister_vlm(&self) {
+        let Ok(core) = self.endpoint() else { return };
+        let token = self
+            .control_token
+            .lock()
+            .expect("runtime token poisoned")
+            .clone();
+        if let Some(token) = token {
+            let _ = Client::new()
+                .delete(format!("{core}/_runtime/vlm"))
+                .header("X-VisionGuard-Control", token)
+                .timeout(Duration::from_secs(2))
+                .send()
+                .await;
+        }
+    }
+
     pub async fn start(self: &Arc<Self>) -> Result<(), RuntimeError> {
         let _guard = self.operation.lock().await;
         self.cancel_requested.store(false, Ordering::SeqCst);
@@ -195,7 +237,7 @@ impl RuntimeManager {
             "save_artifacts": false,
             "warmup_on_startup": false,
             "model_validation": "quick",
-            "runtime_edition": "gpu",
+            "runtime_edition": "cpu",
             "minimum_free_disk_bytes": 536870912
         });
         std::fs::write(
@@ -465,14 +507,14 @@ impl RuntimeManager {
             let triple = option_env!("TAURI_ENV_TARGET_TRIPLE").unwrap_or("x86_64-pc-windows-msvc");
             let source = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
                 .join("binaries")
-                .join(format!("visionguard-runtime-{triple}.exe"));
+                .join(format!("visionguard-core-runtime-{triple}.exe"));
             if source.is_file() {
                 return Ok(source);
             }
         }
         Err(RuntimeError::new(
             "RUNTIME_COMPONENT_MISSING",
-            "VisionGuard GPU Runtime is not installed.",
+            "VisionGuard Core Runtime is not installed.",
         ))
     }
 
@@ -483,7 +525,7 @@ impl RuntimeManager {
         if let Some(active) = active_bundle_path(data_dir) {
             return active;
         }
-        let installed = data_dir.join("models").join("models-v1");
+        let installed = data_dir.join("models").join("core-models-v1");
         if installed.is_dir() {
             return installed;
         }
