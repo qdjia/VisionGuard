@@ -22,6 +22,8 @@ RC_REQUIRED_GATES = {
     "detector_license",
     "gui_lifecycle",
     "offline",
+    "reinstall",
+    "rollback",
     "upgrade",
     "uninstall",
     "historical_regression",
@@ -40,6 +42,15 @@ REQUIRED_SBOMS = (
 )
 DEV_ONLY_PACKAGES = {"pytest", "ruff", "notebook", "jupyter", "tensorboard", "mlflow"}
 REQUIRED_MODEL_ROLES = {"vlm", "ocr_detection", "ocr_recognition", "ocr_orientation"}
+REQUIRED_ACCEPTANCE_GATES = {
+    "clean_machine",
+    "real_offline",
+    "gui_lifecycle",
+    "upgrade",
+    "rollback",
+    "uninstall",
+    "reinstall",
+}
 
 
 def sha256(path: Path) -> str:
@@ -187,6 +198,38 @@ def _validate_release_evidence(root: Path, errors: list[str]) -> None:
     for name in ("onnxruntime-gpu", "torch", "torchvision"):
         if not versions.get(name):
             errors.append(f"runtime provenance missing: {name}")
+
+    detector = _load_json(evidence / "detector-provenance.json", "detector provenance", errors)
+    detector_status = str(detector.get("redistribution_status", "")).upper()
+    if detector_status not in {"ALLOWED", "ALLOWED_WITH_CONDITIONS"}:
+        errors.append(f"detector redistribution is not cleared: {detector_status or 'MISSING'}")
+    for field in ("base_checkpoint", "fine_tuned_checkpoint", "exported_onnx"):
+        artifact = detector.get(field, {})
+        if not re.fullmatch(r"[0-9a-f]{64}", str(artifact.get("sha256", ""))):
+            errors.append(f"detector provenance SHA-256 is invalid: {field}")
+
+    nvjit = _load_json(evidence / "nvjitlink-analysis.json", "nvJitLink analysis", errors)
+    nvjit_status = str(nvjit.get("redistribution_status", "")).upper()
+    if nvjit_status not in {"ALLOWED", "ALLOWED_WITH_CONDITIONS"}:
+        errors.append(f"nvJitLink redistribution is not cleared: {nvjit_status or 'MISSING'}")
+
+    acceptance = _load_json(evidence / "acceptance-status.json", "acceptance status", errors)
+    acceptance_gates = acceptance.get("gates", {})
+    for name in sorted(REQUIRED_ACCEPTANCE_GATES):
+        status = str(acceptance_gates.get(name, {}).get("status", "MISSING")).upper()
+        if status != "PASS":
+            errors.append(f"acceptance evidence not passed: {name}={status}")
+
+    regression = _load_json(
+        evidence / "historical-regression.json", "historical regression", errors
+    )
+    if regression.get("confirmed_regression_count") != 0:
+        errors.append("historical regression has confirmed regressions or missing count")
+    regression_status = str(regression.get("gate_status", "")).upper()
+    if regression_status != "PASS":
+        errors.append(
+            f"historical real-image regression is not passed: {regression_status or 'MISSING'}"
+        )
 
 
 def validate_release(

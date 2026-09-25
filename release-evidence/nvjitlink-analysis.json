@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "audited_at": "2026-09-26",
+  "engineering_notice": "Engineering evidence only; not legal advice.",
+  "file": {
+    "name": "nvJitLink_120_0.dll",
+    "bundled_path": "_internal/torch/lib/nvJitLink_120_0.dll",
+    "size_bytes": 77860352,
+    "sha256": "959d3cb44527ec884db8dc20772520b584dbe7d622d11b0530e6326417078b3e",
+    "pe_product": "NVIDIA CUDA 12.8.93 NVJITLINK Library",
+    "pe_file_version": "6.14.11.9000",
+    "pe_original_filename": "nvJitLink_120_0.dll"
+  },
+  "source_mapping": {
+    "package": "torch",
+    "package_version": "2.11.0+cu128",
+    "wheel_record_path": "torch/lib/nvJitLink_120_0.dll",
+    "wheel_record_size_bytes": 77860352,
+    "wheel_record_sha256_base64url": "lZ08tEUn7IhNuNwgdyUgtYTb59Yi0RsFMOYyZBcHiz4",
+    "installer": "pip",
+    "pyinstaller_collection": "collect_dynamic_libs('torch')"
+  },
+  "dependency_chain": [
+    "visionguard-vlm-runtime",
+    "torch_cuda.dll",
+    "cusparse64_12.dll",
+    "nvJitLink_120_0.dll"
+  ],
+  "required_by": {
+    "binary": "cusparse64_12.dll",
+    "linkage": "static PE import table dependency",
+    "symbols": [
+      "__nvJitLinkCreate_12_8",
+      "__nvJitLinkAddData_12_8",
+      "__nvJitLinkComplete_12_8",
+      "__nvJitLinkGetLinkedCubin_12_8"
+    ]
+  },
+  "isolated_dependency_probe": {
+    "without_nvjitlink": "FAIL_TO_LOAD_CUSPARSE",
+    "with_nvjitlink": "PASS_LOAD_CUSPARSE",
+    "probe_scope": "Windows loader dependency probe only; not a VLM inference acceptance test",
+    "package_removal_attempted": false,
+    "reason_not_removed": "The packaged torch CUDA dependency chain imports this DLL directly. Removing it would create a loader failure and therefore cannot proceed to the required VLM smoke suite."
+  },
+  "official_evidence": {
+    "cuda_eula": "https://docs.nvidia.com/cuda/eula/",
+    "attachment_a_windows_name": "libnvJitLink.dll",
+    "nvjitlink_documentation": "https://docs.nvidia.com/cuda/nvjitlink/",
+    "documentation_windows_name": "nvJitLink.dll",
+    "discrepancy": "The official Attachment A and the official Windows component guide use different base filenames. The bundled versioned filename matches the guide but not Attachment A exactly."
+  },
+  "redistribution_status": "UNCLEAR",
+  "closure_required": "Written license-holder clarification or qualified legal review confirming that nvJitLink_120_0.dll is a permitted Windows filename variation."
+}

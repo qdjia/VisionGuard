@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "audited_at": "2026-09-26",
+  "candidate": "1.0.0-rc.1",
+  "environment": {
+    "independent_windows_available": false,
+    "current_machine_eligible": false,
+    "reason": "The development machine contains the source repository, Python/Conda, Node, Rust, caches, runtimes, and models. No independent Windows Sandbox or VM evidence is available."
+  },
+  "gates": {
+    "clean_machine": {"status": "BLOCKED", "evidence": "NOT_EXECUTED"},
+    "real_offline": {"status": "BLOCKED", "evidence": "NOT_EXECUTED"},
+    "gui_lifecycle": {"status": "BLOCKED", "evidence": "NOT_EXECUTED"},
+    "upgrade": {"status": "BLOCKED", "evidence": "NOT_EXECUTED"},
+    "rollback": {"status": "BLOCKED", "evidence": "NOT_EXECUTED"},
+    "uninstall": {"status": "BLOCKED", "evidence": "NOT_EXECUTED"},
+    "reinstall": {"status": "BLOCKED", "evidence": "NOT_EXECUTED"}
+  },
+  "development_machine_results_are_acceptance_evidence": false
+}

@@ -1,6 +1,6 @@
 # VisionGuard v1.0 Release Gate
 
-审计日期：2026-09-25。状态值：`PASS`、`PARTIAL`、`FAIL`、`BLOCKED`、`PENDING MANUAL`。
+审计更新：2026-09-26。状态值：`PASS`、`PARTIAL`、`FAIL`、`BLOCKED`、`PENDING MANUAL`。
 
 | Gate | Status | Evidence | Blocker / next action |
 |---|---|---|---|
@@ -18,9 +18,9 @@
 | Single instance / shortcut / Start Menu | PARTIAL | 配置和开发验证存在 | 干净机人工确认 |
 | Asset hosting | PASS (strategy) | `docs/release_asset_strategy.md` | 上传仍需许可证 Gate 与用户授权 |
 | SBOM inventory | PASS | 5 份 CycloneDX：Desktop、Core、VLM、Models、Distribution | 许可结论由独立 License Gate 负责 |
-| Detector license | BLOCKED | `docs/model_distribution_licenses.md` | 选择 AGPL 合规路径、商业许可或替换权重 |
+| Detector license | BLOCKED / `NOT_ALLOWED` for current MIT RC | base/trained/ONNX hash chain and official license statement fixed in `release-evidence/detector-provenance.json` | 实施合格 AGPL 路径、提供商业许可或不分发权重；换模型需用户另行决定 |
 | Qwen / Paddle evidence | PASS | `release-evidence/model-provenance.json` | 最终候选需重建并携带 evidence |
-| PyTorch / CUDA redistribution | BLOCKED | 20 个文件实例 / 19 个唯一 SHA-256；唯一二进制为 18 `ALLOWED_WITH_CONDITIONS`、1 `UNCLEAR` | 确认 `nvJitLink_120_0.dll` 条款或从 Runtime 移除并回归 |
+| PyTorch / CUDA redistribution | BLOCKED | `torch_cuda → cusparse → nvJitLink` 为静态依赖；20 个实例 / 19 个唯一 SHA；18 条件允许、1 `UNCLEAR` | 获取 filename discrepancy 的书面确认；该 DLL 不能在当前依赖链中直接移除 |
 | Code signing | PASS (RC decision) | `docs/code_signing.md` | RC 明确 unsigned；Stable 建议受信证书 |
 | Historical regression | BLOCKED | 16/16 contract PASS；near-boundary=`DIAGNOSTIC_ONLY` | 真实图像覆盖与 clean-machine replay 仍不足 |
 | RC validator | FAIL EXPECTED | `scripts/validate_release.py --rc` | critical blockers 必须清零，禁止 bypass |

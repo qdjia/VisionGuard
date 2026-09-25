@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "audited_at": "2026-09-26",
+  "behavior_contract_count": 16,
+  "behavior_contract_passed": 16,
+  "historical_image_case_count": 2,
+  "eligible_historical_image_case_count": 1,
+  "verified_real_world_image_provenance_count": 0,
+  "ground_truth_image_case_count": 1,
+  "confirmed_regression_count": 0,
+  "near_boundary_verdict": "DIAGNOSTIC_ONLY",
+  "near_boundary_distance_to_high_threshold": 0.000001,
+  "near_boundary_safety_effect": "No unsafe low, no wrong fast path, no lost manual review, and no risk downgrade.",
+  "legacy_runtime_verdict": "REFERENCE_ONLY",
+  "gate_status": "BLOCKED",
+  "blocker": "The repository does not contain a redistribution-safe, real-world 20-50 image regression set, and no clean-machine replay has been executed. Synthetic fixtures are not counted as real images."
+}

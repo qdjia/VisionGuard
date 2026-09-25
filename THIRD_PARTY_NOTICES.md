@@ -31,8 +31,8 @@ VLM Runtime may contain CUDA、cuDNN、PyTorch 和 Paddle 相关原生文件。N
 
 公开二进制再分发尚未放行：
 
-1. detector 权重来源和 Ultralytics 派生关系仍是 blocker；
-2. 20 个 NVIDIA DLL 文件实例（19 个唯一 SHA-256）已逐项映射；按唯一二进制计，18 个为 `ALLOWED_WITH_CONDITIONS`，`nvJitLink_120_0.dll` 仍为 `UNCLEAR`；
+1. Detector base 已固定为 Ultralytics assets `v8.4.0`、SHA-256 `9b09cc…4fef`；官方将 trained/fine-tuned models 置于 AGPL-3.0 或 Enterprise 路径，当前 MIT RC 未满足任一路径，因此为 `NOT_ALLOWED`；
+2. 20 个 NVIDIA DLL 文件实例（19 个唯一 SHA-256）已逐项映射；按唯一二进制计，18 个为 `ALLOWED_WITH_CONDITIONS`。`nvJitLink_120_0.dll` 是 `cusparse64_12.dll` 的静态依赖，但 Attachment A 与官方 Windows 指南的基础文件名不一致，故仍为 `UNCLEAR`；
 3. Qwen / Paddle 精确 revision、哈希、模型卡元数据和 Apache-2.0 文本已进入 release evidence；
 4. 最终候选仍需重建，使更新后的 provenance、SBOM 和 notices 与实际资产完全一致。
 

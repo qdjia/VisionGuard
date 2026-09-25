@@ -29,11 +29,11 @@ Development validation used Windows x86-64 and an NVIDIA RTX 4060 Laptop GPU wit
 - Advanced AI download/import is manual; an online downloader is not part of this candidate.
 - Broad GPU compatibility has not been established.
 - Clean-machine, offline, upgrade and uninstall acceptance are still pending.
-- Detector redistribution and one native NVIDIA DLL mapping remain unresolved; therefore these notes remain a draft and no disputed assets may be uploaded.
+- Detector redistribution is `NOT_ALLOWED` for the current MIT RC and one native NVIDIA DLL mapping remains unresolved; therefore these notes remain a draft and no disputed assets may be uploaded.
 
 ## Blocking issues
 
-- Detector redistribution path remains `UNCLEAR`.
+- Detector redistribution path is `NOT_ALLOWED` for the current MIT RC until an approved AGPL, commercial-license, no-weight, or replacement path is implemented.
 - `nvJitLink_120_0.dll` does not yet have an exact-name redistribution mapping accepted for this candidate.
 - Real-image historical coverage and clean-machine replay are incomplete.
 - Clean Windows, true offline and real GUI lifecycle acceptance are incomplete.

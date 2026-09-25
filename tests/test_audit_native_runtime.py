@@ -47,7 +47,10 @@ def test_nvidia_inventory_maps_official_evidence_without_overclaiming(tmp_path: 
     by_name = {Path(item["path"]).name: item for item in result["files"]}
     assert by_name["cublas64_12.dll"]["nvidia_redistribution"]["canonical_name"] == ("cublas.dll")
     assert by_name["cudnn64_9.dll"]["nvidia_redistribution"]["category"] == "cuDNN runtime"
-    assert by_name["nvJitLink_120_0.dll"]["nvidia_redistribution"]["status"] == "UNCLEAR"
+    nvjit = by_name["nvJitLink_120_0.dll"]["nvidia_redistribution"]
+    assert nvjit["status"] == "UNCLEAR"
+    assert nvjit["canonical_name"] == "nvJitLink.dll"
+    assert nvjit["attachment_a_name"] == "libnvJitLink.dll"
 
 
 def test_non_nvidia_file_has_no_redistribution_mapping() -> None:

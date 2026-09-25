@@ -1,7 +1,7 @@
 # Historical Regression Record
 
 候选版本：`1.0.0-rc.1`  
-审计日期：2026-09-25  
+审计更新：2026-09-26
 结论：**BLOCKED（真实图像覆盖不足）；Legacy Full Runtime 继续为 Reference Only。**
 
 ## Evidence inventory
@@ -33,6 +33,8 @@
 | Full Legacy vs componentized comparison | Not Comparable：Legacy generated runtime is intentionally absent |
 | Clean-machine componentized replay | Not executed |
 
+这里的 2 个图片 case 是历史 fixture 数量，不等同于真实世界数据集。当前能够证明真实世界来源并可安全再分发的图片数量为 **0**；synthetic/smoke 图片不计入 real-image coverage。
+
 ## 2026-09-25 live hard-case execution
 
 The existing manifest was executed with real YOLO, PaddleOCR, baseline and local Qwen inference on the development machine:
@@ -50,7 +52,7 @@ No ground truth was changed to obtain these results.
 
 ## Remaining evidence required
 
-1. Curate verified, redistribution-safe images for every required scenario rather than treating the 16 mock/contract cases as model-quality evidence.
+1. Curate 20–50 verified, redistribution-safe real-world images across the required scenarios rather than treating the 16 contracts or synthetic fixtures as model-quality evidence. If fewer are available, record the actual count without inflating it.
 2. Execute them through the packaged Core + VLM services and retain structured result fields: risk, categories, route, manual review, VLM status, fusion score and module status.
 3. Classify every difference as Equivalent, Expected Difference, Potential Regression, Confirmed Regression or Not Comparable.
 4. Repeat the packaged run on the clean acceptance machine.

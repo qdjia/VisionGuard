@@ -132,6 +132,53 @@ def test_release_evidence_fails_closed_for_unclear_native_file(tmp_path: Path) -
         ),
         encoding="utf-8",
     )
+    (evidence / "detector-provenance.json").write_text(
+        json.dumps(
+            {
+                "redistribution_status": "ALLOWED_WITH_CONDITIONS",
+                "base_checkpoint": {"sha256": "d" * 64},
+                "fine_tuned_checkpoint": {"sha256": "e" * 64},
+                "exported_onnx": {"sha256": "f" * 64},
+            }
+        ),
+        encoding="utf-8",
+    )
+    (evidence / "nvjitlink-analysis.json").write_text(
+        json.dumps({"redistribution_status": "ALLOWED_WITH_CONDITIONS"}),
+        encoding="utf-8",
+    )
+    (evidence / "acceptance-status.json").write_text(
+        json.dumps(
+            {
+                "gates": {
+                    name: {"status": "PASS"}
+                    for name in (
+                        "clean_machine",
+                        "real_offline",
+                        "gui_lifecycle",
+                        "upgrade",
+                        "rollback",
+                        "uninstall",
+                        "reinstall",
+                    )
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    (evidence / "historical-regression.json").write_text(
+        json.dumps({"confirmed_regression_count": 0, "gate_status": "PASS"}),
+        encoding="utf-8",
+    )
     errors: list[str] = []
     _validate_release_evidence(tmp_path, errors)
     assert errors == ["NVIDIA redistribution remains unresolved: nvJitLink_120_0.dll"]
+
+
+def test_repository_blocker_evidence_fails_closed() -> None:
+    errors: list[str] = []
+    _validate_release_evidence(Path.cwd(), errors)
+    assert "detector redistribution is not cleared: NOT_ALLOWED" in errors
+    assert "nvJitLink redistribution is not cleared: UNCLEAR" in errors
+    assert "acceptance evidence not passed: clean_machine=BLOCKED" in errors
+    assert "historical real-image regression is not passed: BLOCKED" in errors

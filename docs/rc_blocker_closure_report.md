@@ -10,12 +10,12 @@
 
 | Blocker | Severity | Result | Minimum closure action |
 |---|---|---|---|
-| Detector redistribution | Critical | BLOCKED / `UNCLEAR` | 用户选择 AGPL 合规、商业许可、不分发权重或批准换 base/重训 |
+| Detector redistribution | Critical | BLOCKED / current MIT RC `NOT_ALLOWED` | 用户选择 AGPL 合规、商业许可、不分发权重或批准换 base/重训 |
 | Historical real-image coverage | Major | BLOCKED | 建立 redistribution-safe 真实图像 suite 并在 packaged/clean machine 回放 |
 | Clean Windows | Critical | BLOCKED | 独立 Windows 完成 22 项清单 |
 | True offline | Critical | BLOCKED | 禁用网卡/隔离网络完成端到端验收 |
 | GUI lifecycle | Major | BLOCKED | 人工点击、关闭、no-orphan、重开、升级/回滚/卸载证据 |
-| NVIDIA redistribution | Critical | BLOCKED | 解决 `nvJitLink_120_0.dll` exact-name 条款映射或移除并回归 |
+| NVIDIA redistribution | Critical | BLOCKED | `nvJitLink` 为静态依赖，不能直接移除；需解决官方材料的 filename discrepancy |
 | Final candidate rebuild | Major | BLOCKED | 清除 VLM SBOM 中 pytest metadata，重建并重新校验全部证据/hash |
 
 完整 closure criteria 见 `docs/rc_blocker_closure_plan.md`。
@@ -27,9 +27,9 @@
 | 1 | RC Blocker Summary | **RC BLOCKED**；最少剩余项见上表 |
 | 2 | Final Blocker Matrix | 已建立；含 severity、证据、用户/外部动作和 closure criteria |
 | 3 | Detector Provenance | YOLO26n → Ultralytics 8.4.151 fine-tune → best.pt → ONNX；两级产物 SHA-256 已记录 |
-| 4 | Detector License Status | `UNCLEAR`；不得公开上传 detector asset |
+| 4 | Detector License Status | current MIT RC=`NOT_ALLOWED`；不得公开上传 detector asset |
 | 5 | Detector Release Options | AGPL 合规、商业授权、用户导入、许可清晰 base 重训；未自动选择 |
-| 6 | Historical Regression Suite Size | 16 个 source-level contracts + 2 个现有真实图像 hard cases（仅 1 eligible） |
+| 6 | Historical Regression Suite Size | 16 个 source-level contracts + 2 个历史图片 fixture（1 eligible）；可证明 real-world provenance 数量为 0 |
 | 7 | Near-boundary Analysis | risky OCR/baseline/VLM 一致；VLM path；score `0.700001`；距 high boundary `0.000001`；final high/manual |
 | 8 | Historical Regression Result | 合同 16/16 PASS；near-boundary=`DIAGNOSTIC_ONLY`；真实图像覆盖仍 BLOCKED |
 | 9 | Legacy Runtime Verdict | Reference Only；未删除 |
@@ -136,7 +136,7 @@ No
 Blocking reasons:
 
 - Clean-machine, true-offline and real GUI lifecycle evidence is unavailable.
-- Detector redistribution remains `UNCLEAR`.
+- Detector redistribution is `NOT_ALLOWED` for the current MIT RC until an approved license path is implemented.
 - One NVIDIA native DLL remains `UNCLEAR`.
 - Real-image historical coverage and final rebuilt candidate validation are incomplete.
 

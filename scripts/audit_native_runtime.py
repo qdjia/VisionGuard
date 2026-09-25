@@ -65,10 +65,15 @@ def nvidia_redistribution(name: str) -> dict[str, str] | None:
     if lowered.startswith("nvjitlink"):
         return {
             "category": "NVIDIA JIT Linking Library",
-            "canonical_name": "libnvJitLink.dll",
+            "canonical_name": "nvJitLink.dll",
+            "attachment_a_name": "libnvJitLink.dll",
             "source_component": "PyTorch CUDA wheel / NVIDIA CUDA runtime",
             "evidence_url": CUDA_EULA_URL,
-            "evidence_reference": "CUDA Toolkit Supplement, Attachment A",
+            "documentation_url": "https://docs.nvidia.com/cuda/nvjitlink/",
+            "evidence_reference": (
+                "CUDA Toolkit Supplement, Attachment A names libnvJitLink.dll; "
+                "the Windows nvJitLink guide names nvJitLink.dll"
+            ),
             "status": "UNCLEAR",
         }
     return None

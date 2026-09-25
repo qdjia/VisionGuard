@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "audited_at": "2026-09-26",
+  "scope": "current_mit_public_rc_distribution",
+  "engineering_notice": "Engineering evidence only; not legal advice.",
+  "base_checkpoint": {
+    "name": "yolo26n.pt",
+    "source": "Ultralytics official pretrained model download path",
+    "source_url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolo26n.pt",
+    "source_release": "v8.4.0",
+    "size_bytes": 5544453,
+    "sha256": "9b09cc8bf347f0fc8a5f7657480587f25db09b34bf33b0652110fb03a8ad4fef",
+    "license_framework": "AGPL-3.0_OR_ENTERPRISE",
+    "license_evidence_url": "https://www.ultralytics.com/license"
+  },
+  "training": {
+    "package": "ultralytics",
+    "package_version": "8.4.151",
+    "pretrained": true,
+    "dataset": "data/visionguard_smoke",
+    "dataset_kind": "project-generated synthetic smoke fixture",
+    "dataset_license": "MIT repository license",
+    "quality_claim": false
+  },
+  "fine_tuned_checkpoint": {
+    "path": "artifacts/experiments/yolo26n_smoke_640/weights/best.pt",
+    "size_bytes": 5380933,
+    "sha256": "0f5676be8b44d2a7d1946846e7aa7ad368de4519ad826be71f49a3e200f6cbe9",
+    "license_framework": "AGPL-3.0_OR_ENTERPRISE"
+  },
+  "exported_onnx": {
+    "path": "models/core-models-v1/detector/model.onnx",
+    "size_bytes": 10685076,
+    "sha256": "82dccb397dd39113542731e574001241bcadd2ec4a22e8c31b4592815a5b24d6",
+    "derivative_status": "Export does not remove upstream model-license obligations"
+  },
+  "commercial_license_evidence": null,
+  "agpl_distribution_plan": "NOT_IMPLEMENTED",
+  "redistribution_status": "NOT_ALLOWED",
+  "verdict_reason": "The current RC is presented under the repository MIT license, has no recorded Ultralytics Enterprise License, and has not implemented the complete AGPL-3.0 distribution path described by the license holder.",
+  "release_alternatives": [
+    "Public RC excludes detector weights and validates the no-detector fail-safe",
+    "User imports detector weights locally",
+    "Replace and retrain from a base with a compatible, documented license chain after impact approval",
+    "Obtain an Ultralytics commercial license covering this distribution",
+    "Adopt and implement a qualified AGPL-3.0 compliance plan"
+  ]
+}

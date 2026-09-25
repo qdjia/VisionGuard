@@ -281,10 +281,12 @@
                       "source_package_version":  "2.11.0+cu128",
                       "nvidia_redistribution":  {
                                                     "category":  "NVIDIA JIT Linking Library",
-                                                    "canonical_name":  "libnvJitLink.dll",
+                                                    "canonical_name":  "nvJitLink.dll",
+                                                    "attachment_a_name":  "libnvJitLink.dll",
                                                     "source_component":  "PyTorch CUDA wheel / NVIDIA CUDA runtime",
                                                     "evidence_url":  "https://docs.nvidia.com/cuda/eula/",
-                                                    "evidence_reference":  "CUDA Toolkit Supplement, Attachment A",
+                                                    "documentation_url":  "https://docs.nvidia.com/cuda/nvjitlink/",
+                                                    "evidence_reference":  "CUDA Toolkit Supplement, Attachment A names libnvJitLink.dll; the Windows nvJitLink guide names nvJitLink.dll",
                                                     "status":  "UNCLEAR"
                                                 }
                   },

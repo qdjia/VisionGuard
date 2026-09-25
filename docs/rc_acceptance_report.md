@@ -4,7 +4,7 @@
 候选：`1.0.0-rc.1`（未创建 Tag）  
 最终结论：**RC BLOCKED**
 
-> 后续 RC Blocker Closure 的最新证据与结论见 `docs/rc_blocker_closure_report.md`。本文件保留上一轮候选构建的测量记录。
+> Final Blocker Closure 的最新证据与结论见 `docs/rc_final_blocker_report.md`。本文件保留上一轮候选构建的测量记录。
 
 ## RC Acceptance Summary
 
@@ -68,11 +68,11 @@
 | 30 | Desktop Reinstall | PENDING MANUAL |
 | 31 | Offline Core | Previous packaged smoke only；真正断网 PENDING |
 | 32 | Offline Advanced AI | Offline-mode packaged VLM PASS；真正断网 PENDING |
-| 33 | Historical Regression | FAIL / incomplete：1 still failing，1 not evaluable |
+| 33 | Historical Regression | Superseded：near-boundary=`DIAGNOSTIC_ONLY`，confirmed regression=0；real-image coverage remains BLOCKED |
 | 34 | Legacy Retirement Verdict | Reference Only；不是 Safe To Retire |
-| 35 | Detector License | BLOCKED / Unclear |
-| 36 | Qwen License | Apache-2.0 upstream；bundle revision/license evidence BLOCKED |
-| 37 | Paddle License | Apache-2.0 source；model asset evidence BLOCKED |
+| 35 | Detector License | Current MIT RC=`NOT_ALLOWED`；BLOCKED |
+| 36 | Qwen License | Superseded：exact evidence PASS；final rebuild pending |
+| 37 | Paddle License | Superseded：exact evidence PASS；final rebuild pending |
 | 38 | ONNX Runtime License | MIT；notice required，PARTIAL |
 | 39 | PyTorch License | BSD-style + third parties，PARTIAL |
 | 40 | CUDA/cuDNN Audit | 20 file occurrences / 19 unique binaries identified；1 `UNCLEAR`；BLOCKED |
@@ -84,7 +84,7 @@
 | 46 | Release Manifest | schema v3 generated and checksummed |
 | 47 | SHA256 | 21 non-checksum files covered by `SHA256SUMS.txt` |
 | 48 | RC Validator | FAIL EXPECTED |
-| 49 | Remaining Blockers | clean machine、GUI lifecycle/offline、regression、detector/model/native license |
+| 49 | Remaining Blockers | clean machine、GUI lifecycle/offline、real-image regression、detector/native license |
 | 50 | Known Non-blocking Limitations | unsigned、manual 8.191 GiB import、only RTX 4060 Laptop validated |
 | 51 | Recommended Commit Message | `chore(release): strengthen v1.0 RC acceptance evidence` |
 | 52 | Versioning Recommendation | Commit/push branch Yes；RC Tag/Pre-release/Stable No |
@@ -144,8 +144,8 @@ Blocking reasons:
 
 - Clean-machine and true-offline acceptance unavailable.
 - Real Advanced AI GUI lifecycle acceptance incomplete.
-- Historical hard case still fails near-boundary classification and coverage is insufficient.
-- Detector/model provenance and NVIDIA native redistribution are unresolved.
+- Historical near-boundary is diagnostic-only, but verified real-world coverage is zero.
+- Detector distribution is not allowed under the current MIT path and NVIDIA nvJitLink mapping remains unresolved.
 
 Known non-blocking limitations:
 
