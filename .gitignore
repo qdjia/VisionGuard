@@ -28,6 +28,9 @@ data/benchmark/*
 !data/hard_cases/
 data/hard_cases/*
 !data/hard_cases/manifest.jsonl
+!data/regression/
+data/regression/*
+!data/regression/contract_manifest.jsonl
 # Small, script-generated public fixtures used by smoke tests and tracked manifests.
 !data/vlm_eval/
 !data/vlm_eval/manifest.jsonl

@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "audited_at": "2026-09-25",
+  "engineering_notice": "This is reproducibility and license-evidence metadata, not legal advice.",
+  "models": [
+    {
+      "role": "vlm",
+      "model_id": "Qwen/Qwen3-VL-2B-Instruct",
+      "revision": "89644892e4d85e24eaac8bacfd4f463576704203",
+      "license": "Apache-2.0",
+      "source": "https://huggingface.co/Qwen/Qwen3-VL-2B-Instruct",
+      "immutable_model_card": "https://huggingface.co/Qwen/Qwen3-VL-2B-Instruct/blob/89644892e4d85e24eaac8bacfd4f463576704203/README.md",
+      "license_evidence": "licenses/APACHE-2.0.txt",
+      "artifact": "vlm/model.safetensors",
+      "size_bytes": 4255140312,
+      "sha256": "7de1838c87a5349b016c26a1c3f7d2bc400a3d485f95ef39a7059ffd734977a0",
+      "verification": "Local SHA-256 and size match the official immutable revision response headers. The model card declares Apache-2.0; that revision has no standalone LICENSE file, so the canonical Apache-2.0 text is retained separately."
+    },
+    {
+      "role": "ocr_detection",
+      "model_id": "PaddlePaddle/PP-OCRv6_medium_det",
+      "revision": "8e0f56fb2ef86b461d99cfc7ac5c137738985f61",
+      "license": "Apache-2.0",
+      "source": "https://huggingface.co/PaddlePaddle/PP-OCRv6_medium_det",
+      "license_evidence": "licenses/APACHE-2.0.txt",
+      "artifact": "ocr/text_detection/inference.pdiparams",
+      "size_bytes": 61960476,
+      "sha256": "85218d2e3d98f5a21c58b4220627be923a97aee5db3cc71f39536ab31ac53960",
+      "verification": "Local SHA-256 and size match the official revision response headers; bundled README front matter declares Apache-2.0. The upstream revision has no standalone LICENSE file."
+    },
+    {
+      "role": "ocr_recognition",
+      "model_id": "PaddlePaddle/PP-OCRv6_medium_rec",
+      "revision": "e5a92bcbc5cc1b494628e458d267778f0704fd7c",
+      "license": "Apache-2.0",
+      "source": "https://huggingface.co/PaddlePaddle/PP-OCRv6_medium_rec",
+      "license_evidence": "licenses/APACHE-2.0.txt",
+      "artifact": "ocr/text_recognition/inference.pdiparams",
+      "size_bytes": 76465087,
+      "sha256": "1b01c79a914587933f615569e75de54f2e638ebb5d3f3b3c1b38c24ede8c7319",
+      "verification": "Local SHA-256 and size match the official revision response headers; bundled README front matter declares Apache-2.0. The upstream revision has no standalone LICENSE file."
+    },
+    {
+      "role": "ocr_orientation",
+      "model_id": "PaddlePaddle/PP-LCNet_x1_0_textline_ori",
+      "revision": "cd237a44b0e359d4fe38310a416203cf7403faa5",
+      "license": "Apache-2.0",
+      "source": "https://huggingface.co/PaddlePaddle/PP-LCNet_x1_0_textline_ori",
+      "license_evidence": "licenses/APACHE-2.0.txt",
+      "artifact": "ocr/textline_orientation/inference.pdiparams",
+      "size_bytes": 6743918,
+      "sha256": "0de2bcf996cf553e2b848dd7b1769dafffc6917b1ccdf55c1d8efe7909fbf743",
+      "verification": "Local SHA-256 and size match the official revision response headers; bundled README front matter declares Apache-2.0. The upstream revision has no standalone LICENSE file."
+    }
+  ]
+}

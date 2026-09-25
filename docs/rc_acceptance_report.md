@@ -4,11 +4,13 @@
 候选：`1.0.0-rc.1`（未创建 Tag）  
 最终结论：**RC BLOCKED**
 
+> 后续 RC Blocker Closure 的最新证据与结论见 `docs/rc_blocker_closure_report.md`。本文件保留上一轮候选构建的测量记录。
+
 ## RC Acceptance Summary
 
 本阶段没有新增产品功能。完成了最终候选重建、22 文件资产布局、全元数据 SHA-256、5 份 CycloneDX SBOM、native inventory、官方许可/托管规则复核、冻结 VLM/Core 联调和现有 hard-case live regression。Local Validator PASS；RC Validator fail closed。
 
-当前机器没有可用 Windows Sandbox/VM，不能完成 Clean-machine、真实 GUI 安装生命周期和真正断网验收。Detector、模型 provenance 和 NVIDIA native redistribution 也尚未闭环。不得 Tag 或公开上传。
+当前机器没有可用 Windows Sandbox/VM，不能完成 Clean-machine、真实 GUI 安装生命周期和真正断网验收。后续 closure 已补齐 Qwen/Paddle 工程证据，但 Detector 和 NVIDIA native redistribution 仍未闭环，现有候选也尚未携带新证据重建。不得 Tag 或公开上传。
 
 ## Final Gate Table
 
@@ -20,9 +22,9 @@
 | Upgrade / Rollback / Uninstall | PENDING MANUAL | 代码与自动化存在；真实大包/桌面验收未执行 |
 | Clean Machine | BLOCKED | 无独立 Windows 环境 |
 | Offline | PARTIAL | packaged VLM offline-mode PASS；真正断网未执行 |
-| Historical Regression | FAIL | 唯一 eligible hard case 仍有 near-boundary failure；样本矩阵不足 |
-| Distribution Licenses | BLOCKED | detector、Qwen/Paddle bundle provenance 未闭环 |
-| CUDA/cuDNN | BLOCKED | 19 个 NVIDIA candidate DLL 待逐项 Attachment A 复核 |
+| Historical Regression | BLOCKED | 16/16 行为合同 PASS；near-boundary 为诊断项；真实图像样本矩阵仍不足 |
+| Distribution Licenses | BLOCKED | Qwen/Paddle 工程证据已闭环；detector 与一个 NVIDIA native 映射仍未闭环 |
+| CUDA/cuDNN | BLOCKED | 20 个 DLL 文件实例（19 个唯一 SHA-256）已映射；1 个唯一二进制仍为 `UNCLEAR` |
 | SBOM | PASS (inventory) | Desktop 815、Core 443、VLM 225、Models 44、Distribution 1 |
 | Signing | PASS for RC decision | Unsigned RC 明确披露；Stable 仍建议 Authenticode |
 | Asset Hosting | PASS (strategy) | GitHub Release，22 assets，单文件均小于 2 GiB |
@@ -73,7 +75,7 @@
 | 37 | Paddle License | Apache-2.0 source；model asset evidence BLOCKED |
 | 38 | ONNX Runtime License | MIT；notice required，PARTIAL |
 | 39 | PyTorch License | BSD-style + third parties，PARTIAL |
-| 40 | CUDA/cuDNN Audit | 19 NVIDIA candidates identified；legal mapping BLOCKED |
+| 40 | CUDA/cuDNN Audit | 20 file occurrences / 19 unique binaries identified；1 `UNCLEAR`；BLOCKED |
 | 41 | Final SBOM | 5 CycloneDX files generated and checksummed |
 | 42 | THIRD_PARTY_NOTICES | Updated；final legal closure still blocked |
 | 43 | Signing Decision | Unsigned RC allowed with disclosure；not an RC blocker |

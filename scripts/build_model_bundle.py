@@ -9,6 +9,8 @@ import os
 import shutil
 from pathlib import Path
 
+ROOT = Path(__file__).resolve().parents[1]
+
 
 def sha256(path: Path) -> str:
     digest = hashlib.sha256()
@@ -68,8 +70,27 @@ def artifact(path: Path, root: Path) -> dict:
     }
 
 
+def load_provenance() -> dict[str, dict[str, object]]:
+    path = ROOT / "release-evidence" / "model-provenance.json"
+    if not path.is_file():
+        return {}
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    return {str(item["role"]): item for item in payload.get("models", [])}
+
+
+def attach_provenance(models: dict[str, dict], evidence: dict[str, dict[str, object]]) -> None:
+    """Attach immutable upstream metadata without changing artifact hashes."""
+    for role, model in models.items():
+        item = evidence.get(role)
+        if item:
+            model["provenance"] = {
+                key: item[key]
+                for key in ("model_id", "revision", "license", "source", "artifact", "sha256")
+            }
+
+
 def parser() -> argparse.ArgumentParser:
-    root = Path(__file__).resolve().parents[1]
+    root = ROOT
     value = argparse.ArgumentParser(description=__doc__)
     value.add_argument("--output", type=Path, default=root / "models" / "models-v1")
     value.add_argument(
@@ -141,12 +162,14 @@ def main() -> None:
             copy_file(source, target, hardlink=args.hardlink)
         else:
             copy_tree(source, target, hardlink=args.hardlink)
+    models = {name: artifact(path, output) for name, path in destinations.items()}
+    attach_provenance(models, load_provenance())
     manifest = {
         "schema_version": 2,
         "bundle_version": args.bundle_version,
         "bundle_type": args.profile,
         "compatible_runtime": {"min_inclusive": "0.1.0", "max_exclusive": "0.2.0"},
-        "models": {name: artifact(path, output) for name, path in destinations.items()},
+        "models": models,
     }
     if args.profile == "vlm":
         manifest.update(

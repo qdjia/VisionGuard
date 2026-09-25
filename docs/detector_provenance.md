@@ -7,11 +7,12 @@
 | Field | Recorded value |
 |---|---|
 | Architecture | Ultralytics YOLO26n |
-| Base checkpoint reference | `yolo26n.pt` |
+| Base checkpoint reference | `yolo26n.pt` (exact upstream revision/hash not retained) |
+| Base source | Ultralytics official pretrained model obtained through the `ultralytics` package download path |
 | Training mode | `pretrained: true` |
 | Training package | Ultralytics 8.4.151 |
 | Training runtime | PyTorch 2.11.0+cu128 |
-| Dataset | `data/visionguard_smoke`，项目生成的 8 张 synthetic smoke images |
+| Dataset | `data/visionguard_smoke`，由 `scripts/create_smoke_dataset.py` 生成的 8 张 synthetic smoke images；项目自有 fixture，随仓库 MIT License |
 | Training output | `artifacts/experiments/yolo26n_smoke_640/weights/best.pt` |
 | Training output SHA-256 | `0f5676be8b44d2a7d1946846e7aa7ad368de4519ad826be71f49a3e200f6cbe9` |
 | Export | ONNX opset 18、dynamic batch、embedded NMS |
@@ -24,7 +25,7 @@
 
 Ultralytics 官方许可页面在 2026-09-25 仍说明其代码、模型架构、训练流程以及默认模型产物受 AGPL-3.0 或商业许可路径约束。VisionGuard 根许可证当前为 MIT，仓库中没有 Ultralytics Enterprise License 证明，也没有将整个适用作品切换为 AGPL-3.0 的明确决策。
 
-因此当前 ONNX 权重不得标记为 `publishable=true`。允许的关闭路径只有：
+工程枚举结论：**UNCLEAR**。因此当前 ONNX 权重不得标记为 `publishable=true`。允许的关闭路径只有：
 
 1. 项目所有者确认并执行完整 AGPL-3.0 合规方案；
 2. 提供覆盖当前模型和分发方式的 Ultralytics 商业许可；

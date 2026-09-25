@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "audited_at": "2026-09-25",
+  "engineering_notice": "Runtime provenance and notice mapping only; NVIDIA redistribution is evaluated separately.",
+  "components": [
+    {
+      "name": "onnxruntime-gpu",
+      "version": "1.26.0",
+      "runtime_scope": "Core detector inference; CUDA/TensorRT provider DLLs excluded by the Core packaging profile",
+      "license": "MIT",
+      "binary_source": "Python wheel installed in the frozen build environment",
+      "official_license": "https://github.com/microsoft/onnxruntime/blob/v1.26.0/LICENSE",
+      "sbom": "sbom/core-runtime.cdx.json",
+      "native_files": [
+        "_internal/onnxruntime/capi/onnxruntime.dll",
+        "_internal/onnxruntime/capi/onnxruntime_providers_shared.dll",
+        "_internal/onnxruntime/capi/onnxruntime_pybind11_state.pyd"
+      ]
+    },
+    {
+      "name": "torch",
+      "version": "2.11.0+cu128",
+      "runtime_scope": "Optional VLM Runtime",
+      "license": "BSD-3-Clause",
+      "binary_source": "PyTorch CUDA 12.8 Python wheel frozen by PyInstaller",
+      "official_license": "https://github.com/pytorch/pytorch/blob/main/LICENSE",
+      "bundled_license": "_internal/torch-2.11.0+cu128.dist-info/LICENSE",
+      "bundled_notice": "_internal/torch-2.11.0+cu128.dist-info/NOTICE",
+      "sbom": "sbom/vlm-runtime.cdx.json",
+      "native_audit": "native-nvidia-inventory.json"
+    },
+    {
+      "name": "torchvision",
+      "version": "0.26.0+cu128",
+      "runtime_scope": "Optional VLM Runtime dependency",
+      "license": "BSD-3-Clause",
+      "binary_source": "PyTorch CUDA 12.8 Python wheel frozen by PyInstaller",
+      "official_license": "https://github.com/pytorch/vision/blob/main/LICENSE",
+      "bundled_license": "_internal/torchvision-0.26.0+cu128.dist-info/LICENSE",
+      "sbom": "sbom/vlm-runtime.cdx.json",
+      "native_audit": "native-nvidia-inventory.json"
+    }
+  ]
+}

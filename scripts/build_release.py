@@ -230,6 +230,8 @@ def main() -> None:
         "DETECTOR_REDISTRIBUTION_UNRESOLVED",
         "NVIDIA_NATIVE_REDISTRIBUTION_UNVERIFIED",
         "CLEAN_MACHINE_ACCEPTANCE_PENDING",
+        "REAL_OFFLINE_ACCEPTANCE_PENDING",
+        "GUI_LIFECYCLE_ACCEPTANCE_PENDING",
         "HISTORICAL_REGRESSION_PENDING",
     ]
     notes = write_release_notes(output, args.version, blockers)
@@ -239,6 +241,20 @@ def main() -> None:
     shutil.copy2(ROOT / "THIRD_PARTY_NOTICES.md", notice)
     shutil.copy2(ROOT / "docs/release_licenses.md", license_report)
     shutil.copy2(ROOT / "docs/detector_provenance.md", detector_provenance)
+    evidence_sources = [
+        ROOT / "release-evidence/model-provenance.json",
+        ROOT / "release-evidence/native-nvidia-inventory.json",
+        ROOT / "release-evidence/runtime-provenance.json",
+        ROOT / "release-evidence/licenses/APACHE-2.0.txt",
+        ROOT / "release-evidence/model-cards/Qwen3-VL-2B-Instruct.md",
+    ]
+    evidence_paths = []
+    for source in evidence_sources:
+        relative = source.relative_to(ROOT)
+        target = output / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, target)
+        evidence_paths.append(target)
     manifest = {
         "schema_version": 3,
         "release_version": args.version,
@@ -271,12 +287,19 @@ def main() -> None:
         },
         "gates": {
             "advanced_ai_install": "pending_manual",
+            "asset_hosting": "passed",
             "clean_machine": "pending",
+            "detector_license": "blocked",
+            "gui_lifecycle": "pending_manual",
             "offline": "pending_clean_machine",
             "upgrade": "pending_manual",
             "uninstall": "pending_manual",
             "historical_regression": "pending",
             "license_distribution": "blocked",
+            "native_redistribution": "blocked",
+            "paddle_evidence": "passed",
+            "qwen_evidence": "passed",
+            "sbom": "passed",
         },
         "assets": assets,
         "metadata_files": [
@@ -286,7 +309,8 @@ def main() -> None:
             license_report.name,
             detector_provenance.name,
         ]
-        + [path.relative_to(output).as_posix() for path in sbom_paths],
+        + [path.relative_to(output).as_posix() for path in sbom_paths]
+        + [path.relative_to(output).as_posix() for path in evidence_paths],
     }
     manifest_path = output / "release-manifest.json"
     manifest_path.write_text(
@@ -294,7 +318,15 @@ def main() -> None:
     )
     checksum_paths = [output / str(asset["name"]) for asset in assets]
     checksum_paths.extend(
-        [notes, notice, license_report, detector_provenance, manifest_path, *sbom_paths]
+        [
+            notes,
+            notice,
+            license_report,
+            detector_provenance,
+            manifest_path,
+            *sbom_paths,
+            *evidence_paths,
+        ]
     )
     write_checksums(output, checksum_paths)
     if not args.skip_validation:

@@ -18,6 +18,7 @@ BUILD_ROOT = ROOT / "runtime-build"
 DIST_ROOT = ROOT / "runtime-dist"
 TAURI_BIN = ROOT / "desktop" / "src-tauri" / "binaries"
 RUNTIME_VERSION = "0.1.0"
+DEV_ONLY_DISTRIBUTIONS = ("pytest", "ruff", "notebook", "jupyter", "tensorboard", "mlflow")
 
 
 def sha256(path: Path) -> str:
@@ -102,6 +103,24 @@ def safe_clean(path: Path) -> None:
         shutil.rmtree(resolved)
 
 
+def remove_dev_only_metadata(runtime_root: Path) -> list[str]:
+    """Remove stray dev-only dist-info copied by upstream PyInstaller hooks."""
+    internal = runtime_root / "_internal"
+    removed = []
+    if not internal.is_dir():
+        return removed
+    for item in internal.iterdir():
+        lowered = item.name.casefold().replace("_", "-")
+        if (
+            item.is_dir()
+            and item.name.endswith(".dist-info")
+            and any(lowered.startswith(f"{name}-") for name in DEV_ONLY_DISTRIBUTIONS)
+        ):
+            shutil.rmtree(item)
+            removed.append(item.name)
+    return sorted(removed)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--no-clean", action="store_true")
@@ -154,6 +173,7 @@ def main() -> None:
     executable = source / f"{runtime_name}.exe"
     if not executable.is_file():
         raise FileNotFoundError(f"PyInstaller output missing: {executable}")
+    removed_dev_metadata = remove_dev_only_metadata(source)
     manifest_path = write_runtime_manifest(source, profile=args.profile)
     staged_executable = None
     triple = target_triple()
@@ -178,6 +198,7 @@ def main() -> None:
         "architecture": platform.machine(),
         "target_triple": triple,
         "profile": args.profile,
+        "removed_dev_only_metadata": removed_dev_metadata,
     }
     if args.stage_tauri:
         (TAURI_BIN / "runtime_build.json").write_text(

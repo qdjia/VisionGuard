@@ -19,10 +19,10 @@
 | Asset hosting | PASS (strategy) | `docs/release_asset_strategy.md` | 上传仍需许可证 Gate 与用户授权 |
 | SBOM inventory | PASS | 5 份 CycloneDX：Desktop、Core、VLM、Models、Distribution | 许可结论由独立 License Gate 负责 |
 | Detector license | BLOCKED | `docs/model_distribution_licenses.md` | 选择 AGPL 合规路径、商业许可或替换权重 |
-| Qwen / Paddle license | BLOCKED | `docs/release_licenses.md` | 模型 bundle 缺 exact revision / LICENSE evidence |
-| PyTorch / CUDA redistribution | BLOCKED | 194 个 VLM native 文件；19 个 NVIDIA candidates | 逐项对照 NVIDIA Attachment A 并保留证据 |
+| Qwen / Paddle evidence | PASS | `release-evidence/model-provenance.json` | 最终候选需重建并携带 evidence |
+| PyTorch / CUDA redistribution | BLOCKED | 20 个文件实例 / 19 个唯一 SHA-256；唯一二进制为 18 `ALLOWED_WITH_CONDITIONS`、1 `UNCLEAR` | 确认 `nvJitLink_120_0.dll` 条款或从 Runtime 移除并回归 |
 | Code signing | PASS (RC decision) | `docs/code_signing.md` | RC 明确 unsigned；Stable 建议受信证书 |
-| Historical regression | FAIL | 1 个 eligible hard case 仍为 near-boundary failure | 扩充真实 fixtures 并解决/接受边界失败 |
+| Historical regression | BLOCKED | 16/16 contract PASS；near-boundary=`DIAGNOSTIC_ONLY` | 真实图像覆盖与 clean-machine replay 仍不足 |
 | RC validator | FAIL EXPECTED | `scripts/validate_release.py --rc` | critical blockers 必须清零，禁止 bypass |
 
 当前建议：本阶段修改在自动化验证通过后可以 Commit / push normal branch；RC Tag、Stable Tag、GitHub Pre-release 与 Stable Release 均为 **No**。

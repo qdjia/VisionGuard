@@ -12,6 +12,7 @@ from pathlib import Path
 NATIVE_SUFFIXES = {".dll", ".exe", ".pyd"}
 NVIDIA_PREFIXES = (
     "cublas",
+    "cudart",
     "cudnn",
     "cufft",
     "cupti",
@@ -20,6 +21,57 @@ NVIDIA_PREFIXES = (
     "nvjitlink",
     "nvrtc",
 )
+CUDA_EULA_URL = "https://docs.nvidia.com/cuda/eula/"
+CUDNN_EULA_URL = "https://docs.nvidia.com/deeplearning/cudnn/latest/reference/eula.html"
+
+
+def nvidia_redistribution(name: str) -> dict[str, str] | None:
+    """Map a bundled NVIDIA DLL to the official redistribution evidence.
+
+    This is an engineering mapping, not legal advice.  A name that cannot be
+    matched exactly enough remains UNCLEAR and therefore blocks a public RC.
+    """
+    lowered = name.casefold()
+    if lowered.startswith("cudnn"):
+        return {
+            "category": "cuDNN runtime",
+            "canonical_name": "cudnn*.dll",
+            "source_component": "PyTorch CUDA wheel / NVIDIA cuDNN runtime",
+            "evidence_url": CUDNN_EULA_URL,
+            "evidence_reference": "cuDNN Supplement, Distribution: runtime .so and .dll",
+            "status": "ALLOWED_WITH_CONDITIONS",
+        }
+    mappings = (
+        ("cublaslt", "CUDA BLAS Library", "cublasLt.dll"),
+        ("cublas", "CUDA BLAS Library", "cublas.dll"),
+        ("cudart", "CUDA Runtime", "cudart.dll"),
+        ("cufftw", "CUDA FFT Library", "cufftw.dll"),
+        ("cufft", "CUDA FFT Library", "cufft.dll"),
+        ("curand", "CUDA Random Number Generation Library", "curand.dll"),
+        ("cusparse", "CUDA Sparse Matrix Library", "cusparse.dll"),
+        ("nvrtc-builtins", "NVIDIA Runtime Compilation Library", "nvrtc-builtins.dll"),
+        ("nvrtc", "NVIDIA Runtime Compilation Library", "nvrtc.dll"),
+    )
+    for prefix, category, canonical in mappings:
+        if lowered.startswith(prefix):
+            return {
+                "category": category,
+                "canonical_name": canonical,
+                "source_component": "PyTorch CUDA wheel / NVIDIA CUDA runtime",
+                "evidence_url": CUDA_EULA_URL,
+                "evidence_reference": "CUDA Toolkit Supplement, Attachment A",
+                "status": "ALLOWED_WITH_CONDITIONS",
+            }
+    if lowered.startswith("nvjitlink"):
+        return {
+            "category": "NVIDIA JIT Linking Library",
+            "canonical_name": "libnvJitLink.dll",
+            "source_component": "PyTorch CUDA wheel / NVIDIA CUDA runtime",
+            "evidence_url": CUDA_EULA_URL,
+            "evidence_reference": "CUDA Toolkit Supplement, Attachment A",
+            "status": "UNCLEAR",
+        }
+    return None
 
 
 def sha256(path: Path) -> str:
@@ -62,15 +114,21 @@ def inventory(runtime_root: Path) -> dict[str, object]:
         owner, status = classify_native(path.name, relative)
         owners[owner] += 1
         statuses[status] += 1
-        files.append(
-            {
-                "path": relative,
-                "size_bytes": path.stat().st_size,
-                "sha256": sha256(path),
-                "classification": owner,
-                "redistribution_review": status,
-            }
-        )
+        record = {
+            "path": relative,
+            "size_bytes": path.stat().st_size,
+            "sha256": sha256(path),
+            "classification": owner,
+            "redistribution_review": status,
+        }
+        evidence = nvidia_redistribution(path.name)
+        if evidence:
+            record["source_package"] = "torch"
+            record["source_package_version"] = "2.11.0+cu128"
+            record["nvidia_redistribution"] = evidence
+        files.append(record)
+    nvidia = [item for item in files if "nvidia_redistribution" in item]
+    unique_nvidia = {item["sha256"]: item for item in nvidia}.values()
     return {
         "schema_version": 1,
         "generated_at": datetime.now(UTC).isoformat(),
@@ -80,6 +138,16 @@ def inventory(runtime_root: Path) -> dict[str, object]:
         "classification_counts": dict(sorted(owners.items())),
         "review_counts": dict(sorted(statuses.items())),
         "legal_conclusion": "not_provided_by_tool",
+        "nvidia_candidate_count": len(nvidia),
+        "nvidia_unique_sha256_count": len(unique_nvidia),
+        "nvidia_status_counts": dict(
+            sorted(Counter(item["nvidia_redistribution"]["status"] for item in nvidia).items())
+        ),
+        "nvidia_unique_status_counts": dict(
+            sorted(
+                Counter(item["nvidia_redistribution"]["status"] for item in unique_nvidia).items()
+            )
+        ),
         "files": files,
     }
 

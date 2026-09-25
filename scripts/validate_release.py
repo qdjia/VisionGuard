@@ -6,6 +6,7 @@ import argparse
 import hashlib
 import json
 import re
+from collections import Counter
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -16,12 +17,19 @@ SECRET_PATTERN = re.compile(
 )
 RC_REQUIRED_GATES = {
     "advanced_ai_install",
+    "asset_hosting",
     "clean_machine",
+    "detector_license",
+    "gui_lifecycle",
     "offline",
     "upgrade",
     "uninstall",
     "historical_regression",
     "license_distribution",
+    "native_redistribution",
+    "paddle_evidence",
+    "qwen_evidence",
+    "sbom",
 }
 REQUIRED_SBOMS = (
     "desktop.cdx.json",
@@ -30,6 +38,8 @@ REQUIRED_SBOMS = (
     "models.cdx.json",
     "distribution.cdx.json",
 )
+DEV_ONLY_PACKAGES = {"pytest", "ruff", "notebook", "jupyter", "tensorboard", "mlflow"}
+REQUIRED_MODEL_ROLES = {"vlm", "ocr_detection", "ocr_recognition", "ocr_orientation"}
 
 
 def sha256(path: Path) -> str:
@@ -96,14 +106,87 @@ def _validate_advanced_manifest(root: Path, relative: str, errors: list[str]) ->
             errors.append(f"advanced AI archive hash mismatch: {component_name}")
 
 
-def _validate_sbom(path: Path, errors: list[str]) -> dict:
+def _validate_sbom(path: Path, errors: list[str], *, enforce_runtime_hygiene: bool = False) -> dict:
     payload = _load_json(path, f"SBOM {path.name}", errors)
     if payload.get("bomFormat") != "CycloneDX" or payload.get("specVersion") != "1.6":
         errors.append(f"unsupported SBOM format: {path.name}")
     components = payload.get("components")
     if not isinstance(components, list) or not components:
         errors.append(f"SBOM has no components: {path.name}")
+    if (
+        enforce_runtime_hygiene
+        and path.name in {"core-runtime.cdx.json", "vlm-runtime.cdx.json"}
+        and isinstance(components, list)
+    ):
+        dev_only = sorted(
+            {
+                str(item.get("name", "")).casefold()
+                for item in components
+                if str(item.get("name", "")).casefold() in DEV_ONLY_PACKAGES
+            }
+        )
+        if dev_only:
+            errors.append(f"dev-only packages found in {path.name}: {', '.join(dev_only)}")
     return payload
+
+
+def _validate_release_evidence(root: Path, errors: list[str]) -> None:
+    evidence = root / "release-evidence"
+    provenance = _load_json(evidence / "model-provenance.json", "model provenance", errors)
+    roles = {str(item.get("role")) for item in provenance.get("models", [])}
+    missing_roles = sorted(REQUIRED_MODEL_ROLES - roles)
+    if missing_roles:
+        errors.append(f"model provenance roles missing: {', '.join(missing_roles)}")
+    for item in provenance.get("models", []):
+        if not re.fullmatch(r"[0-9a-f]{40}", str(item.get("revision", ""))):
+            errors.append(f"model revision is not immutable: {item.get('role')}")
+        if not re.fullmatch(r"[0-9a-f]{64}", str(item.get("sha256", ""))):
+            errors.append(f"model SHA-256 is invalid: {item.get('role')}")
+        license_path = evidence / str(item.get("license_evidence", ""))
+        if not license_path.is_file():
+            errors.append(f"model license evidence missing: {item.get('role')}")
+    native = _load_json(
+        evidence / "native-nvidia-inventory.json", "NVIDIA native inventory", errors
+    )
+    files = native.get("files", [])
+    if native.get("candidate_count") != len(files) or not files:
+        errors.append("NVIDIA native inventory count is inconsistent")
+    unique_files = {str(item.get("sha256")): item for item in files}.values()
+    if native.get("unique_sha256_count") != len(unique_files):
+        errors.append("NVIDIA native unique SHA-256 count is inconsistent")
+    occurrence_statuses = dict(
+        sorted(
+            Counter(item.get("nvidia_redistribution", {}).get("status") for item in files).items()
+        )
+    )
+    unique_statuses = dict(
+        sorted(
+            Counter(
+                item.get("nvidia_redistribution", {}).get("status") for item in unique_files
+            ).items()
+        )
+    )
+    if native.get("status_counts") != occurrence_statuses:
+        errors.append("NVIDIA native occurrence status counts are inconsistent")
+    if native.get("unique_status_counts") != unique_statuses:
+        errors.append("NVIDIA native unique status counts are inconsistent")
+    unresolved = [
+        item.get("path")
+        for item in files
+        if item.get("nvidia_redistribution", {}).get("status")
+        not in {"ALLOWED", "ALLOWED_WITH_CONDITIONS"}
+    ]
+    if unresolved:
+        errors.append(
+            f"NVIDIA redistribution remains unresolved: {', '.join(map(str, unresolved))}"
+        )
+    runtime = _load_json(evidence / "runtime-provenance.json", "runtime provenance", errors)
+    versions = {
+        str(item.get("name")): str(item.get("version")) for item in runtime.get("components", [])
+    }
+    for name in ("onnxruntime-gpu", "torch", "torchvision"):
+        if not versions.get(name):
+            errors.append(f"runtime provenance missing: {name}")
 
 
 def validate_release(
@@ -213,8 +296,12 @@ def validate_release(
             if gates.get(name) != "passed":
                 errors.append(f"RC gate not passed: {name}")
         for sbom in REQUIRED_SBOMS:
-            if not (root / "sbom" / sbom).is_file():
+            sbom_path = root / "sbom" / sbom
+            if not sbom_path.is_file():
                 errors.append(f"missing release SBOM: sbom/{sbom}")
+            else:
+                _validate_sbom(sbom_path, errors, enforce_runtime_hygiene=True)
+        _validate_release_evidence(root, errors)
         models_path = root / "sbom/models.cdx.json"
         if models_path.is_file():
             model_names = {
@@ -263,6 +350,20 @@ def main() -> None:
     root = (args.release_dir or _latest_release()).expanduser().resolve()
     gate = "stable" if args.stable else "rc" if args.rc else "local"
     errors = validate_release(root, public=args.public, gate=gate)
+    if gate in {"rc", "stable"}:
+        manifest = _load_json(root / "release-manifest.json", "release manifest", [])
+        for name in sorted(RC_REQUIRED_GATES):
+            value = str(manifest.get("gates", {}).get(name, "missing")).casefold()
+            status = (
+                "PASS"
+                if value == "passed"
+                else "FAIL"
+                if value == "failed"
+                else "N/A"
+                if value == "n/a"
+                else "BLOCKED"
+            )
+            print(f"GATE {name}: {status}")
     if errors:
         for error in errors:
             print(f"ERROR: {error}")

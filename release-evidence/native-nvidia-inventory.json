@@ -1,0 +1,360 @@
+{
+    "schema_version":  1,
+    "audited_at":  "2026-09-25",
+    "runtime_component":  "visionguard-vlm-runtime",
+    "source_package":  "torch",
+    "source_package_version":  "2.11.0+cu128",
+    "candidate_count":  20,
+    "unique_sha256_count":  19,
+    "status_counts":  {
+                          "ALLOWED_WITH_CONDITIONS":  19,
+                          "UNCLEAR":  1
+                      },
+    "unique_status_counts":  {
+                                 "ALLOWED_WITH_CONDITIONS":  18,
+                                 "UNCLEAR":  1
+                             },
+    "engineering_notice":  "Engineering evidence only; not legal advice. UNCLEAR blocks public distribution.",
+    "files":  [
+                  {
+                      "path":  "_internal/torch/lib/cublas64_12.dll",
+                      "size_bytes":  113716224,
+                      "sha256":  "9513540e4ec4c51ee9e7304138c2cc255c29a8c181f9e80c38efa25738becd99",
+                      "classification":  "nvidia_cuda_or_cudnn",
+                      "redistribution_review":  "requires_attachment_a_review",
+                      "source_package":  "torch",
+                      "source_package_version":  "2.11.0+cu128",
+                      "nvidia_redistribution":  {
+                                                    "category":  "CUDA BLAS Library",
+                                                    "canonical_name":  "cublas.dll",
+                                                    "source_component":  "PyTorch CUDA wheel / NVIDIA CUDA runtime",
+                                                    "evidence_url":  "https://docs.nvidia.com/cuda/eula/",
+                                                    "evidence_reference":  "CUDA Toolkit Supplement, Attachment A",
+                                                    "status":  "ALLOWED_WITH_CONDITIONS"
+                                                }
+                  },
+                  {
+                      "path":  "_internal/torch/lib/cublasLt64_12.dll",
+                      "size_bytes":  674667520,
+                      "sha256":  "b199d1ff892a81b7fd3d57ba1781549609b41500b36008fef326038393ad46c7",
+                      "classification":  "nvidia_cuda_or_cudnn",
+                      "redistribution_review":  "requires_attachment_a_review",
+                      "source_package":  "torch",
+                      "source_package_version":  "2.11.0+cu128",
+                      "nvidia_redistribution":  {
+                                                    "category":  "CUDA BLAS Library",
+                                                    "canonical_name":  "cublasLt.dll",
+                                                    "source_component":  "PyTorch CUDA wheel / NVIDIA CUDA runtime",
+                                                    "evidence_url":  "https://docs.nvidia.com/cuda/eula/",
+                                                    "evidence_reference":  "CUDA Toolkit Supplement, Attachment A",
+                                                    "status":  "ALLOWED_WITH_CONDITIONS"
+                                                }
+                  },
+                  {
+                      "path":  "_internal/torch/lib/cudart64_12.dll",
+                      "size_bytes":  573952,
+                      "sha256":  "c2c9a9c22a9bcba90e261825968836787b331038047a26770cffb7a583c28344",
+                      "classification":  "nvidia_cuda_or_cudnn",
+                      "redistribution_review":  "requires_attachment_a_review",
+                      "source_package":  "torch",
+                      "source_package_version":  "2.11.0+cu128",
+                      "nvidia_redistribution":  {
+                                                    "category":  "CUDA Runtime",
+                                                    "canonical_name":  "cudart.dll",
+                                                    "source_component":  "PyTorch CUDA wheel / NVIDIA CUDA runtime",
+                                                    "evidence_url":  "https://docs.nvidia.com/cuda/eula/",
+                                                    "evidence_reference":  "CUDA Toolkit Supplement, Attachment A",
+                                                    "status":  "ALLOWED_WITH_CONDITIONS"
+                                                }
+                  },
+                  {
+                      "path":  "_internal/torch/lib/cudnn64_9.dll",
+                      "size_bytes":  264304,
+                      "sha256":  "c6de55089c4759a545ff63459c00a6223dacffa5e797109a6be2be0477fb6c5c",
+                      "classification":  "nvidia_cuda_or_cudnn",
+                      "redistribution_review":  "requires_attachment_a_review",
+                      "source_package":  "torch",
+                      "source_package_version":  "2.11.0+cu128",
+                      "nvidia_redistribution":  {
+                                                    "category":  "cuDNN runtime",
+                                                    "canonical_name":  "cudnn*.dll",
+                                                    "source_component":  "PyTorch CUDA wheel / NVIDIA cuDNN runtime",
+                                                    "evidence_url":  "https://docs.nvidia.com/deeplearning/cudnn/latest/reference/eula.html",
+                                                    "evidence_reference":  "cuDNN Supplement, Distribution: runtime .so and .dll",
+                                                    "status":  "ALLOWED_WITH_CONDITIONS"
+                                                }
+                  },
+                  {
+                      "path":  "_internal/torch/lib/cudnn_adv64_9.dll",
+                      "size_bytes":  269016688,
+                      "sha256":  "a8aed3390144ea20d96c0d618462a12cbc7897620380e60438489329b9722531",
+                      "classification":  "nvidia_cuda_or_cudnn",
+                      "redistribution_review":  "requires_attachment_a_review",
+                      "source_package":  "torch",
+                      "source_package_version":  "2.11.0+cu128",
+                      "nvidia_redistribution":  {
+                                                    "category":  "cuDNN runtime",
+                                                    "canonical_name":  "cudnn*.dll",
+                                                    "source_component":  "PyTorch CUDA wheel / NVIDIA cuDNN runtime",
+                                                    "evidence_url":  "https://docs.nvidia.com/deeplearning/cudnn/latest/reference/eula.html",
+                                                    "evidence_reference":  "cuDNN Supplement, Distribution: runtime .so and .dll",
+                                                    "status":  "ALLOWED_WITH_CONDITIONS"
+                                                }
+                  },
+                  {
+                      "path":  "_internal/torch/lib/cudnn_cnn64_9.dll",
+                      "size_bytes":  2984560,
+                      "sha256":  "acac8bf8f924ecd60928877310ba360d2ee5eb1e4ec80ff6475bf9d819d3a5c8",
+                      "classification":  "nvidia_cuda_or_cudnn",
+                      "redistribution_review":  "requires_attachment_a_review",
+                      "source_package":  "torch",
+                      "source_package_version":  "2.11.0+cu128",
+                      "nvidia_redistribution":  {
+                                                    "category":  "cuDNN runtime",
+                                                    "canonical_name":  "cudnn*.dll",
+                                                    "source_component":  "PyTorch CUDA wheel / NVIDIA cuDNN runtime",
+                                                    "evidence_url":  "https://docs.nvidia.com/deeplearning/cudnn/latest/reference/eula.html",
+                                                    "evidence_reference":  "cuDNN Supplement, Distribution: runtime .so and .dll",
+                                                    "status":  "ALLOWED_WITH_CONDITIONS"
+                                                }
+                  },
+                  {
+                      "path":  "_internal/torch/lib/cudnn_engines_precompiled64_9.dll",
+                      "size_bytes":  481015408,
+                      "sha256":  "3a97df241beb2b75eb5d6152996a9a90d2155c2d4da1aeac5bd66850ed2446c1",
+                      "classification":  "nvidia_cuda_or_cudnn",
+                      "redistribution_review":  "requires_attachment_a_review",
+                      "source_package":  "torch",
+                      "source_package_version":  "2.11.0+cu128",
+                      "nvidia_redistribution":  {
+                                                    "category":  "cuDNN runtime",
+                                                    "canonical_name":  "cudnn*.dll",
+                                                    "source_component":  "PyTorch CUDA wheel / NVIDIA cuDNN runtime",
+                                                    "evidence_url":  "https://docs.nvidia.com/deeplearning/cudnn/latest/reference/eula.html",
+                                                    "evidence_reference":  "cuDNN Supplement, Distribution: runtime .so and .dll",
+                                                    "status":  "ALLOWED_WITH_CONDITIONS"
+                                                }
+                  },
+                  {
+                      "path":  "_internal/torch/lib/cudnn_engines_runtime_compiled64_9.dll",
+                      "size_bytes":  27759216,
+                      "sha256":  "81c5e5475e386269825ae6da0652f4554fa1c58af6c90908a180314689e12350",
+                      "classification":  "nvidia_cuda_or_cudnn",
+                      "redistribution_review":  "requires_attachment_a_review",
+                      "source_package":  "torch",
+                      "source_package_version":  "2.11.0+cu128",
+                      "nvidia_redistribution":  {
+                                                    "category":  "cuDNN runtime",
+                                                    "canonical_name":  "cudnn*.dll",
+                                                    "source_component":  "PyTorch CUDA wheel / NVIDIA cuDNN runtime",
+                                                    "evidence_url":  "https://docs.nvidia.com/deeplearning/cudnn/latest/reference/eula.html",
+                                                    "evidence_reference":  "cuDNN Supplement, Distribution: runtime .so and .dll",
+                                                    "status":  "ALLOWED_WITH_CONDITIONS"
+                                                }
+                  },
+                  {
+                      "path":  "_internal/torch/lib/cudnn_graph64_9.dll",
+                      "size_bytes":  2493040,
+                      "sha256":  "f5453cb541402218cb5459e669db1d578656ebef394c755ab5acc2bec1165657",
+                      "classification":  "nvidia_cuda_or_cudnn",
+                      "redistribution_review":  "requires_attachment_a_review",
+                      "source_package":  "torch",
+                      "source_package_version":  "2.11.0+cu128",
+                      "nvidia_redistribution":  {
+                                                    "category":  "cuDNN runtime",
+                                                    "canonical_name":  "cudnn*.dll",
+                                                    "source_component":  "PyTorch CUDA wheel / NVIDIA cuDNN runtime",
+                                                    "evidence_url":  "https://docs.nvidia.com/deeplearning/cudnn/latest/reference/eula.html",
+                                                    "evidence_reference":  "cuDNN Supplement, Distribution: runtime .so and .dll",
+                                                    "status":  "ALLOWED_WITH_CONDITIONS"
+                                                }
+                  },
+                  {
+                      "path":  "_internal/torch/lib/cudnn_heuristic64_9.dll",
+                      "size_bytes":  58874992,
+                      "sha256":  "3b1cb10835204fb7a45bf03aeb353842185cb2ebb34f59db20d9cb6fe5c1c556",
+                      "classification":  "nvidia_cuda_or_cudnn",
+                      "redistribution_review":  "requires_attachment_a_review",
+                      "source_package":  "torch",
+                      "source_package_version":  "2.11.0+cu128",
+                      "nvidia_redistribution":  {
+                                                    "category":  "cuDNN runtime",
+                                                    "canonical_name":  "cudnn*.dll",
+                                                    "source_component":  "PyTorch CUDA wheel / NVIDIA cuDNN runtime",
+                                                    "evidence_url":  "https://docs.nvidia.com/deeplearning/cudnn/latest/reference/eula.html",
+                                                    "evidence_reference":  "cuDNN Supplement, Distribution: runtime .so and .dll",
+                                                    "status":  "ALLOWED_WITH_CONDITIONS"
+                                                }
+                  },
+                  {
+                      "path":  "_internal/torch/lib/cudnn_ops64_9.dll",
+                      "size_bytes":  105604208,
+                      "sha256":  "922897bd15a66acecde7c026ecc835b0fc5662c9ae08c120fd89f0f73affa7da",
+                      "classification":  "nvidia_cuda_or_cudnn",
+                      "redistribution_review":  "requires_attachment_a_review",
+                      "source_package":  "torch",
+                      "source_package_version":  "2.11.0+cu128",
+                      "nvidia_redistribution":  {
+                                                    "category":  "cuDNN runtime",
+                                                    "canonical_name":  "cudnn*.dll",
+                                                    "source_component":  "PyTorch CUDA wheel / NVIDIA cuDNN runtime",
+                                                    "evidence_url":  "https://docs.nvidia.com/deeplearning/cudnn/latest/reference/eula.html",
+                                                    "evidence_reference":  "cuDNN Supplement, Distribution: runtime .so and .dll",
+                                                    "status":  "ALLOWED_WITH_CONDITIONS"
+                                                }
+                  },
+                  {
+                      "path":  "_internal/torch/lib/cufft64_11.dll",
+                      "size_bytes":  276121600,
+                      "sha256":  "f4fea9227b14843894ad5436725f9638b172171142c95291fc6ae7a493248221",
+                      "classification":  "nvidia_cuda_or_cudnn",
+                      "redistribution_review":  "requires_attachment_a_review",
+                      "source_package":  "torch",
+                      "source_package_version":  "2.11.0+cu128",
+                      "nvidia_redistribution":  {
+                                                    "category":  "CUDA FFT Library",
+                                                    "canonical_name":  "cufft.dll",
+                                                    "source_component":  "PyTorch CUDA wheel / NVIDIA CUDA runtime",
+                                                    "evidence_url":  "https://docs.nvidia.com/cuda/eula/",
+                                                    "evidence_reference":  "CUDA Toolkit Supplement, Attachment A",
+                                                    "status":  "ALLOWED_WITH_CONDITIONS"
+                                                }
+                  },
+                  {
+                      "path":  "_internal/torch/lib/cufftw64_11.dll",
+                      "size_bytes":  163328,
+                      "sha256":  "84c86dcc4d4b770e75766964149ef688c901dc89e380278fe399dd3c03608541",
+                      "classification":  "nvidia_cuda_or_cudnn",
+                      "redistribution_review":  "requires_attachment_a_review",
+                      "source_package":  "torch",
+                      "source_package_version":  "2.11.0+cu128",
+                      "nvidia_redistribution":  {
+                                                    "category":  "CUDA FFT Library",
+                                                    "canonical_name":  "cufftw.dll",
+                                                    "source_component":  "PyTorch CUDA wheel / NVIDIA CUDA runtime",
+                                                    "evidence_url":  "https://docs.nvidia.com/cuda/eula/",
+                                                    "evidence_reference":  "CUDA Toolkit Supplement, Attachment A",
+                                                    "status":  "ALLOWED_WITH_CONDITIONS"
+                                                }
+                  },
+                  {
+                      "path":  "_internal/torch/lib/curand64_10.dll",
+                      "size_bytes":  71955968,
+                      "sha256":  "3465fd1b46e551339b8f44c455756a0f2cba8bd846562eb659040d48edb7aaac",
+                      "classification":  "nvidia_cuda_or_cudnn",
+                      "redistribution_review":  "requires_attachment_a_review",
+                      "source_package":  "torch",
+                      "source_package_version":  "2.11.0+cu128",
+                      "nvidia_redistribution":  {
+                                                    "category":  "CUDA Random Number Generation Library",
+                                                    "canonical_name":  "curand.dll",
+                                                    "source_component":  "PyTorch CUDA wheel / NVIDIA CUDA runtime",
+                                                    "evidence_url":  "https://docs.nvidia.com/cuda/eula/",
+                                                    "evidence_reference":  "CUDA Toolkit Supplement, Attachment A",
+                                                    "status":  "ALLOWED_WITH_CONDITIONS"
+                                                }
+                  },
+                  {
+                      "path":  "_internal/torch/lib/cusparse64_12.dll",
+                      "size_bytes":  379535872,
+                      "sha256":  "f4688daa6163c47a0b5293926ec7ae367de6b4af54ea201638b308831b322a0e",
+                      "classification":  "nvidia_cuda_or_cudnn",
+                      "redistribution_review":  "requires_attachment_a_review",
+                      "source_package":  "torch",
+                      "source_package_version":  "2.11.0+cu128",
+                      "nvidia_redistribution":  {
+                                                    "category":  "CUDA Sparse Matrix Library",
+                                                    "canonical_name":  "cusparse.dll",
+                                                    "source_component":  "PyTorch CUDA wheel / NVIDIA CUDA runtime",
+                                                    "evidence_url":  "https://docs.nvidia.com/cuda/eula/",
+                                                    "evidence_reference":  "CUDA Toolkit Supplement, Attachment A",
+                                                    "status":  "ALLOWED_WITH_CONDITIONS"
+                                                }
+                  },
+                  {
+                      "path":  "_internal/torch/lib/nvJitLink_120_0.dll",
+                      "size_bytes":  77860352,
+                      "sha256":  "959d3cb44527ec884db8dc20772520b584dbe7d622d11b0530e6326417078b3e",
+                      "classification":  "nvidia_cuda_or_cudnn",
+                      "redistribution_review":  "requires_attachment_a_review",
+                      "source_package":  "torch",
+                      "source_package_version":  "2.11.0+cu128",
+                      "nvidia_redistribution":  {
+                                                    "category":  "NVIDIA JIT Linking Library",
+                                                    "canonical_name":  "libnvJitLink.dll",
+                                                    "source_component":  "PyTorch CUDA wheel / NVIDIA CUDA runtime",
+                                                    "evidence_url":  "https://docs.nvidia.com/cuda/eula/",
+                                                    "evidence_reference":  "CUDA Toolkit Supplement, Attachment A",
+                                                    "status":  "UNCLEAR"
+                                                }
+                  },
+                  {
+                      "path":  "_internal/torch/lib/nvrtc-builtins64_128.dll",
+                      "size_bytes":  6356480,
+                      "sha256":  "a7afa2a40cbd3f922a33d8bf71c13cb26ca707c7016a9bc5fcde36759ba668f5",
+                      "classification":  "nvidia_cuda_or_cudnn",
+                      "redistribution_review":  "requires_attachment_a_review",
+                      "source_package":  "torch",
+                      "source_package_version":  "2.11.0+cu128",
+                      "nvidia_redistribution":  {
+                                                    "category":  "NVIDIA Runtime Compilation Library",
+                                                    "canonical_name":  "nvrtc-builtins.dll",
+                                                    "source_component":  "PyTorch CUDA wheel / NVIDIA CUDA runtime",
+                                                    "evidence_url":  "https://docs.nvidia.com/cuda/eula/",
+                                                    "evidence_reference":  "CUDA Toolkit Supplement, Attachment A",
+                                                    "status":  "ALLOWED_WITH_CONDITIONS"
+                                                }
+                  },
+                  {
+                      "path":  "_internal/torch/lib/nvrtc64_120_0.alt.dll",
+                      "size_bytes":  86794240,
+                      "sha256":  "5464ea01b079d78042374dc7819684910c8e9d5c63000e2d2d5aa02298ecf2ae",
+                      "classification":  "nvidia_cuda_or_cudnn",
+                      "redistribution_review":  "requires_attachment_a_review",
+                      "source_package":  "torch",
+                      "source_package_version":  "2.11.0+cu128",
+                      "nvidia_redistribution":  {
+                                                    "category":  "NVIDIA Runtime Compilation Library",
+                                                    "canonical_name":  "nvrtc.dll",
+                                                    "source_component":  "PyTorch CUDA wheel / NVIDIA CUDA runtime",
+                                                    "evidence_url":  "https://docs.nvidia.com/cuda/eula/",
+                                                    "evidence_reference":  "CUDA Toolkit Supplement, Attachment A",
+                                                    "status":  "ALLOWED_WITH_CONDITIONS"
+                                                }
+                  },
+                  {
+                      "path":  "_internal/torch/lib/nvrtc64_120_0.dll",
+                      "size_bytes":  86728192,
+                      "sha256":  "02d2d7ef4690bf1a55dda1d3ac94c86ce8d16920071c87bcd3e70e94ef346e93",
+                      "classification":  "nvidia_cuda_or_cudnn",
+                      "redistribution_review":  "requires_attachment_a_review",
+                      "source_package":  "torch",
+                      "source_package_version":  "2.11.0+cu128",
+                      "nvidia_redistribution":  {
+                                                    "category":  "NVIDIA Runtime Compilation Library",
+                                                    "canonical_name":  "nvrtc.dll",
+                                                    "source_component":  "PyTorch CUDA wheel / NVIDIA CUDA runtime",
+                                                    "evidence_url":  "https://docs.nvidia.com/cuda/eula/",
+                                                    "evidence_reference":  "CUDA Toolkit Supplement, Attachment A",
+                                                    "status":  "ALLOWED_WITH_CONDITIONS"
+                                                }
+                  },
+                  {
+                      "path":  "_internal/torchvision/cudart64_12.dll",
+                      "size_bytes":  573952,
+                      "sha256":  "c2c9a9c22a9bcba90e261825968836787b331038047a26770cffb7a583c28344",
+                      "classification":  "nvidia_cuda_or_cudnn",
+                      "redistribution_review":  "requires_attachment_a_review",
+                      "source_package":  "torch",
+                      "source_package_version":  "2.11.0+cu128",
+                      "nvidia_redistribution":  {
+                                                    "category":  "CUDA Runtime",
+                                                    "canonical_name":  "cudart.dll",
+                                                    "source_component":  "PyTorch CUDA wheel / NVIDIA CUDA runtime",
+                                                    "evidence_url":  "https://docs.nvidia.com/cuda/eula/",
+                                                    "evidence_reference":  "CUDA Toolkit Supplement, Attachment A",
+                                                    "status":  "ALLOWED_WITH_CONDITIONS"
+                                                }
+                  }
+              ]
+}

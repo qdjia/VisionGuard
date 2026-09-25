@@ -134,6 +134,12 @@ def model_components(manifest_path: Path, profile: str) -> list[dict[str, object
     result: list[dict[str, object]] = []
     for name, model in sorted(payload.get("models", {}).items()):
         base = str(model.get("path", name))
+        provenance = model.get("provenance", {})
+        provenance_properties = [
+            {"name": f"visionguard:model_{key}", "value": str(provenance[key])}
+            for key in ("model_id", "revision", "license", "source")
+            if provenance.get(key)
+        ]
         files = model.get("files", [])
         if files:
             for entry in files:
@@ -152,7 +158,8 @@ def model_components(manifest_path: Path, profile: str) -> list[dict[str, object
                                 "value": str(entry["size_bytes"]),
                             },
                             {"name": "visionguard:model_role", "value": name},
-                        ],
+                        ]
+                        + provenance_properties,
                     }
                 )
         elif model.get("sha256"):
@@ -167,7 +174,8 @@ def model_components(manifest_path: Path, profile: str) -> list[dict[str, object
                     "properties": [
                         {"name": "visionguard:size_bytes", "value": str(model["size_bytes"])},
                         {"name": "visionguard:model_role", "value": name},
-                    ],
+                    ]
+                    + provenance_properties,
                 }
             )
     return result
