@@ -1,35 +1,16 @@
-# VisionGuard v1.0 RC Distribution License Report
+# Release License Report
 
-审计更新：2026-09-26。状态基于当前冻结候选资产；不是法律意见。
+| Component | Scope | License | Decision |
+|---|---|---|---|
+| VisionGuard source/Desktop | Source + installer | AGPL-3.0-only | PASS (source alignment) |
+| Ultralytics YOLO detector | Core Models | AGPL-3.0 / applicable Enterprise terms | `ALLOWED_WITH_CONDITIONS` |
+| Qwen3-VL-2B-Instruct | Optional VLM Models | Apache-2.0 | PASS (evidence) |
+| PaddleOCR models | Core Models | Apache-2.0 metadata | PASS (evidence) |
+| ONNX Runtime | Core Runtime | MIT | PASS (notice required) |
+| PyTorch / torchvision | Optional VLM Runtime | BSD-style + notices | PASS (evidence) |
+| NVIDIA CUDA / cuDNN native files | Optional VLM Runtime | NVIDIA terms | BLOCKED: one mapping remains `UNCLEAR` |
+| WebView2 Runtime | Installer | Microsoft distribution terms | Conditional on frozen artifact evidence |
 
-| Component | Version / artifact | Included in | License | Redistribution status | Required notice / evidence | Gate |
-|---|---|---|---|---|---|---|
-| VisionGuard source/Desktop | 1.0.0 | Installer | MIT | Allowed with MIT notice | 根 `LICENSE` | PASS |
-| Ultralytics YOLO26 detector | assets release `v8.4.0`；base SHA-256 `9b09cc…4fef`；Ultralytics 8.4.151；ONNX `82dccb…24d6` | Core Models | AGPL-3.0 or Enterprise | `NOT_ALLOWED` for the current MIT RC | Implement qualified AGPL path、provide applicable commercial license、or do not distribute weight | **BLOCKED** |
-| Qwen3-VL-2B-Instruct | revision `89644892…4203`；model SHA-256 `7de183…78a0` | VLM Models | Apache-2.0 on immutable official model card | Allowed with conditions | `release-evidence/model-provenance.json`、model-card metadata、canonical Apache-2.0 text | PASS (evidence) |
-| PaddleOCR source | Frozen Python package | Core Runtime | Apache-2.0 | Allowed with conditions | Apache-2.0 notice | PARTIAL |
-| PaddleOCR model assets | revisions `8e0f56…` / `e5a92b…` / `cd237a…` | Core Models | Bundled immutable README metadata declares Apache-2.0 | Allowed with conditions | Exact hashes/revisions and canonical Apache-2.0 text retained in `release-evidence/` | PASS (evidence) |
-| ONNX Runtime | 1.26.0 (`onnxruntime-gpu` build source；CPU-only Core package profile) | Core Runtime | MIT | Allowed with notice | Runtime mapping in `release-evidence/runtime-provenance.json` | PASS (evidence) |
-| PyTorch | 2.11.0+cu128；torchvision 0.26.0+cu128 | VLM Runtime | BSD-3-Clause plus bundled third-party components | Allowed with conditions | Bundled LICENSE/NOTICE + native dependency audit | PASS (framework evidence) |
-| CUDA/cuDNN libraries | CUDA 12.x / cuDNN 9 family DLLs | VLM Runtime | NVIDIA SDK EULA / cuDNN Supplement | 20 file occurrences / 19 unique hashes；18 unique allowed with conditions；`nvJitLink_120_0.dll` remains unclear | Attachment A says `libnvJitLink.dll` while the official Windows guide says `nvJitLink.dll`; obtain clarification | **BLOCKED** |
-| WebView2 Evergreen Standalone Installer | File version 1.3.271.7 in current Tauri build cache | Core NSIS | Microsoft distribution terms | Supported distribution method | Record installer SHA-256 and Microsoft distribution evidence | PARTIAL |
-| Node/Rust/Python dependencies | Exact versions in CycloneDX SBOM | Desktop/Core/VLM | Mixed | Per-component review required | Final SBOM and bundled notices | PARTIAL |
+VisionGuard 自有代码与第三方资产是两个许可层。项目采用 AGPL 不会把第三方 MIT、Apache、BSD 或专有再分发条款改成 AGPL，也不会自动解决 NVIDIA 二进制再分发问题。
 
-## Frozen model evidence status
-
-- Qwen model bytes match immutable revision `89644892e4d85e24eaac8bacfd4f463576704203`; immutable model-card metadata and canonical Apache-2.0 text are retained.
-- OCR weight bytes match three immutable upstream revisions. Those repositories' README metadata declares Apache-2.0 but the revisions return 404 for standalone `LICENSE`; the canonical license text is therefore retained as explicit release evidence.
-- The detector record now retains the v8.4.0 source URL and local base/trained/ONNX hashes. It still has no Enterprise License and has not implemented an AGPL distribution plan.
-
-Qwen/Paddle evidence defects are closed at the engineering-evidence level. Detector and one native NVIDIA mapping still keep the public RC blocked.
-
-## Official evidence accessed 2026-09-25
-
-- Qwen model card: <https://huggingface.co/Qwen/Qwen3-VL-2B-Instruct>
-- PaddleOCR license: <https://github.com/PaddlePaddle/PaddleOCR/blob/main/LICENSE>
-- Paddle license: <https://github.com/PaddlePaddle/Paddle/blob/develop/LICENSE>
-- Ultralytics licensing: <https://www.ultralytics.com/license>
-- ONNX Runtime license: <https://github.com/microsoft/onnxruntime/blob/main/LICENSE>
-- PyTorch license: <https://github.com/pytorch/pytorch/blob/main/LICENSE>
-- NVIDIA CUDA EULA: <https://docs.nvidia.com/cuda/eula/index.html>
-- WebView2 distribution: <https://learn.microsoft.com/microsoft-edge/webview2/concepts/distribution>
+最终候选必须包含 `LICENSE`、`NOTICE`、本报告、`THIRD_PARTY_NOTICES.md`、模型/Runtime provenance 与 CycloneDX SBOM，并映射到源码 commit 和预期 tag。

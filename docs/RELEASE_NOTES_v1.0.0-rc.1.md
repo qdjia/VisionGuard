@@ -1,41 +1,19 @@
-# VisionGuard 1.0.0-rc.1 — Draft Release Notes
+# VisionGuard 1.0.0-rc.1 Draft Release Notes
 
-Status: **Draft / Release Candidate preparation only. Do not publish yet.**
+状态：草案；尚未获准 Tag 或公开发布。
 
-VisionGuard is a local-first multimodal publishing-content review project. The Core installer provides detector, OCR, text baseline, routing and fusion. Advanced AI is an optional local import containing the VLM Runtime and Qwen3-VL model files.
+## Release alignment
 
-## Candidate layout
+- VisionGuard 自有代码已迁移为 `AGPL-3.0-only`。
+- 产品定义改为“网络辅助安装/组件获取/更新 + 完全本地审核推理”，不再宣称 Fully Offline。
+- Real Offline gate 为 N/A，不再阻断 v1.0 RC。
+- Ultralytics Detector 在 AGPL 路径下为 `ALLOWED_WITH_CONDITIONS`。
+- SBOM、manifest 与严格 validator 需要携带和验证项目许可证及源码版本映射。
 
-- Core users download only `VisionGuard-Setup-1.0.0-rc.1.exe`.
-- Advanced AI users additionally download `advanced-ai-manifest.json` and all 9 `.partNN` files.
-- Users select the manifest in VisionGuard; they do not manually concatenate parts.
-- SHA-256 verification is required before use.
+## Remaining blockers
 
-## Measured size
+- NVIDIA `nvJitLink_120_0.dll` 再分发状态仍为 `UNCLEAR`。
+- Clean Windows、真实 GUI 生命周期和历史真实图片回归尚未完成。
+- 许可证迁移后的最终候选尚未重建。
 
-- Core installer: approximately 506.4 MiB.
-- Core installed footprint: approximately 0.843 GiB.
-- Advanced AI download: approximately 8.191 GiB.
-- Additional Advanced AI installation space: approximately 9.009 GiB.
-- Peak with downloaded parts retained: approximately 17.2 GiB.
-
-## Validated configuration
-
-Development validation used Windows x86-64 and an NVIDIA RTX 4060 Laptop GPU with 8 GiB VRAM. This is a validated configuration, not a claimed minimum requirement or broad hardware certification.
-
-## Candidate limitations
-
-- The installer is unsigned and may trigger Windows SmartScreen warnings.
-- Advanced AI download/import is manual; an online downloader is not part of this candidate.
-- Broad GPU compatibility has not been established.
-- Clean-machine, offline, upgrade and uninstall acceptance are still pending.
-- Detector redistribution is `NOT_ALLOWED` for the current MIT RC and one native NVIDIA DLL mapping remains unresolved; therefore these notes remain a draft and no disputed assets may be uploaded.
-
-## Blocking issues
-
-- Detector redistribution path is `NOT_ALLOWED` for the current MIT RC until an approved AGPL, commercial-license, no-weight, or replacement path is implemented.
-- `nvJitLink_120_0.dll` does not yet have an exact-name redistribution mapping accepted for this candidate.
-- Real-image historical coverage and clean-machine replay are incomplete.
-- Clean Windows, true offline and real GUI lifecycle acceptance are incomplete.
-
-This Release Candidate is not production certification.
+本文件不表示候选已经公开发布。

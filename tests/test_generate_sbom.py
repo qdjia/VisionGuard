@@ -35,6 +35,7 @@ def test_sbom_is_cyclonedx_and_deterministically_sorted(tmp_path: Path) -> None:
     )
     payload = json.loads(target.read_text(encoding="utf-8"))
     assert payload["bomFormat"] == "CycloneDX"
+    assert payload["metadata"]["component"]["licenses"] == [{"license": {"id": "AGPL-3.0-only"}}]
     assert [item["bom-ref"] for item in payload["components"]] == ["a", "z"]
 
 

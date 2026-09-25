@@ -1,35 +1,26 @@
-# Detector Provenance Record
+# Detector Provenance and Redistribution Decision
 
-审计更新：2026-09-26。结论：**当前 MIT Public RC 的 Redistribution status = `NOT_ALLOWED`；阻塞 Public RC。** 本记录是工程证据，不是法律意见。
+审计日期：2026-09-26。当前 AGPL 开源发行路径结论：**`ALLOWED_WITH_CONDITIONS`**。这是工程证据，不是法律意见。
 
-## Artifact chain
+## 来源链
 
-| Field | Recorded value |
+| Item | Evidence |
 |---|---|
-| Architecture | Ultralytics YOLO26n |
-| Base checkpoint reference | `yolo26n.pt`，5,544,453 bytes，SHA-256 `9b09cc8bf347f0fc8a5f7657480587f25db09b34bf33b0652110fb03a8ad4fef` |
-| Base source | Ultralytics assets release `v8.4.0`：`https://github.com/ultralytics/assets/releases/download/v8.4.0/yolo26n.pt` |
-| Training mode | `pretrained: true` |
-| Training package | Ultralytics 8.4.151 |
-| Training runtime | PyTorch 2.11.0+cu128 |
-| Dataset | `data/visionguard_smoke`，由 `scripts/create_smoke_dataset.py` 生成的 8 张 synthetic smoke images；项目自有 fixture，随仓库 MIT License |
-| Training output | `artifacts/experiments/yolo26n_smoke_640/weights/best.pt` |
-| Training output SHA-256 | `0f5676be8b44d2a7d1946846e7aa7ad368de4519ad826be71f49a3e200f6cbe9` |
-| Export | ONNX opset 18、dynamic batch、embedded NMS |
-| Final bundled artifact | `models/core-models-v1/detector/model.onnx` |
-| Final ONNX SHA-256 | `82dccb397dd39113542731e574001241bcadd2ec4a22e8c31b4592815a5b24d6` |
+| Base checkpoint | Ultralytics `yolo26n.pt`, assets release `v8.4.0`, SHA-256 `9b09cc8bf347f0fc8a5f7657480587f25db09b34bf33b0652110fb03a8ad4fef` |
+| Training package | `ultralytics==8.4.151` |
+| Dataset | `data/visionguard_smoke`，项目生成的 synthetic fixture，项目自有部分随 AGPL-3.0-only 发行 |
+| Fine-tuned checkpoint | SHA-256 `0f5676be8b44d2a7d1946846e7aa7ad368de4519ad826be71f49a3e200f6cbe9` |
+| Exported ONNX | SHA-256 `82dccb397dd39113542731e574001241bcadd2ec4a22e8c31b4592815a5b24d6` |
 
-本地重复副本 `yolo26n.pt` 与 `weights/yolo26n.pt` 哈希一致；官方文档和下载日志把 YOLO26 权重定位到 assets release `v8.4.0`。当前证据能够固定 base → `best.pt` → ONNX 的本地字节链，但没有 Ultralytics Enterprise License。把权重导出为 ONNX 不会自动改变上游许可义务。机器可读记录见 `release-evidence/detector-provenance.json`。
+导出 ONNX 不消除上游及派生模型许可义务。旧 MIT RC 路径因没有 Enterprise 证明或 AGPL 发行实现而为 `NOT_ALLOWED`，该历史判断已由本次 AGPL 迁移取代。
 
-## License finding
+## 放行条件
 
-Ultralytics 官方许可页面在 2026-09-26 明确说明 pretrained、trained/fine-tuned 模型默认使用 AGPL-3.0，或者需要 Enterprise License。VisionGuard 根许可证当前为 MIT，仓库中没有 Ultralytics Enterprise License 证明，也没有实施许可方描述的完整 AGPL-3.0 发行方案。
+1. 根许可证、Python/Node/Rust/Tauri 元数据均声明 `AGPL-3.0-only`。
+2. 向接收者提供适用的 Corresponding Source、构建/训练/导出脚本与修改信息。
+3. 发行包包含许可证、Notice、第三方声明和本来源记录。
+4. 模型 base、训练产物、ONNX 的版本与哈希保持可追溯。
+5. 最终 manifest 记录精确源码 commit 和与版本一致的预期 tag。
+6. 严格 validator 对上述条件 fail closed。
 
-针对**当前 MIT RC 分发方案**的工程枚举结论：**`NOT_ALLOWED`**。这不是说该模型永远不能发行，而是当前条件没有满足任一许可路径；ONNX 权重不得标记为 `publishable=true`。允许的关闭路径只有：
-
-1. 项目所有者确认并执行完整 AGPL-3.0 合规方案；
-2. 提供覆盖当前模型和分发方式的 Ultralytics 商业许可；
-3. Public RC 不分发 detector 权重，并重新验收不带权重的产品行为；
-4. 经用户另行批准，使用许可来源清晰的 base model 重新训练并重新完成全部回归。
-
-在其中一种路径完成前，Detector License Gate 保持 `BLOCKED`。若选择更换 base 或重新训练，必须先完成影响分析并由用户决定，本轮没有自动替换模型。
+官方许可说明：<https://www.ultralytics.com/license>。

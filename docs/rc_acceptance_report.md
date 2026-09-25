@@ -1,5 +1,7 @@
 # VisionGuard v1.0 RC Acceptance Report
 
+> 历史快照（已被取代）：本报告记录迁移前的 MIT / Fully Offline RC 状态。当前政策以 `docs/agpl_migration.md` 和 `docs/release_gate.md` 为准。
+
 日期：2026-09-25  
 候选：`1.0.0-rc.1`（未创建 Tag）  
 最终结论：**RC BLOCKED**

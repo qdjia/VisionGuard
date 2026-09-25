@@ -1,5 +1,7 @@
 # RC Blocker Closure Plan
 
+> 历史快照（已被取代）：本计划记录迁移前的 MIT / Fully Offline 阻断项。当前政策以 `docs/agpl_migration.md` 和 `docs/release_gate.md` 为准。
+
 审计更新：2026-09-26。状态只使用 `PASS`、`FAIL`、`BLOCKED`、`N/A`。本表是工程审计，不是法律意见。
 
 | Blocker | Severity | Current Evidence | Required Evidence | Can Fix In Code? | User Action? | External Verification? | Blocks RC Tag? | Closure Criteria |

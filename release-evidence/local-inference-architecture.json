@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "audited_at": "2026-09-26",
+  "status": "PASS",
+  "product_boundary": {
+    "network_assisted_installation_and_updates": true,
+    "local_review_inference": true,
+    "cloud_inference_enabled": false,
+    "fully_offline_claim": false
+  },
+  "review_stages": [
+    "detector",
+    "ocr",
+    "text_baseline",
+    "dynamic_router",
+    "local_vlm_sidecar",
+    "risk_fusion",
+    "structured_result"
+  ],
+  "evidence": [
+    {"path": "configs/api.yaml", "assertion": "API bind host is loopback"},
+    {"path": "configs/vlm.yaml", "assertion": "VLM provider is local"},
+    {"path": "src/visionguard/vlm/providers/remote.py", "assertion": "sidecar endpoint is restricted to http://127.0.0.1"},
+    {"path": "desktop/src", "assertion": "managed Runtime uses a local loopback endpoint"}
+  ],
+  "allowed_network_lifecycle_stages": [
+    "installer acquisition",
+    "component and model acquisition",
+    "updates"
+  ]
+}

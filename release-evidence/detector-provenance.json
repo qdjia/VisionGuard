@@ -1,8 +1,13 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "audited_at": "2026-09-26",
-  "scope": "current_mit_public_rc_distribution",
+  "scope": "agpl_3_0_only_open_source_rc_distribution",
   "engineering_notice": "Engineering evidence only; not legal advice.",
+  "previous_distribution": {
+    "scope": "mit_public_rc_distribution",
+    "redistribution_status": "NOT_ALLOWED",
+    "superseded_by": "docs/agpl_migration.md"
+  },
   "base_checkpoint": {
     "name": "yolo26n.pt",
     "source": "Ultralytics official pretrained model download path",
@@ -19,7 +24,7 @@
     "pretrained": true,
     "dataset": "data/visionguard_smoke",
     "dataset_kind": "project-generated synthetic smoke fixture",
-    "dataset_license": "MIT repository license",
+    "dataset_license": "AGPL-3.0-only for VisionGuard-owned fixture code and metadata",
     "quality_claim": false
   },
   "fine_tuned_checkpoint": {
@@ -35,14 +40,21 @@
     "derivative_status": "Export does not remove upstream model-license obligations"
   },
   "commercial_license_evidence": null,
-  "agpl_distribution_plan": "NOT_IMPLEMENTED",
-  "redistribution_status": "NOT_ALLOWED",
-  "verdict_reason": "The current RC is presented under the repository MIT license, has no recorded Ultralytics Enterprise License, and has not implemented the complete AGPL-3.0 distribution path described by the license holder.",
-  "release_alternatives": [
-    "Public RC excludes detector weights and validates the no-detector fail-safe",
-    "User imports detector weights locally",
-    "Replace and retrain from a base with a compatible, documented license chain after impact approval",
-    "Obtain an Ultralytics commercial license covering this distribution",
-    "Adopt and implement a qualified AGPL-3.0 compliance plan"
+  "agpl_distribution_plan": "IMPLEMENTED_IN_SOURCE_ALIGNMENT",
+  "redistribution_status": "ALLOWED_WITH_CONDITIONS",
+  "conditions": {
+    "project_license_agpl_3_0_only": "IMPLEMENTED",
+    "license_and_notice_in_candidate": "ENFORCED_BY_VALIDATOR",
+    "corresponding_source_available": "ENFORCED_BY_RELEASE_PROCESS",
+    "build_training_export_scripts_available": "IMPLEMENTED",
+    "model_provenance_and_modifications_documented": "IMPLEMENTED",
+    "source_commit_and_expected_tag_recorded": "ENFORCED_BY_VALIDATOR"
+  },
+  "verdict_reason": "VisionGuard has adopted the open-source AGPL-3.0-only path. Distribution is allowed only when every recorded source, notice, provenance, build-script, and release-version condition is satisfied by the final candidate.",
+  "remaining_independent_blockers": [
+    "NVIDIA native redistribution evidence",
+    "clean Windows and GUI lifecycle acceptance",
+    "historical real-image regression",
+    "final candidate rebuild and strict validation"
   ]
 }

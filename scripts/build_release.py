@@ -44,6 +44,12 @@ def source_version() -> str:
     return str(json.loads((TAURI / "tauri.conf.json").read_text(encoding="utf-8"))["version"])
 
 
+def source_commit() -> str:
+    return subprocess.check_output(
+        ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True, encoding="utf-8"
+    ).strip()
+
+
 def run(command: list[str], *, cwd: Path = ROOT) -> None:
     print("+", subprocess.list2cmdline(command), flush=True)
     subprocess.run(command, cwd=cwd, check=True)
@@ -112,32 +118,20 @@ def write_release_notes(output: Path, version: str, blockers: list[str]) -> Path
     target.write_text(
         f"""# VisionGuard {version} Local Release Candidate
 
-这是本地生成的候选产物，不代表已经获准公开发布。
+这是本地生成的候选产物，不表示已经获准公开发布。
 
-## Highlights
+## Distribution model
 
-- 安装器内置 Slim CPU Core Runtime 与 Core Models，Fast Review 可离线使用。
-- Advanced AI 使用 1 GiB 分卷、SHA-256、磁盘预检、staging 与原子激活。
-- VLM Runtime / Models 独立版本，可回滚和卸载；Core 保持可用。
-
-## Installation
-
-安装 Core 后，在应用内选择 `advanced-ai-manifest.json` 导入可选 Advanced AI。
-用户不需要手工合并分卷。
-
-## Validated hardware
-
-RTX 4060 Laptop 8 GiB 是开发验证配置，不是最低要求。最低 RAM / VRAM 尚未充分刻画。
-
-## Signing
-
-当前候选未配置 Authenticode，Windows SmartScreen 可能显示警告。
+- VisionGuard 自有代码采用 AGPL-3.0-only。
+- 安装、组件/模型获取和更新可以联网。
+- 图片审核推理在本地完成，不依赖云端推理 API。
+- Real Offline 不是 v1.0 产品要求或 RC gate。
 
 ## Blocking gates
 
 {blocker_text}
 
-公开分发前必须完成 `docs/release_gate.md` 和 clean-machine 验收。
+公开分发前必须完成 `docs/release_gate.md` 所列门禁并让严格 validator 无绕过通过。
 """,
         encoding="utf-8",
         newline="\n",
@@ -227,10 +221,8 @@ def main() -> None:
     webview_installer = find_webview_installer()
     sbom_paths = generate_sbom(output / "sbom", args.version, webview_installer)
     blockers = [
-        "DETECTOR_REDISTRIBUTION_UNRESOLVED",
         "NVIDIA_NATIVE_REDISTRIBUTION_UNVERIFIED",
         "CLEAN_MACHINE_ACCEPTANCE_PENDING",
-        "REAL_OFFLINE_ACCEPTANCE_PENDING",
         "GUI_LIFECYCLE_ACCEPTANCE_PENDING",
         "HISTORICAL_REGRESSION_PENDING",
     ]
@@ -238,9 +230,13 @@ def main() -> None:
     notice = output / "THIRD_PARTY_NOTICES.md"
     license_report = output / "release_licenses.md"
     detector_provenance = output / "detector_provenance.md"
+    project_license = output / "LICENSE"
+    project_notice = output / "NOTICE"
     shutil.copy2(ROOT / "THIRD_PARTY_NOTICES.md", notice)
     shutil.copy2(ROOT / "docs/release_licenses.md", license_report)
     shutil.copy2(ROOT / "docs/detector_provenance.md", detector_provenance)
+    shutil.copy2(ROOT / "LICENSE", project_license)
+    shutil.copy2(ROOT / "NOTICE", project_notice)
     evidence_sources = [
         ROOT / "release-evidence/model-provenance.json",
         ROOT / "release-evidence/native-nvidia-inventory.json",
@@ -249,6 +245,8 @@ def main() -> None:
         ROOT / "release-evidence/nvjitlink-analysis.json",
         ROOT / "release-evidence/acceptance-status.json",
         ROOT / "release-evidence/historical-regression.json",
+        ROOT / "release-evidence/local-inference-architecture.json",
+        ROOT / "release-evidence/license-migration.json",
         ROOT / "release-evidence/licenses/APACHE-2.0.txt",
         ROOT / "release-evidence/model-cards/Qwen3-VL-2B-Instruct.md",
     ]
@@ -260,8 +258,10 @@ def main() -> None:
         shutil.copy2(source, target)
         evidence_paths.append(target)
     manifest = {
-        "schema_version": 3,
+        "schema_version": 4,
         "release_version": args.version,
+        "project_license": "AGPL-3.0-only",
+        "source": {"commit": source_commit(), "expected_tag": f"v{args.version}"},
         "release_channel": "release_candidate",
         "generated_at": datetime.now(UTC).isoformat(),
         "app_version": app_version,
@@ -284,7 +284,9 @@ def main() -> None:
             "installer": "nsis_current_user_bundled_cpu_core",
             "advanced_ai": "local_manifest_import_split_parts",
             "advanced_ai_manifest": advanced_manifest,
-            "offline_inference": True,
+            "network_assisted_installation": True,
+            "local_inference": True,
+            "cloud_inference": False,
             "code_signing": "unsigned",
             "public_release_ready": False,
             "blockers": blockers,
@@ -293,9 +295,9 @@ def main() -> None:
             "advanced_ai_install": "pending_manual",
             "asset_hosting": "passed",
             "clean_machine": "pending",
-            "detector_license": "blocked",
+            "detector_license": "passed",
             "gui_lifecycle": "pending_manual",
-            "offline": "pending_clean_machine",
+            "local_inference": "passed",
             "upgrade": "pending_manual",
             "rollback": "pending_manual",
             "uninstall": "pending_manual",
@@ -314,6 +316,8 @@ def main() -> None:
             notice.name,
             license_report.name,
             detector_provenance.name,
+            project_license.name,
+            project_notice.name,
         ]
         + [path.relative_to(output).as_posix() for path in sbom_paths]
         + [path.relative_to(output).as_posix() for path in evidence_paths],
@@ -329,6 +333,8 @@ def main() -> None:
             notice,
             license_report,
             detector_provenance,
+            project_license,
+            project_notice,
             manifest_path,
             *sbom_paths,
             *evidence_paths,

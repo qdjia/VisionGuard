@@ -1,5 +1,7 @@
 # Phase 19 — VisionGuard v1.0 Release Gate Report
 
+> 历史快照：本报告中的 MIT / offline 描述记录当时状态；当前政策以 `docs/agpl_migration.md` 和 `docs/release_gate.md` 为准。
+
 日期：2026-09-25  
 结论：**本地候选构建通过；RC Gate 未通过，不建议 Tag 或公开发布。**
 

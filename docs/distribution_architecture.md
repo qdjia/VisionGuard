@@ -8,11 +8,11 @@ Phase 16 最终选择 **Tauri v2 轻量 NSIS 按用户安装 + GPU Runtime 独�
 
 当前生成的是 `0.1.0-rc.*` 本地候选包，不是可以公开上传的 v1.0 正式版。公开发行门禁见本文末尾。
 
-当前实测：Desktop 主程序约 16.7 MiB，轻量离线安装器约 209.7 MiB，Runtime 安装目录约 4.95 GiB，模型目录约 4.12 GiB，安装后的核心组件合计约 9.08 GiB。下载包与安装文件同时保留并加 15% 余量时，建议至少准备 22 GiB 可用磁盘空间。
+当前实测：Desktop 主程序约 16.7 MiB，捆绑 WebView2 的安装器约 209.7 MiB，Runtime 安装目录约 4.95 GiB，模型目录约 4.12 GiB，安装后的核心组件合计约 9.08 GiB。下载包与安装文件同时保留并加 15% 余量时，建议至少准备 22 GiB 可用磁盘空间。
 
 ## 方案比较
 
-| 方案 | 用户体验 | 更新成本 | 离线能力 | 当前结论 |
+| 方案 | 用户体验 | 更新成本 | 本地推理能力 | 当前结论 |
 |---|---|---|---|---|
 | A. App + Runtime + Models 单体包 | 一次安装 | 任何改动都重下约 9 GiB | 最强 | 拒绝，过大且耦合 |
 | B. App + GPU Runtime；模型独立 | 首次启动选择模型包 | App 与模型可独立更新 | 完整 | NSIS 大文件实测失败 |
@@ -82,7 +82,7 @@ Launch
 
 安装前按解压后体积另加 15% 安全余量检查空间。安装失败清理 staging，不覆盖已验证的模型。目录导入也拒绝符号链接，避免复制时逃逸到来源目录之外。
 
-## GPU 与离线策略
+## GPU 与本地推理策略
 
 第一版仅生成 Windows x86_64 GPU Edition。Runtime 在构造模型之前检查：
 
@@ -94,7 +94,7 @@ Launch
 
 当前实测环境是 RTX 4060 Laptop GPU 8 GiB、驱动 `580.97`、PyTorch CUDA `12.8`。这只是通过测试的配置，不是最低要求。最低显存和内存必须通过多台硬件重复测量后确定。
 
-运行时强制 Hugging Face、Transformers、Datasets、Paddle 和 YOLO 使用离线配置。安装器选择 WebView2 offline installer，使安装阶段也不需要下载 WebView2；代价是安装包增加约 127 MB。
+运行时使用显式本地模型路径，并保留 Hugging Face、Transformers、Datasets、Paddle 和 YOLO 的离线加载能力，确保审核推理不依赖云端 API。当前安装器仍可捆绑 WebView2 offline installer，但这是一项工程能力，不构成“安装无需网络”或 Fully Offline 产品承诺；安装、模型获取和组件更新允许联网。
 
 ## Release Builder
 

@@ -1,15 +1,16 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "audited_at": "2026-09-26",
   "candidate": "1.0.0-rc.1",
   "environment": {
     "independent_windows_available": false,
     "current_machine_eligible": false,
-    "reason": "The development machine contains the source repository, Python/Conda, Node, Rust, caches, runtimes, and models. No independent Windows Sandbox or VM evidence is available."
+    "reason": "The development machine contains the source repository, toolchains, caches, runtimes, and models. No independent Windows Sandbox or VM evidence is available."
   },
   "gates": {
     "clean_machine": {"status": "BLOCKED", "evidence": "NOT_EXECUTED"},
-    "real_offline": {"status": "BLOCKED", "evidence": "NOT_EXECUTED"},
+    "local_inference": {"status": "PASS", "evidence": "release-evidence/local-inference-architecture.json"},
+    "real_offline": {"status": "N/A", "evidence": "NOT_A_V1_PRODUCT_REQUIREMENT"},
     "gui_lifecycle": {"status": "BLOCKED", "evidence": "NOT_EXECUTED"},
     "upgrade": {"status": "BLOCKED", "evidence": "NOT_EXECUTED"},
     "rollback": {"status": "BLOCKED", "evidence": "NOT_EXECUTED"},

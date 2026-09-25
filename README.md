@@ -3,65 +3,59 @@
 > 基于视觉语言模型的多模态出版内容智能审校系统<br>
 > Multimodal Publishing Content Moderation System Based on Vision-Language Models
 
-VisionGuard 是一个面向 AI / Computer Vision 算法作品集的本地优先项目。它把目标检测、OCR、传统文本分类、动态路由、视觉语言模型和风险融合组织为可评估、可解释、可服务化的完整推理链路。
+VisionGuard 是面向 AI / Computer Vision 算法实习作品集的本地优先项目。系统将目标检测、OCR、传统文本分类、动态路由、视觉语言模型与风险融合组织为可评估、可解释、可服务化的完整推理链路。
 
-> 当前处于 **v1.0 Release Candidate 准备阶段**。仓库尚未提供可公开下载的正式安装包，也未发布 `v1.0.0-rc.1` Tag。本地构建产物不能直接当作公开 Release 上传。
+> 当前处于 **v1.0 Release Candidate 准备阶段**。仓库尚未提供可公开下载的正式安装包，也未发布 `v1.0.0-rc.1` Tag。本地构建成功不代表已获准公开发行。
 
-## 给使用者
+## 产品边界
 
-### 它能做什么
+VisionGuard is a local-first desktop AI application. Internet access may be required for installation, model acquisition, and component updates, while all image review and AI inference run locally on the user's machine without cloud inference APIs.
 
-- Fast Review：使用 CPU Core 完成目标检测、OCR、文本基线、路由和风险融合。
-- Deep Review：安装可选 Advanced AI 后，按需调用本地 VLM 处理复杂语义或冲突证据。
-- 全程本地：推理不依赖云端 API；运行时使用动态本地端口和会话令牌。
-- 结构化结果：输出风险等级、类别、证据、置信度、人工复核建议和阶段耗时。
+- 安装、模型/组件获取和更新可以使用网络。
+- 实际审核推理在用户本机完成：Detector、OCR、Baseline、Router、VLM、Fusion 和结构化结果均不依赖云端推理 API。
+- 审核图片在推理期间由本地 Runtime 处理；项目不提供向云端审核服务上传图片的实现。
+- “本地推理”不等同于“完全离线”：项目不承诺零网络流量、隔离网运行或安装阶段断网可用。
 
-### 计划中的安装体验
+## 能力
 
-1. 下载并校验 `VisionGuard-Setup-<version>.exe`。
-2. 安装后从桌面快捷方式或开始菜单启动。
-3. 内置 Slim CPU Core 直接进入 Ready，Fast Review 可立即使用。
-4. 如需 Deep Review，在应用内选择 `advanced-ai-manifest.json`。
-5. VisionGuard 自动验证所有分卷、检查磁盘空间、安装并激活 VLM Runtime 与 Models。
+- **Fast Review**：使用 CPU Core 完成目标检测、OCR、文本基线、动态路由和风险融合。
+- **Deep Review**：安装可选 Advanced AI 后，按需调用本地 VLM 处理复杂语义或冲突证据。
+- **结构化结果**：输出风险等级、类别、证据、置信度、人工复核建议和分阶段耗时。
+- **工程评估**：包含训练、评估、批量推理、性能分析、错误分析、SBOM 和发行校验工具。
 
-用户不需要安装 Python、Conda、Node、Rust，也不需要手工合并分卷或启动 FastAPI。
+## 组件
 
-### Core 与 Advanced AI
-
-| 组件 | 是否必需 | 当前实测体积 | 作用 |
+| 组件 | 必需 | 当前实测体积 | 作用 |
 |---|---:|---:|---|
 | Slim Core Runtime | 是 | 约 0.697 GiB | ONNX Detector、PaddleOCR、Baseline、Routing、Fusion |
-| Core Models | 是 | 约 0.146 GiB | Core 离线模型资产 |
+| Core Models | 是 | 约 0.146 GiB | Core 模型资产 |
 | VLM Runtime | 否 | 约 4.216 GiB | PyTorch、Transformers、CUDA 侧运行环境 |
 | VLM Models | 否 | 约 3.974 GiB | Qwen3-VL-2B-Instruct 模型资产 |
 
-Core-only 安装体积约 0.843 GiB。Advanced AI 采用独立分卷、SHA-256 校验和原子激活，不会因为 VLM 故障影响 Fast Review。
+Core-only 安装体积约 0.843 GiB。Advanced AI 采用独立分卷、SHA-256 校验和原子激活，不会因 VLM 故障影响 Fast Review。
 
-### 系统要求
+## 计划中的安装体验
+
+1. 下载并校验 `VisionGuard-Setup-<version>.exe`。
+2. 安装并启动内置 Slim CPU Core。
+3. 如需 Deep Review，在应用内获取或导入 `advanced-ai-manifest.json`。
+4. VisionGuard 校验分卷和磁盘空间，安装并激活本地 VLM Runtime 与模型。
+
+最终用户不需要安装 Python、Conda、Node 或 Rust。
+
+## 系统要求与限制
 
 - 目标平台：64 位 Windows。
-- Core：CPU 模式，仍需在更多机器上完成最低内存和性能测量。
-- Advanced AI：当前仅在 RTX 4060 Laptop 8 GiB 环境完成开发验证。
-- **RTX 4060 8 GiB 是已验证配置，不是最低配置。最低 GPU / VRAM 要求尚未充分刻画。**
-- 磁盘：安装界面会依据实际包体和 staging 空间给出预检结果。
+- Core：CPU 模式；最低内存与性能仍需多机验证。
+- Advanced AI：当前只在 RTX 4060 Laptop 8 GiB 上完成开发验证，这不是最低配置承诺。
+- Clean Windows、真实 GUI 安装生命周期和历史真实图片回归仍待独立环境验收。
+- Windows RC 计划为未签名包，可能出现 SmartScreen 提示。
+- Ultralytics Detector 在 AGPL 开源发行路径下为 `ALLOWED_WITH_CONDITIONS`；发布时必须同时满足源码、许可证、构建脚本、来源记录及发行版本映射条件。
+- NVIDIA `nvJitLink_120_0.dll` 再分发映射仍为 `UNCLEAR`，继续阻塞公开 RC。
 
-### 离线与隐私
+当前门禁见 [Release Gate](docs/release_gate.md)，硬件记录见 [Hardware Compatibility](docs/hardware_compatibility.md)。
 
-Core 和已安装的 Advanced AI 均设计为断网可用。模型、日志、缓存与审核产物位于本机应用数据目录。发行验收仍需在没有开发工具和模型缓存的干净 Windows 环境中完成。
-
-### 当前限制
-
-- 尚未完成 clean-machine 全流程人工验收。
-- Windows 安装包当前计划为 unsigned RC，可能触发 SmartScreen 提示。
-- Detector 权重的公开再分发路径仍未解决。
-- VLM Runtime 中 CUDA / PyTorch 原生二进制仍需按最终文件清单完成再分发复核。
-- 暂不提供网络自动下载器；Advanced AI 第一版使用本地 manifest 导入。
-
-发布状态与阻断项见 [RC Acceptance Report](docs/rc_acceptance_report.md) 和 [Release Gate](docs/release_gate.md)，硬件实测见 [Hardware Compatibility](docs/hardware_compatibility.md)。
-
-## 给开发者
-
-### 系统架构
+## 架构
 
 ```mermaid
 flowchart LR
@@ -72,12 +66,10 @@ flowchart LR
     O --> R
     B --> R
     R -->|证据明确| F[Risk Fusion]
-    R -->|不确定 / 冲突 / 高风险| V[Optional VLM Runtime]
+    R -->|不确定 / 冲突 / 高风险| V[Local VLM Runtime]
     V --> F
     F --> J[Structured Review Result]
 ```
-
-桌面发行采用独立组件边界：
 
 ```text
 VisionGuard Desktop
@@ -91,7 +83,7 @@ VisionGuard Desktop
 
 详细设计见 [架构说明](docs/architecture.md)、[组件化 Runtime](docs/componentized_runtime.md) 和 [Desktop 架构](docs/desktop_architecture.md)。
 
-### 目录
+## 目录
 
 ```text
 src/visionguard/       Python 算法、Pipeline、评估与 API
@@ -105,64 +97,17 @@ artifacts/              本地实验产物（不提交）
 models/                 本地模型包（不提交）
 ```
 
-### 源码环境
+## 开发
 
 ```powershell
 conda activate visionguard
 pip install -e ".[dev]"
+
 cd desktop
 npm ci
 ```
 
-训练、VLM 和发行 Runtime 使用不同依赖边界。Core 发行依赖位于 `requirements-runtime-core.txt`，Advanced AI 依赖位于 `requirements-runtime-vlm.txt`。
-
-### 本地运行
-
-外部 Backend 调试：
-
-```powershell
-python scripts/run_api.py --config configs/api.local.yaml
-cd desktop
-$env:VISIONGUARD_BACKEND_MODE="external"
-$env:VISIONGUARD_API_URL="http://127.0.0.1:8000"
-npm run tauri:dev
-```
-
-组件化 Sidecar 调试：
-
-```powershell
-python scripts/build_model_bundle.py --profile core --bundle-version core-models-v1 --output models/core-models-v1 --hardlink --force
-python scripts/build_runtime.py --profile core --stage-tauri
-cd desktop
-npm run tauri:dev
-```
-
-### 构建 Advanced AI 分卷
-
-```powershell
-python scripts/build_model_bundle.py --profile vlm --bundle-version vlm-models-v1 --output models/vlm-models-v1 --hardlink --force
-python scripts/build_runtime.py --profile vlm
-python scripts/build_advanced_ai_package.py `
-  --runtime runtime-dist-vlm/visionguard-vlm-runtime `
-  --models models/vlm-models-v1 `
-  --runtime-version 0.1.0 `
-  --model-version vlm-models-v1 `
-  --version advanced-ai-v1 `
-  --part-size-mib 1024 `
-  --output artifacts/advanced-ai-package
-```
-
-生成结果包含 `advanced-ai-manifest.json` 和有序 `.partNN` 文件。桌面安装器会先 fail-closed 校验文件名、顺序、大小、单卷 SHA-256 和组合归档 SHA-256，再跨分卷流式解压到 staging，最后原子切换 `components.json`。
-
-### SBOM
-
-```powershell
-python scripts/generate_sbom.py --version 1.0.0-rc.1 --output artifacts/sbom
-```
-
-会生成 Desktop、Core Runtime、VLM Runtime、Models 和 Distribution 五份 CycloneDX 1.6 JSON。Python 清单优先读取冻结 Runtime 的精确 `.dist-info` 元数据，模型和 WebView2 记录来自最终 bundle manifest / 构建资产，不读取开发环境的 `pip freeze`。
-
-### 质量门
+质量检查：
 
 ```powershell
 pytest -q
@@ -182,17 +127,23 @@ cargo fmt --check
 cargo check
 ```
 
-### Release Candidate 构建
+生成 SBOM：
 
-最终目标命令是：
+```powershell
+python scripts/generate_sbom.py --version 1.0.0-rc.1 --output artifacts/sbom
+```
+
+最终 RC 构建和校验命令为：
 
 ```powershell
 python scripts/build_release.py --version 1.0.0-rc.1
 python scripts/validate_release.py --rc
 ```
 
-只有 RC validator、clean-machine、离线、升级、卸载、历史回归和许可证分发门全部通过，才允许建议创建 `v1.0.0-rc.1`。构建成功本身不等于允许 Tag 或 Release。
+只有严格校验、clean-machine、GUI 生命周期、升级/回滚/卸载/重装、历史回归与许可证分发门全部通过，才可建议创建 `v1.0.0-rc.1`。真实离线测试不是 v1.0 的产品要求，也不是 RC 阻断项。
 
-### 许可证
+## 许可证
 
-VisionGuard 自有代码使用 MIT License。第三方代码、Runtime 和模型继续适用各自许可证；仓库 MIT License 不会改变第三方资产的许可。详见 [Third-Party Notices](THIRD_PARTY_NOTICES.md)、[发行许可报告](docs/release_licenses.md) 与 [Detector provenance](docs/detector_provenance.md)。
+VisionGuard 自有代码以 **GNU Affero General Public License v3.0 only (`AGPL-3.0-only`)** 发行。AGPL 是自由/开源许可证，不是“禁止商业使用”许可证；分发或通过网络提供修改后的适用程序时，应遵守相应源码提供义务。
+
+第三方代码、Runtime、模型和资产继续适用各自许可证，根许可证不会重新许可它们。详见 [LICENSE](LICENSE)、[NOTICE](NOTICE)、[Third-Party Notices](THIRD_PARTY_NOTICES.md)、[发行许可报告](docs/release_licenses.md) 和 [AGPL 迁移记录](docs/agpl_migration.md)。

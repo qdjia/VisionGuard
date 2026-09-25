@@ -214,7 +214,12 @@ def write_sbom(output: Path, name: str, version: str, components: list[dict[str,
         "version": 1,
         "metadata": {
             "timestamp": datetime.now(UTC).isoformat(),
-            "component": {"type": "application", "name": f"VisionGuard {name}", "version": version},
+            "component": {
+                "type": "application",
+                "name": f"VisionGuard {name}",
+                "version": version,
+                "licenses": [{"license": {"id": "AGPL-3.0-only"}}],
+            },
             "properties": [{"name": "visionguard:source", "value": "release lock/profile"}],
         },
         "components": sorted(components, key=lambda item: str(item["bom-ref"])),

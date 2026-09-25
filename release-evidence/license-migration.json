@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "audited_at": "2026-09-26",
+  "previous_project_license": "MIT",
+  "current_project_license": "AGPL-3.0-only",
+  "effective_from": "the source commit containing this migration",
+  "ownership_audit": {
+    "git_authors": ["qdjia <qidongja@gmail.com>"],
+    "external_contributors_found": false,
+    "merge_commits_found": false,
+    "vendored_third_party_source_found": false
+  },
+  "historical_rule": "Previously distributed copies, if any, retain the license terms under which they were received.",
+  "engineering_notice": "Repository evidence only; not legal advice."
+}

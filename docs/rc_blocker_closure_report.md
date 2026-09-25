@@ -1,5 +1,7 @@
 # VisionGuard RC Blocker Closure Report
 
+> 历史快照（已被取代）：本报告记录迁移前的 MIT / Fully Offline 状态。当前政策以 `docs/agpl_migration.md` 和 `docs/release_gate.md` 为准。
+
 日期：2026-09-25  
 目标版本：`v1.0.0-rc.1`  
 结论：**RC BLOCKED**

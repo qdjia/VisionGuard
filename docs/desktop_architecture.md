@@ -43,7 +43,7 @@ Python 先将 socket 绑定到 `127.0.0.1:0`，由操作系统选择端口，然
 
 Runtime 不依赖启动目录：PyInstaller 资源从 `_MEIPASS/resources` 定位；模型目录和用户数据目录由绝对路径配置传入。日志、缓存、临时配置和可选 artifacts 写入 Tauri 的应用本地数据目录，模型目录只读。
 
-## 模型包与离线优先
+## 模型包与本地推理
 
 模型和 Runtime 独立版本化。`models-v1/manifest.json` 记录 detector、三个 OCR 模型、baseline 和 VLM 的相对路径、字节数与 SHA-256。启动使用快速校验（存在性与大小），发布验收可使用完整哈希校验。
 

@@ -1,5 +1,7 @@
 # Phase 18 Engineering Report
 
+> 历史快照：本报告中的 MIT / offline 描述记录当时状态；当前政策以 `docs/agpl_migration.md` 和 `docs/release_gate.md` 为准。
+
 验证日期：2026-09-24。结论：组件化 Core + Optional VLM 架构已形成并完成本机工程验证；仍不满足公开 v1.0 或 RC 发行门禁。
 
 ## Legacy Full Runtime Audit

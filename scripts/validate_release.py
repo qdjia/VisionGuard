@@ -9,6 +9,11 @@ import re
 from collections import Counter
 from pathlib import Path
 
+if __package__:
+    from scripts.validate_license_alignment import PROJECT_LICENSE, validate_alignment
+else:
+    from validate_license_alignment import PROJECT_LICENSE, validate_alignment
+
 ROOT = Path(__file__).resolve().parents[1]
 GITHUB_ASSET_LIMIT = 2 * 1024**3
 ABSOLUTE_PATH = re.compile(r"(?:[A-Za-z]:\\|/Users/|/home/)")
@@ -21,7 +26,7 @@ RC_REQUIRED_GATES = {
     "clean_machine",
     "detector_license",
     "gui_lifecycle",
-    "offline",
+    "local_inference",
     "reinstall",
     "rollback",
     "upgrade",
@@ -44,7 +49,6 @@ DEV_ONLY_PACKAGES = {"pytest", "ruff", "notebook", "jupyter", "tensorboard", "ml
 REQUIRED_MODEL_ROLES = {"vlm", "ocr_detection", "ocr_recognition", "ocr_orientation"}
 REQUIRED_ACCEPTANCE_GATES = {
     "clean_machine",
-    "real_offline",
     "gui_lifecycle",
     "upgrade",
     "rollback",
@@ -121,6 +125,9 @@ def _validate_sbom(path: Path, errors: list[str], *, enforce_runtime_hygiene: bo
     payload = _load_json(path, f"SBOM {path.name}", errors)
     if payload.get("bomFormat") != "CycloneDX" or payload.get("specVersion") != "1.6":
         errors.append(f"unsupported SBOM format: {path.name}")
+    project_licenses = payload.get("metadata", {}).get("component", {}).get("licenses", [])
+    if {item.get("license", {}).get("id") for item in project_licenses} != {PROJECT_LICENSE}:
+        errors.append(f"SBOM project license is not {PROJECT_LICENSE}: {path.name}")
     components = payload.get("components")
     if not isinstance(components, list) or not components:
         errors.append(f"SBOM has no components: {path.name}")
@@ -207,6 +214,35 @@ def _validate_release_evidence(root: Path, errors: list[str]) -> None:
         artifact = detector.get(field, {})
         if not re.fullmatch(r"[0-9a-f]{64}", str(artifact.get("sha256", ""))):
             errors.append(f"detector provenance SHA-256 is invalid: {field}")
+    required_detector_conditions = {
+        "project_license_agpl_3_0_only",
+        "license_and_notice_in_candidate",
+        "corresponding_source_available",
+        "build_training_export_scripts_available",
+        "model_provenance_and_modifications_documented",
+        "source_commit_and_expected_tag_recorded",
+    }
+    conditions = detector.get("conditions", {})
+    missing_conditions = sorted(required_detector_conditions - conditions.keys())
+    if detector_status == "ALLOWED_WITH_CONDITIONS" and missing_conditions:
+        errors.append(
+            f"detector redistribution conditions missing: {', '.join(missing_conditions)}"
+        )
+    if any(
+        str(value).upper()
+        not in {"IMPLEMENTED", "ENFORCED_BY_VALIDATOR", "ENFORCED_BY_RELEASE_PROCESS"}
+        for value in conditions.values()
+    ):
+        errors.append("detector redistribution conditions are not fully implemented or enforced")
+
+    local_inference = _load_json(
+        evidence / "local-inference-architecture.json", "local inference architecture", errors
+    )
+    boundary = local_inference.get("product_boundary", {})
+    if local_inference.get("status") != "PASS" or not boundary.get("local_review_inference"):
+        errors.append("local inference architecture is not passed")
+    if boundary.get("cloud_inference_enabled") is not False:
+        errors.append("cloud inference must be disabled")
 
     nvjit = _load_json(evidence / "nvjitlink-analysis.json", "nvJitLink analysis", errors)
     nvjit_status = str(nvjit.get("redistribution_status", "")).upper()
@@ -250,7 +286,7 @@ def validate_release(
     manifest = _load_json(manifest_path, "release manifest", errors)
     if not manifest:
         return errors
-    if manifest.get("schema_version") not in {1, 2, 3}:
+    if manifest.get("schema_version") not in {1, 2, 3, 4}:
         errors.append("unsupported release manifest schema")
     release_version = str(manifest.get("release_version", ""))
     app_version = str(manifest.get("app_version", ""))
@@ -295,7 +331,7 @@ def validate_release(
     if advanced_manifest:
         _validate_advanced_manifest(root, str(advanced_manifest), errors)
     metadata_files = [str(name) for name in manifest.get("metadata_files", [])]
-    if manifest.get("schema_version") == 3:
+    if manifest.get("schema_version") in {3, 4}:
         for name in metadata_files:
             if Path(name).is_absolute() or ".." in Path(name).parts:
                 errors.append(f"unsafe metadata path: {name}")
@@ -327,6 +363,18 @@ def validate_release(
     if public and not distribution.get("public_release_ready", False):
         errors.append("release manifest explicitly blocks public distribution")
     if gate in {"rc", "stable"}:
+        if manifest.get("project_license") != PROJECT_LICENSE:
+            errors.append(f"release manifest project license is not {PROJECT_LICENSE}")
+        source = manifest.get("source", {})
+        if not re.fullmatch(r"[0-9a-f]{40}", str(source.get("commit", ""))):
+            errors.append("release source commit is missing or invalid")
+        if source.get("expected_tag") != f"v{release_version}":
+            errors.append("release expected tag does not match release version")
+        for filename in ("LICENSE", "NOTICE"):
+            if not (root / filename).is_file():
+                errors.append(f"missing project license file: {filename}")
+        for error in validate_alignment(ROOT):
+            errors.append(f"source license alignment: {error}")
         if gate == "rc" and not re.fullmatch(r"1\.0\.0-rc\.[1-9][0-9]*", release_version):
             errors.append("RC release version must match 1.0.0-rc.N")
         if gate == "stable" and release_version != "1.0.0":

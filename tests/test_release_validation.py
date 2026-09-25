@@ -75,6 +75,7 @@ def test_runtime_sbom_rejects_dev_only_packages(tmp_path: Path) -> None:
             {
                 "bomFormat": "CycloneDX",
                 "specVersion": "1.6",
+                "metadata": {"component": {"licenses": [{"license": {"id": "AGPL-3.0-only"}}]}},
                 "components": [{"name": "pytest", "version": "8.4.2"}],
             }
         ),
@@ -136,6 +137,14 @@ def test_release_evidence_fails_closed_for_unclear_native_file(tmp_path: Path) -
         json.dumps(
             {
                 "redistribution_status": "ALLOWED_WITH_CONDITIONS",
+                "conditions": {
+                    "project_license_agpl_3_0_only": "IMPLEMENTED",
+                    "license_and_notice_in_candidate": "ENFORCED_BY_VALIDATOR",
+                    "corresponding_source_available": "ENFORCED_BY_RELEASE_PROCESS",
+                    "build_training_export_scripts_available": "IMPLEMENTED",
+                    "model_provenance_and_modifications_documented": "IMPLEMENTED",
+                    "source_commit_and_expected_tag_recorded": "ENFORCED_BY_VALIDATOR",
+                },
                 "base_checkpoint": {"sha256": "d" * 64},
                 "fine_tuned_checkpoint": {"sha256": "e" * 64},
                 "exported_onnx": {"sha256": "f" * 64},
@@ -154,7 +163,6 @@ def test_release_evidence_fails_closed_for_unclear_native_file(tmp_path: Path) -
                     name: {"status": "PASS"}
                     for name in (
                         "clean_machine",
-                        "real_offline",
                         "gui_lifecycle",
                         "upgrade",
                         "rollback",
@@ -162,6 +170,18 @@ def test_release_evidence_fails_closed_for_unclear_native_file(tmp_path: Path) -
                         "reinstall",
                     )
                 }
+            }
+        ),
+        encoding="utf-8",
+    )
+    (evidence / "local-inference-architecture.json").write_text(
+        json.dumps(
+            {
+                "status": "PASS",
+                "product_boundary": {
+                    "local_review_inference": True,
+                    "cloud_inference_enabled": False,
+                },
             }
         ),
         encoding="utf-8",
@@ -178,7 +198,7 @@ def test_release_evidence_fails_closed_for_unclear_native_file(tmp_path: Path) -
 def test_repository_blocker_evidence_fails_closed() -> None:
     errors: list[str] = []
     _validate_release_evidence(Path.cwd(), errors)
-    assert "detector redistribution is not cleared: NOT_ALLOWED" in errors
+    assert not any("detector redistribution" in error for error in errors)
     assert "nvJitLink redistribution is not cleared: UNCLEAR" in errors
     assert "acceptance evidence not passed: clean_machine=BLOCKED" in errors
     assert "historical real-image regression is not passed: BLOCKED" in errors
