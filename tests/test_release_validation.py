@@ -54,3 +54,15 @@ def test_release_validation_detects_tampering(tmp_path: Path) -> None:
     next(target.glob("*.exe")).write_bytes(b"tampered")
     errors = validate_release(target)
     assert any("SHA-256 mismatch" in error for error in errors)
+
+
+def test_schema_three_requires_metadata_checksums(tmp_path: Path) -> None:
+    target = _release(tmp_path)
+    manifest_path = target / "release-manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["schema_version"] = 3
+    manifest["metadata_files"] = ["SHA256SUMS.txt", "RELEASE_NOTES.md"]
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    errors = validate_release(target)
+    assert "metadata file is not checksummed: RELEASE_NOTES.md" in errors
+    assert "release manifest is not checksummed" in errors

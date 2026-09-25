@@ -28,6 +28,9 @@
 - `release-manifest.json`
 - CycloneDX SBOM
 - Release Notes
+- Third-Party Notices、release license report 与 detector provenance
+
+当前完整候选布局共 22 个 Release assets（1 个 installer、1 个 Advanced AI manifest、9 个分卷和 11 个校验/清单/说明文件），远低于 1000 个 asset 限制。该数量只是托管兼容性结论，不代表资产已经具备公开分发许可。
 
 1 GiB 明显低于 2 GiB 边界，也为托管层额外元数据和以后体积波动保留空间。用户不手工合并分卷；Desktop 读取 manifest 并跨分卷流式解压。
 

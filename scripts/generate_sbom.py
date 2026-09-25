@@ -125,6 +125,78 @@ def native_components(runtime_root: Path, profile: str) -> list[dict[str, object
     return result
 
 
+def model_components(manifest_path: Path, profile: str) -> list[dict[str, object]]:
+    """Inventory the exact model files recorded by a frozen model-bundle manifest."""
+    if not manifest_path.is_file():
+        return []
+    payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    bundle_version = str(payload.get("bundle_version", "unknown"))
+    result: list[dict[str, object]] = []
+    for name, model in sorted(payload.get("models", {}).items()):
+        base = str(model.get("path", name))
+        files = model.get("files", [])
+        if files:
+            for entry in files:
+                relative = f"{base}/{entry['path']}"
+                result.append(
+                    {
+                        "type": "file",
+                        "group": f"model-{profile}",
+                        "name": relative,
+                        "version": bundle_version,
+                        "bom-ref": f"model:{profile}/{relative}@{bundle_version}",
+                        "hashes": [{"alg": "SHA-256", "content": entry["sha256"]}],
+                        "properties": [
+                            {
+                                "name": "visionguard:size_bytes",
+                                "value": str(entry["size_bytes"]),
+                            },
+                            {"name": "visionguard:model_role", "value": name},
+                        ],
+                    }
+                )
+        elif model.get("sha256"):
+            result.append(
+                {
+                    "type": "machine-learning-model",
+                    "group": f"model-{profile}",
+                    "name": base,
+                    "version": bundle_version,
+                    "bom-ref": f"model:{profile}/{base}@{bundle_version}",
+                    "hashes": [{"alg": "SHA-256", "content": model["sha256"]}],
+                    "properties": [
+                        {"name": "visionguard:size_bytes", "value": str(model["size_bytes"])},
+                        {"name": "visionguard:model_role", "value": name},
+                    ],
+                }
+            )
+    return result
+
+
+def distribution_components(webview_installer: Path | None) -> list[dict[str, object]]:
+    value: dict[str, object] = {
+        "type": "application",
+        "group": "microsoft",
+        "name": "Microsoft Edge WebView2 Evergreen Offline Installer (x64)",
+        "version": "bundled",
+        "bom-ref": "distribution:microsoft/webview2-evergreen-offline-x64@bundled",
+        "properties": [{"name": "visionguard:bundle_mode", "value": "tauri_offline_installer"}],
+    }
+    if webview_installer and webview_installer.is_file():
+        value["hashes"] = [{"alg": "SHA-256", "content": sha256(webview_installer)}]
+        value["properties"].extend(
+            [
+                {"name": "visionguard:size_bytes", "value": str(webview_installer.stat().st_size)},
+                {"name": "visionguard:inventory_source", "value": "tauri_build_cache"},
+            ]
+        )
+    else:
+        value["properties"].append(
+            {"name": "visionguard:inventory_source", "value": "tauri_configuration_only"}
+        )
+    return [value]
+
+
 def write_sbom(output: Path, name: str, version: str, components: list[dict[str, object]]) -> Path:
     target = output / f"{name}.cdx.json"
     payload = {
@@ -143,7 +215,7 @@ def write_sbom(output: Path, name: str, version: str, components: list[dict[str,
     return target
 
 
-def generate(output: Path, version: str) -> list[Path]:
+def generate(output: Path, version: str, webview_installer: Path | None = None) -> list[Path]:
     output.mkdir(parents=True, exist_ok=True)
     desktop = node_components(ROOT / "desktop/package-lock.json") + rust_components(
         ROOT / "desktop/src-tauri/Cargo.lock"
@@ -158,10 +230,20 @@ def generate(output: Path, version: str) -> list[Path]:
     )
     core = core_python + native_components(core_root, "core")
     vlm = vlm_python + native_components(vlm_root, "vlm")
+    models = model_components(
+        ROOT / "models/core-models-v1/manifest.json", "core"
+    ) + model_components(ROOT / "models/vlm-models-v1/manifest.json", "vlm")
     return [
         write_sbom(output, "desktop", version, desktop),
         write_sbom(output, "core-runtime", version, core),
         write_sbom(output, "vlm-runtime", version, vlm),
+        write_sbom(output, "models", version, models),
+        write_sbom(
+            output,
+            "distribution",
+            version,
+            distribution_components(webview_installer),
+        ),
     ]
 
 
@@ -169,8 +251,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=ROOT / "artifacts/sbom")
     parser.add_argument("--version", required=True)
+    parser.add_argument("--webview-installer", type=Path)
     args = parser.parse_args()
-    for path in generate(args.output, args.version):
+    for path in generate(args.output, args.version, args.webview_installer):
         print(path)
 
 

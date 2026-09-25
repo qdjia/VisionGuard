@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -67,6 +68,18 @@ def find_installer() -> Path:
     return candidates[0]
 
 
+def find_webview_installer() -> Path | None:
+    local_app_data = os.environ.get("LOCALAPPDATA")
+    if not local_app_data:
+        return None
+    candidates = sorted(
+        Path(local_app_data).glob("tauri/x64/*/MicrosoftEdgeWebView2RuntimeInstallerX64.exe"),
+        key=lambda item: item.stat().st_mtime,
+        reverse=True,
+    )
+    return candidates[0] if candidates else None
+
+
 def asset_record(path: Path, output: Path, *, kind: str, publishable: bool) -> dict[str, object]:
     size = path.stat().st_size
     return {
@@ -79,10 +92,14 @@ def asset_record(path: Path, output: Path, *, kind: str, publishable: bool) -> d
     }
 
 
-def write_checksums(output: Path, assets: list[dict[str, object]]) -> Path:
+def write_checksums(output: Path, paths: list[Path]) -> Path:
     target = output / "SHA256SUMS.txt"
     target.write_text(
-        "\n".join(f"{asset['sha256']}  {asset['name']}" for asset in assets) + "\n",
+        "\n".join(
+            f"{sha256(path)}  {path.relative_to(output).as_posix()}"
+            for path in sorted(paths, key=lambda item: item.relative_to(output).as_posix())
+        )
+        + "\n",
         encoding="utf-8",
         newline="\n",
     )
@@ -207,16 +224,21 @@ def main() -> None:
             kind = "vlm_runtime_part" if "VLM-Runtime" in part.name else "vlm_models_part"
             assets.append(asset_record(part, output, kind=kind, publishable=False))
 
-    sbom_paths = generate_sbom(output / "sbom", args.version)
+    webview_installer = find_webview_installer()
+    sbom_paths = generate_sbom(output / "sbom", args.version, webview_installer)
     blockers = [
         "DETECTOR_REDISTRIBUTION_UNRESOLVED",
         "NVIDIA_NATIVE_REDISTRIBUTION_UNVERIFIED",
         "CLEAN_MACHINE_ACCEPTANCE_PENDING",
         "HISTORICAL_REGRESSION_PENDING",
-        "CODE_SIGNING_NOT_CONFIGURED",
     ]
     notes = write_release_notes(output, args.version, blockers)
-    checksums = write_checksums(output, assets)
+    notice = output / "THIRD_PARTY_NOTICES.md"
+    license_report = output / "release_licenses.md"
+    detector_provenance = output / "detector_provenance.md"
+    shutil.copy2(ROOT / "THIRD_PARTY_NOTICES.md", notice)
+    shutil.copy2(ROOT / "docs/release_licenses.md", license_report)
+    shutil.copy2(ROOT / "docs/detector_provenance.md", detector_provenance)
     manifest = {
         "schema_version": 3,
         "release_version": args.version,
@@ -257,13 +279,24 @@ def main() -> None:
             "license_distribution": "blocked",
         },
         "assets": assets,
-        "metadata_files": [checksums.name, notes.name]
+        "metadata_files": [
+            "SHA256SUMS.txt",
+            notes.name,
+            notice.name,
+            license_report.name,
+            detector_provenance.name,
+        ]
         + [path.relative_to(output).as_posix() for path in sbom_paths],
     }
     manifest_path = output / "release-manifest.json"
     manifest_path.write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )
+    checksum_paths = [output / str(asset["name"]) for asset in assets]
+    checksum_paths.extend(
+        [notes, notice, license_report, detector_provenance, manifest_path, *sbom_paths]
+    )
+    write_checksums(output, checksum_paths)
     if not args.skip_validation:
         run([sys.executable, "scripts/validate_release.py", str(output)])
     print(json.dumps({"release": str(output), "assets": len(assets)}, ensure_ascii=False))

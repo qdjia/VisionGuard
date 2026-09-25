@@ -23,6 +23,13 @@ RC_REQUIRED_GATES = {
     "historical_regression",
     "license_distribution",
 }
+REQUIRED_SBOMS = (
+    "desktop.cdx.json",
+    "core-runtime.cdx.json",
+    "vlm-runtime.cdx.json",
+    "models.cdx.json",
+    "distribution.cdx.json",
+)
 
 
 def sha256(path: Path) -> str:
@@ -89,6 +96,16 @@ def _validate_advanced_manifest(root: Path, relative: str, errors: list[str]) ->
             errors.append(f"advanced AI archive hash mismatch: {component_name}")
 
 
+def _validate_sbom(path: Path, errors: list[str]) -> dict:
+    payload = _load_json(path, f"SBOM {path.name}", errors)
+    if payload.get("bomFormat") != "CycloneDX" or payload.get("specVersion") != "1.6":
+        errors.append(f"unsupported SBOM format: {path.name}")
+    components = payload.get("components")
+    if not isinstance(components, list) or not components:
+        errors.append(f"SBOM has no components: {path.name}")
+    return payload
+
+
 def validate_release(
     root: Path,
     *,
@@ -114,6 +131,15 @@ def validate_release(
     if release_version.split("-", maxsplit=1)[0] != app_version:
         errors.append("release/app versions are inconsistent")
     checksums = _checksums(checksum_path, errors)
+    for name, expected in checksums.items():
+        if Path(name).is_absolute() or ".." in Path(name).parts:
+            errors.append(f"unsafe checksum path: {name}")
+            continue
+        target = root / name
+        if not target.is_file():
+            errors.append(f"checksummed file does not exist: {name}")
+        elif sha256(target) != expected:
+            errors.append(f"checksum file mismatch: {name}")
     binary_assets = [asset for asset in manifest.get("assets", []) if "sha256" in asset]
     kinds = {asset.get("kind") for asset in binary_assets}
     if not ({"windows_installer", "windows_gpu_installer"} & kinds):
@@ -142,7 +168,30 @@ def validate_release(
     advanced_manifest = manifest.get("distribution", {}).get("advanced_ai_manifest")
     if advanced_manifest:
         _validate_advanced_manifest(root, str(advanced_manifest), errors)
-    for text_file in (manifest_path, notes_path):
+    metadata_files = [str(name) for name in manifest.get("metadata_files", [])]
+    if manifest.get("schema_version") == 3:
+        for name in metadata_files:
+            if Path(name).is_absolute() or ".." in Path(name).parts:
+                errors.append(f"unsafe metadata path: {name}")
+                continue
+            target = root / name
+            if not target.is_file():
+                errors.append(f"metadata file does not exist: {name}")
+            if name != checksum_path.name and name not in checksums:
+                errors.append(f"metadata file is not checksummed: {name}")
+        if manifest_path.name not in checksums:
+            errors.append("release manifest is not checksummed")
+        for name in REQUIRED_SBOMS:
+            path = root / "sbom" / name
+            if path.is_file():
+                _validate_sbom(path, errors)
+    text_files = [manifest_path, notes_path]
+    text_files.extend(
+        root / name
+        for name in metadata_files
+        if Path(name).suffix.lower() in {".json", ".md", ".txt"} and (root / name).is_file()
+    )
+    for text_file in dict.fromkeys(text_files):
         content = text_file.read_text(encoding="utf-8")
         if ABSOLUTE_PATH.search(content):
             errors.append(f"absolute private path found: {text_file.name}")
@@ -163,9 +212,25 @@ def validate_release(
         for name in sorted(RC_REQUIRED_GATES):
             if gates.get(name) != "passed":
                 errors.append(f"RC gate not passed: {name}")
-        for sbom in ("desktop.cdx.json", "core-runtime.cdx.json", "vlm-runtime.cdx.json"):
+        for sbom in REQUIRED_SBOMS:
             if not (root / "sbom" / sbom).is_file():
                 errors.append(f"missing release SBOM: sbom/{sbom}")
+        models_path = root / "sbom/models.cdx.json"
+        if models_path.is_file():
+            model_names = {
+                str(item.get("name"))
+                for item in _load_json(models_path, "models SBOM", errors).get("components", [])
+            }
+            for required_model in ("detector/model.onnx", "vlm/model.safetensors"):
+                if required_model not in model_names:
+                    errors.append(f"model is missing from SBOM: {required_model}")
+        distribution_path = root / "sbom/distribution.cdx.json"
+        if distribution_path.is_file():
+            distribution_components = _load_json(
+                distribution_path, "distribution SBOM", errors
+            ).get("components", [])
+            if not any(item.get("hashes") for item in distribution_components):
+                errors.append("WebView2 distribution component is not hash-inventoried")
         if not distribution.get("public_release_ready", False):
             errors.append("RC distribution is not marked public_release_ready")
     if gate == "stable":

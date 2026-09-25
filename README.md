@@ -57,7 +57,7 @@ Core 和已安装的 Advanced AI 均设计为断网可用。模型、日志、�
 - VLM Runtime 中 CUDA / PyTorch 原生二进制仍需按最终文件清单完成再分发复核。
 - 暂不提供网络自动下载器；Advanced AI 第一版使用本地 manifest 导入。
 
-发布状态与阻断项见 [Release Gate](docs/release_gate.md)，硬件实测见 [Hardware Compatibility](docs/hardware_compatibility.md)。
+发布状态与阻断项见 [RC Acceptance Report](docs/rc_acceptance_report.md) 和 [Release Gate](docs/release_gate.md)，硬件实测见 [Hardware Compatibility](docs/hardware_compatibility.md)。
 
 ## 给开发者
 
@@ -160,7 +160,7 @@ python scripts/build_advanced_ai_package.py `
 python scripts/generate_sbom.py --version 1.0.0-rc.1 --output artifacts/sbom
 ```
 
-会生成 Desktop、Core Runtime 和 VLM Runtime 三份 CycloneDX 1.6 JSON。Python 清单来自发行 profile，不读取开发环境的 `pip freeze`。
+会生成 Desktop、Core Runtime、VLM Runtime、Models 和 Distribution 五份 CycloneDX 1.6 JSON。Python 清单优先读取冻结 Runtime 的精确 `.dist-info` 元数据，模型和 WebView2 记录来自最终 bundle manifest / 构建资产，不读取开发环境的 `pip freeze`。
 
 ### 质量门
 
@@ -195,4 +195,4 @@ python scripts/validate_release.py --rc
 
 ### 许可证
 
-VisionGuard 自有代码使用 MIT License。第三方代码、Runtime 和模型继续适用各自许可证；仓库 MIT License 不会改变第三方资产的许可。详见 [Third-Party Notices](THIRD_PARTY_NOTICES.md) 与 [模型分发审计](docs/model_distribution_licenses.md)。
+VisionGuard 自有代码使用 MIT License。第三方代码、Runtime 和模型继续适用各自许可证；仓库 MIT License 不会改变第三方资产的许可。详见 [Third-Party Notices](THIRD_PARTY_NOTICES.md)、[发行许可报告](docs/release_licenses.md) 与 [Detector provenance](docs/detector_provenance.md)。

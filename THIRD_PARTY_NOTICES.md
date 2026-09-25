@@ -20,6 +20,7 @@ VisionGuard 自有源代码使用 MIT License。下列第三方代码、二进�
 | Transformers | Optional VLM Runtime | Apache-2.0 — https://github.com/huggingface/transformers |
 | Qwen3-VL-2B-Instruct | Optional VLM Models | Apache-2.0 — https://huggingface.co/Qwen/Qwen3-VL-2B-Instruct |
 | Ultralytics YOLO / derived detector | Training / detector provenance | AGPL-3.0 or commercial license — https://www.ultralytics.com/license |
+| Microsoft Edge WebView2 Runtime | Desktop offline installer | Microsoft distribution terms — https://learn.microsoft.com/microsoft-edge/webview2/concepts/distribution |
 
 ## Native binary boundary
 
@@ -32,6 +33,6 @@ VLM Runtime may contain CUDA、cuDNN、PyTorch 和 Paddle 相关原生文件。N
 1. detector 权重来源和 Ultralytics 派生关系仍是 blocker；
 2. 最终 VLM Runtime 原生文件清单尚未逐项完成 NVIDIA 再分发复核；
 3. Qwen / Paddle 模型包仍需实际随附 LICENSE、NOTICE、模型卡、来源 revision 和哈希；
-4. 最终 SBOM 必须从冻结发行 profile 和打包目录重新生成。
+4. 最终 SBOM 已从冻结发行 profile 和打包目录生成，但许可证字段和 native redistribution 结论仍需人工闭环。
 
 本文件是工程审计记录，不构成法律意见。
