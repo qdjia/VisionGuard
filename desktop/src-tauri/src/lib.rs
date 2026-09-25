@@ -1,7 +1,10 @@
 mod models;
 mod runtime;
 
-use models::{ModelBundleInfo, ModelInstallResult, ModelInstallStatus, ModelInstaller};
+use models::{
+    AdvancedAIInstallResult, AdvancedAIInstallStatus, AdvancedAIInstaller, AdvancedAIPackageInfo,
+    ModelBundleInfo, ModelInstallResult, ModelInstallStatus, ModelInstaller,
+};
 use models::{RuntimeInstallResult, RuntimeInstallStatus, RuntimeInstaller, RuntimePackageInfo};
 use runtime::{AdvancedAIManager, AdvancedAISnapshot, RuntimeManager, RuntimeSnapshot};
 use std::sync::Arc;
@@ -48,6 +51,57 @@ async fn restart_advanced_ai(
 async fn stop_advanced_ai(manager: tauri::State<'_, Arc<AdvancedAIManager>>) -> Result<(), String> {
     manager.stop().await;
     Ok(())
+}
+
+#[tauri::command]
+fn get_advanced_ai_install_status(
+    installer: tauri::State<'_, Arc<AdvancedAIInstaller>>,
+) -> AdvancedAIInstallStatus {
+    installer.status()
+}
+
+#[tauri::command]
+async fn inspect_advanced_ai_package(
+    manifest: String,
+    installer: tauri::State<'_, Arc<AdvancedAIInstaller>>,
+) -> Result<AdvancedAIPackageInfo, String> {
+    installer.inspect(manifest).await
+}
+
+#[tauri::command]
+async fn install_advanced_ai_package(
+    manifest: String,
+    installer: tauri::State<'_, Arc<AdvancedAIInstaller>>,
+    manager: tauri::State<'_, Arc<AdvancedAIManager>>,
+) -> Result<AdvancedAIInstallResult, String> {
+    manager.stop().await;
+    let result = installer.install(manifest).await?;
+    manager.start().await?;
+    Ok(result)
+}
+
+#[tauri::command]
+fn cancel_advanced_ai_install(installer: tauri::State<'_, Arc<AdvancedAIInstaller>>) {
+    installer.cancel();
+}
+
+#[tauri::command]
+async fn uninstall_advanced_ai(
+    installer: tauri::State<'_, Arc<AdvancedAIInstaller>>,
+    manager: tauri::State<'_, Arc<AdvancedAIManager>>,
+) -> Result<(), String> {
+    manager.stop().await;
+    installer.uninstall().await
+}
+
+#[tauri::command]
+async fn rollback_advanced_ai(
+    installer: tauri::State<'_, Arc<AdvancedAIInstaller>>,
+    manager: tauri::State<'_, Arc<AdvancedAIManager>>,
+) -> Result<(), String> {
+    manager.stop().await;
+    installer.rollback().await?;
+    manager.start().await
 }
 
 #[tauri::command]
@@ -121,6 +175,12 @@ pub fn run() {
             start_advanced_ai,
             restart_advanced_ai,
             stop_advanced_ai,
+            get_advanced_ai_install_status,
+            inspect_advanced_ai_package,
+            install_advanced_ai_package,
+            cancel_advanced_ai_install,
+            uninstall_advanced_ai,
+            rollback_advanced_ai,
             get_model_install_status,
             inspect_model_bundle,
             install_model_bundle,
@@ -156,10 +216,12 @@ pub fn run() {
             let advanced = AdvancedAIManager::new(app.handle().clone(), Arc::clone(&manager));
             let installer = ModelInstaller::new(app.handle().clone());
             let runtime_installer = RuntimeInstaller::new(app.handle().clone());
+            let advanced_installer = AdvancedAIInstaller::new(app.handle().clone());
             app.manage(Arc::clone(&manager));
             app.manage(Arc::clone(&advanced));
             app.manage(installer);
             app.manage(runtime_installer);
+            app.manage(advanced_installer);
             tauri::async_runtime::spawn(async move {
                 if manager.start().await.is_ok() {
                     let _ = advanced.start().await;

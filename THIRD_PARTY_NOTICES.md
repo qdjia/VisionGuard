@@ -1,26 +1,37 @@
 # Third-Party Notices
 
-VisionGuard 自有源代码使用 MIT License。下表记录组件化 Windows 候选包的主要第三方组件；各组件继续适用其原始许可。本文件不重新许可任何第三方代码或模型。PyTorch、Transformers 与 Qwen 仅属于可选 Advanced AI 组件，Core 不包含它们。
+VisionGuard 自有源代码使用 MIT License。下列第三方代码、二进制和模型继续适用其原始许可证；本仓库的 MIT License 不会重新许可它们。
 
-| Component | Purpose | License / upstream |
+| Component | Runtime scope | License / upstream |
 |---|---|---|
-| Tauri | Desktop shell and NSIS bundling | Apache-2.0 OR MIT — https://github.com/tauri-apps/tauri |
-| React | Desktop UI | MIT — https://github.com/facebook/react |
-| PyInstaller | Python one-folder packaging | GPL-2.0-or-later with bootloader exception — https://pyinstaller.org/en/stable/license.html |
-| FastAPI | Local inference API | MIT — https://github.com/fastapi/fastapi |
-| Uvicorn | Local ASGI server | BSD-3-Clause — https://github.com/encode/uvicorn |
-| ONNX Runtime | Core detector inference runtime | MIT — https://github.com/microsoft/onnxruntime |
-| PyTorch | Tensor and CUDA inference runtime | BSD-style plus bundled third-party notices — https://github.com/pytorch/pytorch/blob/main/LICENSE |
-| Transformers | VLM model runtime | Apache-2.0 — https://github.com/huggingface/transformers |
-| Qwen3-VL-2B-Instruct | Vision-language model weights | Apache-2.0 — https://huggingface.co/Qwen/Qwen3-VL-2B-Instruct |
-| PaddlePaddle / PaddleOCR | OCR runtime and models | Apache-2.0 — https://github.com/PaddlePaddle/PaddleOCR |
-| Ultralytics | YOLO inference/training | AGPL-3.0 or commercial Enterprise License — https://www.ultralytics.com/license |
-| OpenCV | Image processing | Apache-2.0 plus bundled third-party notices — https://github.com/opencv/opencv |
-| scikit-learn | Text baseline | BSD-3-Clause — https://github.com/scikit-learn/scikit-learn |
-| NumPy | Numeric runtime | BSD-3-Clause — https://github.com/numpy/numpy |
-| Pillow | Image codecs | HPND — https://github.com/python-pillow/Pillow |
-| Pydantic | Runtime schemas | MIT — https://github.com/pydantic/pydantic |
+| Tauri | Desktop | Apache-2.0 OR MIT — https://github.com/tauri-apps/tauri |
+| React | Desktop | MIT — https://github.com/facebook/react |
+| PyInstaller | Core / VLM packaging | GPL-2.0-or-later with bootloader exception — https://pyinstaller.org/en/stable/license.html |
+| FastAPI | Core / VLM service | MIT — https://github.com/fastapi/fastapi |
+| Uvicorn | Core / VLM service | BSD-3-Clause — https://github.com/encode/uvicorn |
+| ONNX Runtime | Core detector inference | MIT — https://github.com/microsoft/onnxruntime |
+| PaddlePaddle / PaddleOCR | Core OCR | Apache-2.0 — https://github.com/PaddlePaddle/PaddleOCR |
+| OpenCV | Core image processing | Apache-2.0 plus bundled notices — https://github.com/opencv/opencv |
+| scikit-learn | Core text baseline | BSD-3-Clause — https://github.com/scikit-learn/scikit-learn |
+| NumPy | Core / VLM numeric runtime | BSD-3-Clause — https://github.com/numpy/numpy |
+| Pillow | Core / VLM image codecs | HPND — https://github.com/python-pillow/Pillow |
+| Pydantic | Core / VLM schemas | MIT — https://github.com/pydantic/pydantic |
+| PyTorch | Optional VLM Runtime | BSD-style plus bundled third-party notices — https://github.com/pytorch/pytorch/blob/main/LICENSE |
+| Transformers | Optional VLM Runtime | Apache-2.0 — https://github.com/huggingface/transformers |
+| Qwen3-VL-2B-Instruct | Optional VLM Models | Apache-2.0 — https://huggingface.co/Qwen/Qwen3-VL-2B-Instruct |
+| Ultralytics YOLO / derived detector | Training / detector provenance | AGPL-3.0 or commercial license — https://www.ultralytics.com/license |
 
-The public redistribution audit is **not cleared**. In particular, the current Ultralytics-based detector and the NVIDIA/CUDA binary inventory remain release blockers. See `docs/model_distribution_licenses.md`.
+## Native binary boundary
 
-Before any public binary release, generate separate frozen dependency/SBOM inventories for Core Runtime and VLM Runtime, and include all license and NOTICE files required by each component. Split model parts remain one logical Qwen asset and must ship the same license, model-card and revision metadata. This candidate notice is an engineering audit record, not legal advice.
+VLM Runtime may contain CUDA、cuDNN、PyTorch 和 Paddle 相关原生文件。NVIDIA 只允许按照 CUDA Toolkit EULA 及其 Attachment A 再分发列明的文件；最终冻结目录必须逐项核对，而不能仅凭 `torch` 包名判断许可。
+
+## Current distribution gate
+
+公开二进制再分发尚未放行：
+
+1. detector 权重来源和 Ultralytics 派生关系仍是 blocker；
+2. 最终 VLM Runtime 原生文件清单尚未逐项完成 NVIDIA 再分发复核；
+3. Qwen / Paddle 模型包仍需实际随附 LICENSE、NOTICE、模型卡、来源 revision 和哈希；
+4. 最终 SBOM 必须从冻结发行 profile 和打包目录重新生成。
+
+本文件是工程审计记录，不构成法律意见。

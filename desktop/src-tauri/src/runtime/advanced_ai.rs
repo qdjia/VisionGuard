@@ -1,4 +1,5 @@
 use super::RuntimeManager;
+use crate::models::active_vlm_paths;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::{
@@ -282,8 +283,8 @@ impl AdvancedAIManager {
             .map(PathBuf::from)
             .filter(|p| p.is_file())
             .or_else(|| {
-                let p = data.join("components/vlm-runtime/visionguard-vlm-runtime.exe");
-                p.is_file().then_some(p)
+                let (runtime, _, _) = active_vlm_paths(data)?;
+                find_component_file(&runtime, "visionguard-vlm-runtime.exe")
             })
     }
     fn resolve_model(&self, data: &Path) -> Option<PathBuf> {
@@ -292,8 +293,8 @@ impl AdvancedAIManager {
             .map(PathBuf::from)
             .filter(|p| p.is_dir())
             .or_else(|| {
-                let p = data.join("components/vlm-models/vlm-models-v1/vlm");
-                p.is_dir().then_some(p)
+                let (_, models, _) = active_vlm_paths(data)?;
+                find_component_directory(&models, "vlm")
             })
     }
     fn force_kill(&self) {
@@ -327,4 +328,28 @@ fn path_text(path: &Path) -> String {
     path.to_string_lossy()
         .replace('\\', "/")
         .replace('\'', "''")
+}
+
+fn find_component_file(root: &Path, name: &str) -> Option<PathBuf> {
+    let direct = root.join(name);
+    if direct.is_file() {
+        return Some(direct);
+    }
+    std::fs::read_dir(root)
+        .ok()?
+        .filter_map(Result::ok)
+        .map(|entry| entry.path().join(name))
+        .find(|path| path.is_file())
+}
+
+fn find_component_directory(root: &Path, name: &str) -> Option<PathBuf> {
+    let direct = root.join(name);
+    if direct.is_dir() {
+        return Some(direct);
+    }
+    std::fs::read_dir(root)
+        .ok()?
+        .filter_map(Result::ok)
+        .map(|entry| entry.path().join(name))
+        .find(|path| path.is_dir())
 }

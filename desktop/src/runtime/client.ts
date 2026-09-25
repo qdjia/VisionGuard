@@ -3,6 +3,9 @@ import { open } from "@tauri-apps/plugin-dialog";
 
 import type {
   AdvancedAISnapshot,
+  AdvancedAIInstallResult,
+  AdvancedAIInstallStatus,
+  AdvancedAIPackageInfo,
   ModelBundleInfo,
   ModelInstallResult,
   ModelInstallStatus,
@@ -45,4 +48,19 @@ export const tauriRuntimeController: RuntimeController = {
   startAdvancedAI: () => invoke<void>("start_advanced_ai"),
   restartAdvancedAI: () => invoke<void>("restart_advanced_ai"),
   stopAdvancedAI: () => invoke<void>("stop_advanced_ai"),
+  chooseAdvancedAIManifest: async () => {
+    const selected = await open({
+      directory: false,
+      multiple: false,
+      title: "选择 Advanced AI 安装清单",
+      filters: [{ name: "Advanced AI Manifest", extensions: ["json"] }],
+    });
+    return typeof selected === "string" ? selected : null;
+  },
+  inspectAdvancedAIPackage: (manifest) => invoke<AdvancedAIPackageInfo>("inspect_advanced_ai_package", { manifest }),
+  installAdvancedAIPackage: (manifest) => invoke<AdvancedAIInstallResult>("install_advanced_ai_package", { manifest }),
+  advancedAIInstallStatus: () => invoke<AdvancedAIInstallStatus>("get_advanced_ai_install_status"),
+  cancelAdvancedAIInstall: () => invoke<void>("cancel_advanced_ai_install"),
+  uninstallAdvancedAI: () => invoke<void>("uninstall_advanced_ai"),
+  rollbackAdvancedAI: () => invoke<void>("rollback_advanced_ai"),
 };

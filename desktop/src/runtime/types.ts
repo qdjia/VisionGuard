@@ -43,6 +43,37 @@ export interface AdvancedAISnapshot {
   error_message: string | null;
 }
 
+export interface AdvancedAIPackageInfo {
+  package_version: string;
+  runtime_version: string;
+  model_version: string;
+  source_bytes: number;
+  installed_bytes: number;
+  required_free_bytes: number;
+  available_free_bytes: number;
+  disk_space_sufficient: boolean;
+  part_count: number;
+  validation_status: string;
+}
+
+export interface AdvancedAIInstallStatus {
+  state: "idle" | "validating" | "installing" | "activating" | "ready" | "cancelled" | "failed";
+  package_version: string | null;
+  bytes_completed: number;
+  bytes_total: number;
+  runtime_version: string | null;
+  model_version: string | null;
+  error_code: string | null;
+  error_message: string | null;
+}
+
+export interface AdvancedAIInstallResult {
+  package_version: string;
+  runtime_version: string;
+  model_version: string;
+  validation_status: string;
+}
+
 export interface ModelBundleInfo {
   source_kind: "directory" | "zip";
   bundle_version: string;
@@ -107,4 +138,11 @@ export interface RuntimeController {
   startAdvancedAI?(): Promise<void>;
   restartAdvancedAI?(): Promise<void>;
   stopAdvancedAI?(): Promise<void>;
+  chooseAdvancedAIManifest?(): Promise<string | null>;
+  inspectAdvancedAIPackage?(manifest: string): Promise<AdvancedAIPackageInfo>;
+  installAdvancedAIPackage?(manifest: string): Promise<AdvancedAIInstallResult>;
+  advancedAIInstallStatus?(): Promise<AdvancedAIInstallStatus>;
+  cancelAdvancedAIInstall?(): Promise<void>;
+  uninstallAdvancedAI?(): Promise<void>;
+  rollbackAdvancedAI?(): Promise<void>;
 }

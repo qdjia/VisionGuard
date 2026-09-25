@@ -1,4 +1,4 @@
-"""Build a local Windows release candidate and generate verifiable release metadata."""
+"""Build a reproducible local Windows release candidate without publishing it."""
 
 from __future__ import annotations
 
@@ -9,15 +9,20 @@ import re
 import shutil
 import subprocess
 import sys
-import zipfile
 from datetime import UTC, datetime
 from pathlib import Path
+
+if __package__:
+    from scripts.build_advanced_ai_package import build_package
+    from scripts.generate_sbom import generate as generate_sbom
+else:
+    from build_advanced_ai_package import build_package
+    from generate_sbom import generate as generate_sbom
 
 ROOT = Path(__file__).resolve().parents[1]
 DESKTOP = ROOT / "desktop"
 TAURI = DESKTOP / "src-tauri"
 RELEASE_ROOT = ROOT / "release"
-MODEL_ROOT = ROOT / "models" / "core-models-v1"
 SEMVER = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?$")
 GITHUB_ASSET_LIMIT = 2 * 1024**3
 
@@ -35,8 +40,7 @@ def directory_size(path: Path) -> int:
 
 
 def source_version() -> str:
-    payload = json.loads((TAURI / "tauri.conf.json").read_text(encoding="utf-8"))
-    return str(payload["version"])
+    return str(json.loads((TAURI / "tauri.conf.json").read_text(encoding="utf-8"))["version"])
 
 
 def run(command: list[str], *, cwd: Path = ROOT) -> None:
@@ -54,7 +58,7 @@ def safe_clean(path: Path) -> None:
 
 def find_installer() -> Path:
     candidates = sorted(
-        (TAURI / "target" / "release" / "bundle" / "nsis").glob("*.exe"),
+        (TAURI / "target/release/bundle/nsis").glob("*.exe"),
         key=lambda item: item.stat().st_mtime,
         reverse=True,
     )
@@ -63,43 +67,10 @@ def find_installer() -> Path:
     return candidates[0]
 
 
-def package_models(output: Path) -> tuple[Path, str, int]:
-    manifest_path = MODEL_ROOT / "manifest.json"
-    if not manifest_path.is_file():
-        raise FileNotFoundError(
-            "models/core-models-v1 is missing; build the Core model bundle first"
-        )
-    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    bundle_version = str(manifest["bundle_version"])
-    public_name = bundle_version.replace("models", "Models", 1)
-    archive = output / f"VisionGuard-{public_name}.zip"
-    with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_STORED, allowZip64=True) as target:
-        for item in sorted(MODEL_ROOT.rglob("*")):
-            if item.is_file():
-                target.write(item, Path(bundle_version) / item.relative_to(MODEL_ROOT))
-    return archive, bundle_version, directory_size(MODEL_ROOT)
-
-
-def package_runtime(output: Path) -> tuple[Path, str, int]:
-    runtime_root = ROOT / "runtime-dist-core" / "visionguard-core-runtime"
-    manifest_path = runtime_root / "runtime-manifest.json"
-    if not manifest_path.is_file():
-        raise FileNotFoundError("runtime manifest is missing; run scripts/build_runtime.py first")
-    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    version = str(manifest["runtime_version"])
-    directory_name = f"runtime-v{version}"
-    archive = output / f"VisionGuard-Core-Runtime-{version}-windows-x64.zip"
-    with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_STORED, allowZip64=True) as target:
-        for item in sorted(runtime_root.rglob("*")):
-            if item.is_file():
-                target.write(item, Path(directory_name) / item.relative_to(runtime_root))
-    return archive, version, directory_size(runtime_root)
-
-
-def asset_record(path: Path, *, kind: str, publishable: bool) -> dict[str, object]:
+def asset_record(path: Path, output: Path, *, kind: str, publishable: bool) -> dict[str, object]:
     size = path.stat().st_size
     return {
-        "name": path.name,
+        "name": path.relative_to(output).as_posix(),
         "kind": kind,
         "size_bytes": size,
         "sha256": sha256(path),
@@ -110,44 +81,46 @@ def asset_record(path: Path, *, kind: str, publishable: bool) -> dict[str, objec
 
 def write_checksums(output: Path, assets: list[dict[str, object]]) -> Path:
     target = output / "SHA256SUMS.txt"
-    lines = [f"{asset['sha256']}  {asset['name']}" for asset in assets]
-    target.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
+    target.write_text(
+        "\n".join(f"{asset['sha256']}  {asset['name']}" for asset in assets) + "\n",
+        encoding="utf-8",
+        newline="\n",
+    )
     return target
 
 
-def write_release_notes(output: Path, version: str, assets: list[dict[str, object]]) -> Path:
+def write_release_notes(output: Path, version: str, blockers: list[str]) -> Path:
     target = output / "RELEASE_NOTES.md"
-    table = "\n".join(
-        f"| `{asset['name']}` | {asset['size_bytes']} | {'是' if asset['publishable'] else '否'} |"
-        for asset in assets
-    )
+    blocker_text = "\n".join(f"- `{blocker}`" for blocker in blockers)
     target.write_text(
-        f"""# VisionGuard {version} Release Candidate
+        f"""# VisionGuard {version} Local Release Candidate
 
-这是本地生成的 Windows GPU 版候选发布物，不代表已经获准公开发布。
+这是本地生成的候选产物，不代表已经获准公开发布。
 
-## 安装
+## Highlights
 
-1. 下载并校验安装器与模型包。
-2. 运行 `VisionGuard-Setup-GPU-{version}.exe`。
-3. 首次启动时先选择 GPU Runtime ZIP 或已解压目录。
-4. Runtime 安装完成后选择模型 ZIP 或已解压模型目录。
-5. 等待本机 SHA-256 校验与 AI Runtime 就绪。
+- 安装器内置 Slim CPU Core Runtime 与 Core Models，Fast Review 可离线使用。
+- Advanced AI 使用 1 GiB 分卷、SHA-256、磁盘预检、staging 与原子激活。
+- VLM Runtime / Models 独立版本，可回滚和卸载；Core 保持可用。
 
-## 发布物
+## Installation
 
-| 文件 | 字节数 | 当前允许公开上传 |
-|---|---:|---|
-{table}
+安装 Core 后，在应用内选择 `advanced-ai-manifest.json` 导入可选 Advanced AI。
+用户不需要手工合并分卷。
 
-## 已知发布门禁
+## Validated hardware
 
-- Ultralytics/YOLO 代码与权重的公开再分发方式尚未解决，模型资产不得上传。
-- 超过 2 GiB 的文件不能作为单个 GitHub Release asset 上传。
-- 尚需完成代码签名、Windows Sandbox/干净 VM、卸载、重装和升级人工验收。
-- GPU 最低显存和整机内存要求尚未形成足量实测结论；不要把当前测试机配置写成最低要求。
+RTX 4060 Laptop 8 GiB 是开发验证配置，不是最低要求。最低 RAM / VRAM 尚未充分刻画。
 
-详情见 `docs/distribution_architecture.md` 与 `docs/model_distribution_licenses.md`。
+## Signing
+
+当前候选未配置 Authenticode，Windows SmartScreen 可能显示警告。
+
+## Blocking gates
+
+{blocker_text}
+
+公开分发前必须完成 `docs/release_gate.md` 和 clean-machine 验收。
 """,
         encoding="utf-8",
         newline="\n",
@@ -157,11 +130,18 @@ def write_release_notes(output: Path, version: str, assets: list[dict[str, objec
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--version", required=True, help="Release SemVer, for example 0.1.0-rc.1")
-    parser.add_argument("--skip-runtime", action="store_true")
-    parser.add_argument("--skip-installer", action="store_true")
-    parser.add_argument("--skip-models", action="store_true")
+    parser.add_argument("--version", required=True)
+    parser.add_argument("--skip-build", action="store_true", help="Reuse existing local binaries")
     parser.add_argument("--no-clean", action="store_true")
+    parser.add_argument(
+        "--advanced-runtime", type=Path, default=ROOT / "runtime-dist-vlm/visionguard-vlm-runtime"
+    )
+    parser.add_argument("--advanced-models", type=Path, default=ROOT / "models/vlm-models-v1")
+    parser.add_argument("--advanced-version", default="advanced-ai-v1")
+    parser.add_argument("--runtime-version", default="0.1.0")
+    parser.add_argument("--model-version", default="vlm-models-v1")
+    parser.add_argument("--part-size-mib", type=int, default=1024)
+    parser.add_argument("--skip-advanced-ai", action="store_true")
     parser.add_argument("--skip-validation", action="store_true")
     args = parser.parse_args()
     if not SEMVER.fullmatch(args.version):
@@ -178,108 +158,107 @@ def main() -> None:
         safe_clean(output)
     output.mkdir(parents=True, exist_ok=True)
 
-    if not args.skip_runtime:
+    core_runtime = ROOT / "runtime-dist-core/visionguard-core-runtime"
+    core_models = ROOT / "models/core-models-v1"
+    if not args.skip_build:
         run([sys.executable, "scripts/build_runtime.py", "--profile", "core"])
-    if not args.skip_installer:
+        if not core_models.joinpath("manifest.json").is_file():
+            run(
+                [
+                    sys.executable,
+                    "scripts/build_model_bundle.py",
+                    "--profile",
+                    "core",
+                    "--bundle-version",
+                    "core-models-v1",
+                    "--output",
+                    str(core_models),
+                    "--hardlink",
+                ]
+            )
         run(["npm.cmd", "run", "tauri:build:release"], cwd=DESKTOP)
+    if not core_runtime.joinpath("runtime-manifest.json").is_file():
+        raise FileNotFoundError("Core Runtime is missing")
+    if not core_models.joinpath("manifest.json").is_file():
+        raise FileNotFoundError("Core Models are missing")
 
     assets: list[dict[str, object]] = []
-    installer_source = find_installer()
     installer = output / f"VisionGuard-Setup-{args.version}.exe"
-    shutil.copy2(installer_source, installer)
-    assets.append(asset_record(installer, kind="windows_installer", publishable=True))
+    shutil.copy2(find_installer(), installer)
+    # Public flag remains false until detector/native redistribution gates are cleared.
+    assets.append(asset_record(installer, output, kind="windows_installer", publishable=False))
 
-    runtime_archive, runtime_version, unpacked_runtime_size = package_runtime(output)
-    assets.append(
-        asset_record(
-            runtime_archive,
-            kind="core_runtime",
-            publishable=True,
+    advanced_manifest: str | None = None
+    if not args.skip_advanced_ai:
+        advanced_path = build_package(
+            runtime=args.advanced_runtime,
+            models=args.advanced_models,
+            output=output,
+            package_version=args.advanced_version,
+            runtime_version=args.runtime_version,
+            model_version=args.model_version,
+            part_size_mib=args.part_size_mib,
         )
-    )
-
-    model_version: str | None = None
-    unpacked_model_size: int | None = None
-    if not args.skip_models:
-        model_archive, model_version, unpacked_model_size = package_models(output)
+        advanced_manifest = advanced_path.name
         assets.append(
-            asset_record(
-                model_archive,
-                kind="core_models",
-                # Local packaging is permitted for verification; public redistribution is blocked.
-                publishable=False,
-            )
+            asset_record(advanced_path, output, kind="advanced_ai_manifest", publishable=False)
         )
+        for part in sorted(output.glob("*.part[0-9][0-9]")):
+            kind = "vlm_runtime_part" if "VLM-Runtime" in part.name else "vlm_models_part"
+            assets.append(asset_record(part, output, kind=kind, publishable=False))
 
-    packaged_bytes = sum(int(asset["size_bytes"]) for asset in assets)
-    app_binary = TAURI / "target" / "release" / "visionguard-desktop.exe"
-    app_binary_bytes = app_binary.stat().st_size if app_binary.is_file() else None
-    installed_total_bytes = (
-        (app_binary_bytes or 0) + unpacked_runtime_size + (unpacked_model_size or 0)
-    )
-    recommended_install_disk_bytes = (packaged_bytes + installed_total_bytes) * 115 // 100
-
+    sbom_paths = generate_sbom(output / "sbom", args.version)
+    blockers = [
+        "DETECTOR_REDISTRIBUTION_UNRESOLVED",
+        "NVIDIA_NATIVE_REDISTRIBUTION_UNVERIFIED",
+        "CLEAN_MACHINE_ACCEPTANCE_PENDING",
+        "HISTORICAL_REGRESSION_PENDING",
+        "CODE_SIGNING_NOT_CONFIGURED",
+    ]
+    notes = write_release_notes(output, args.version, blockers)
     checksums = write_checksums(output, assets)
-    notes = write_release_notes(output, args.version, assets)
     manifest = {
-        "schema_version": 2,
+        "schema_version": 3,
         "release_version": args.version,
         "release_channel": "release_candidate",
         "generated_at": datetime.now(UTC).isoformat(),
         "app_version": app_version,
-        "runtime_version": runtime_version,
-        "model_bundle_version": model_version,
-        "pipeline_version": "v2",
-        "routing_version": "v1",
-        "fusion_version": "v1",
-        "prompt_version": "v1",
         "platform": "windows",
         "architecture": "x86_64",
-        "edition": "componentized_cpu_core",
+        "edition": "bundled_cpu_core_optional_advanced_ai",
         "components": {
-            "core_runtime": {"required": True, "version": runtime_version},
-            "core_models": {"required": True, "version": model_version},
-            "vlm_runtime": {"required": False, "version": None},
-            "vlm_models": {"required": False, "version": None},
-        },
-        "distribution": {
-            "installer": "thin_nsis_current_user",
-            "runtime": "separate_local_import",
-            "models": "separate_local_import",
-            "offline_inference": True,
-            "public_release_ready": False,
-            "blockers": [
-                "ULTRALYTICS_REDISTRIBUTION_UNRESOLVED",
-                "NVIDIA_CUDA_REDISTRIBUTION_UNVERIFIED",
-                "CODE_SIGNING_NOT_CONFIGURED",
-                "CLEAN_MACHINE_ACCEPTANCE_PENDING",
-            ],
-        },
-        "minimum_requirements": {
-            "os": "64-bit Windows",
-            "gpu": "NVIDIA GPU with a driver compatible with bundled CUDA PyTorch",
-            "vram_bytes": None,
-            "system_memory_bytes": None,
-            "disk_free_bytes": recommended_install_disk_bytes,
-            "note": (
-                "Disk value includes downloaded assets, installed components, and a 15% "
-                "safety margin. Minimum RAM/VRAM still requires repeated hardware testing."
-            ),
+            "desktop": {"version": app_version, "required": True},
+            "core_runtime": {"version": args.runtime_version, "required": True},
+            "core_models": {"version": "core-models-v1", "required": True},
+            "vlm_runtime": {"version": args.runtime_version, "required": False},
+            "vlm_models": {"version": args.model_version, "required": False},
         },
         "sizes": {
-            "runtime_bytes": unpacked_runtime_size,
-            "model_unpacked_bytes": unpacked_model_size,
             "installer_bytes": installer.stat().st_size,
-            "desktop_binary_bytes": app_binary_bytes,
-            "installed_total_bytes": installed_total_bytes,
-            "packaged_assets_total_bytes": packaged_bytes,
-            "recommended_install_disk_bytes": recommended_install_disk_bytes,
+            "core_runtime_installed_bytes": directory_size(core_runtime),
+            "core_models_installed_bytes": directory_size(core_models),
         },
-        "assets": assets
-        + [
-            {"name": checksums.name, "kind": "checksums"},
-            {"name": notes.name, "kind": "release_notes"},
-        ],
+        "distribution": {
+            "installer": "nsis_current_user_bundled_cpu_core",
+            "advanced_ai": "local_manifest_import_split_parts",
+            "advanced_ai_manifest": advanced_manifest,
+            "offline_inference": True,
+            "code_signing": "unsigned",
+            "public_release_ready": False,
+            "blockers": blockers,
+        },
+        "gates": {
+            "advanced_ai_install": "pending_manual",
+            "clean_machine": "pending",
+            "offline": "pending_clean_machine",
+            "upgrade": "pending_manual",
+            "uninstall": "pending_manual",
+            "historical_regression": "pending",
+            "license_distribution": "blocked",
+        },
+        "assets": assets,
+        "metadata_files": [checksums.name, notes.name]
+        + [path.relative_to(output).as_posix() for path in sbom_paths],
     }
     manifest_path = output / "release-manifest.json"
     manifest_path.write_text(

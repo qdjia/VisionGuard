@@ -502,6 +502,15 @@ impl RuntimeManager {
         if let Some(path) = active_runtime_executable(data_dir) {
             return Ok(path);
         }
+        if let Ok(resources) = self.app.path().resource_dir() {
+            let bundled = resources
+                .join("components")
+                .join("core-runtime")
+                .join("visionguard-core-runtime.exe");
+            if bundled.is_file() {
+                return Ok(bundled);
+            }
+        }
         #[cfg(debug_assertions)]
         {
             let triple = option_env!("TAURI_ENV_TARGET_TRIPLE").unwrap_or("x86_64-pc-windows-msvc");
@@ -524,6 +533,12 @@ impl RuntimeManager {
         }
         if let Some(active) = active_bundle_path(data_dir) {
             return active;
+        }
+        if let Ok(resources) = self.app.path().resource_dir() {
+            let bundled = resources.join("components").join("core-models");
+            if bundled.join("manifest.json").is_file() {
+                return bundled;
+            }
         }
         let installed = data_dir.join("models").join("core-models-v1");
         if installed.is_dir() {

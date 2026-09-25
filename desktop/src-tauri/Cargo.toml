@@ -1,6 +1,6 @@
 [package]
 name = "visionguard-desktop"
-version = "0.1.0"
+version = "1.0.0"
 description = "VisionGuard desktop shell"
 authors = ["VisionGuard contributors"]
 edition = "2021"
