@@ -12,7 +12,9 @@
 
 ## Remaining blockers
 
-- NVIDIA `nvJitLink_120_0.dll` 再分发状态仍为 `UNCLEAR`。
+- Advanced AI 改为按需在线安装固定官方依赖与模型；完成后审核推理仍完全在本机运行。
+- 默认 Release 不再直接分发 PyTorch/CUDA/NVIDIA DLL 或 Qwen 权重；旧分卷路径仅作为 legacy fallback 保留。
+- Advanced AI 全新下载、clean Windows GUI 生命周期与历史真实图片回归仍未完成，RC 继续阻塞。
 - Clean Windows、真实 GUI 生命周期和历史真实图片回归尚未完成。
 - 许可证迁移后的最终候选尚未重建。
 

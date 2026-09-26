@@ -14,6 +14,13 @@ from visionguard.vlm.schemas import VLMContext
 from visionguard.vlm_runtime.app import create_vlm_app
 from visionguard.vlm_runtime.config import VLMRuntimeConfig
 
+
+def test_managed_runtime_module_entrypoint_is_available() -> None:
+    from visionguard.vlm_runtime.__main__ import run
+
+    assert callable(run)
+
+
 TOKEN = "a" * 32
 
 

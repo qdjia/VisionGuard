@@ -3,8 +3,8 @@ mod installer;
 mod runtime_installer;
 
 pub use advanced_ai_installer::{
-    active_vlm_paths, AdvancedAIInstallResult, AdvancedAIInstallStatus, AdvancedAIInstaller,
-    AdvancedAIPackageInfo,
+    active_managed_vlm_paths, active_vlm_paths, AdvancedAIInstallResult, AdvancedAIInstallStatus,
+    AdvancedAIInstaller, AdvancedAIPackageInfo,
 };
 
 pub use installer::{

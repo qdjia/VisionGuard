@@ -6,6 +6,7 @@ use std::{
     fs::{self, File},
     io::{self, Read, Seek, SeekFrom, Write},
     path::{Component, Path, PathBuf},
+    process::{Command, Stdio},
     sync::{
         atomic::{AtomicBool, Ordering},
         Arc, RwLock,
@@ -63,6 +64,14 @@ pub struct ActiveComponentRegistry {
     pub vlm_models_directory: String,
 }
 
+#[derive(Debug, Clone)]
+pub struct ManagedVLMPaths {
+    pub python_executable: PathBuf,
+    pub models_directory: PathBuf,
+    pub model_revision: String,
+    pub model_bundle_version: String,
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub struct AdvancedAIPackageInfo {
     pub package_version: String,
@@ -92,7 +101,7 @@ pub struct AdvancedAIInstallStatus {
 impl Default for AdvancedAIInstallStatus {
     fn default() -> Self {
         Self {
-            state: "idle".into(),
+            state: "NotInstalled".into(),
             package_version: None,
             bytes_completed: 0,
             bytes_total: 0,
@@ -114,14 +123,14 @@ pub struct AdvancedAIInstallResult {
 
 #[derive(Debug, Serialize)]
 struct InstallError {
-    code: &'static str,
+    code: String,
     message: String,
 }
 
 impl InstallError {
-    fn new(code: &'static str, message: impl Into<String>) -> Self {
+    fn new(code: impl Into<String>, message: impl Into<String>) -> Self {
         Self {
-            code,
+            code: code.into(),
             message: message.into(),
         }
     }
@@ -169,6 +178,58 @@ impl AdvancedAIInstaller {
         .await
         .map_err(|e| e.to_string())?
         .map_err(|e| e.json())
+    }
+
+    pub async fn inspect_online(&self) -> Result<AdvancedAIPackageInfo, String> {
+        let resources = self.app.path().resource_dir().map_err(|e| e.to_string())?;
+        let manifest_path = resources.join("bootstrap/advanced-ai-bootstrap-manifest.json");
+        let data = self
+            .app
+            .path()
+            .app_local_data_dir()
+            .map_err(|e| e.to_string())?;
+        tauri::async_runtime::spawn_blocking(move || inspect_online_manifest(&manifest_path, &data))
+            .await
+            .map_err(|e| e.to_string())?
+            .map_err(|e| e.json())
+    }
+
+    pub async fn install_online(&self) -> Result<AdvancedAIInstallResult, String> {
+        let _guard = self.operation.lock().await;
+        self.cancelled.store(false, Ordering::SeqCst);
+        let resources = self.app.path().resource_dir().map_err(|e| e.to_string())?;
+        let data = self
+            .app
+            .path()
+            .app_local_data_dir()
+            .map_err(|e| e.to_string())?;
+        let status = Arc::clone(&self.status);
+        let cancelled = Arc::clone(&self.cancelled);
+        let result = tauri::async_runtime::spawn_blocking(move || {
+            install_online_bootstrap(&resources, &data, &status, &cancelled)
+        })
+        .await
+        .map_err(|e| e.to_string())?;
+        match result {
+            Ok(value) => Ok(value),
+            Err(error) => {
+                let state = if error.code == "ADVANCED_AI_INSTALL_CANCELLED" {
+                    "Cancelled"
+                } else {
+                    "Failed"
+                };
+                let current = self.status();
+                update_status(
+                    &self.status,
+                    state,
+                    None,
+                    current.bytes_completed,
+                    current.bytes_total,
+                    Some((error.code.clone(), error.message.clone())),
+                );
+                Err(error.json())
+            }
+        }
     }
 
     pub async fn install(&self, manifest: String) -> Result<AdvancedAIInstallResult, String> {
@@ -219,32 +280,286 @@ impl AdvancedAIInstaller {
 
     pub async fn uninstall(&self) -> Result<(), String> {
         let _guard = self.operation.lock().await;
+        update_status(&self.status, "Removing", None, 0, 0, None);
         let data = self
             .app
             .path()
             .app_local_data_dir()
             .map_err(|e| e.to_string())?;
-        tauri::async_runtime::spawn_blocking(move || uninstall_active(&data))
+        let result = tauri::async_runtime::spawn_blocking(move || uninstall_active(&data))
             .await
-            .map_err(|e| e.to_string())?
-            .map_err(|e| e.json())?;
-        *self.status.write().expect("advanced AI status poisoned") =
-            AdvancedAIInstallStatus::default();
-        Ok(())
+            .map_err(|e| e.to_string())?;
+        match result {
+            Ok(()) => {
+                *self.status.write().expect("advanced AI status poisoned") =
+                    AdvancedAIInstallStatus::default();
+                Ok(())
+            }
+            Err(error) => {
+                update_status(
+                    &self.status,
+                    "Failed",
+                    None,
+                    0,
+                    0,
+                    Some((error.code.clone(), error.message.clone())),
+                );
+                Err(error.json())
+            }
+        }
     }
 
     pub async fn rollback(&self) -> Result<(), String> {
         let _guard = self.operation.lock().await;
+        update_status(&self.status, "Updating", None, 0, 0, None);
         let data = self
             .app
             .path()
             .app_local_data_dir()
             .map_err(|e| e.to_string())?;
-        tauri::async_runtime::spawn_blocking(move || rollback_active(&data))
+        let result = tauri::async_runtime::spawn_blocking(move || rollback_active(&data))
             .await
-            .map_err(|e| e.to_string())?
-            .map_err(|e| e.json())
+            .map_err(|e| e.to_string())?;
+        match result {
+            Ok(()) => {
+                update_status(&self.status, "Ready", None, 0, 0, None);
+                Ok(())
+            }
+            Err(error) => {
+                update_status(
+                    &self.status,
+                    "Failed",
+                    None,
+                    0,
+                    0,
+                    Some((error.code.clone(), error.message.clone())),
+                );
+                Err(error.json())
+            }
+        }
     }
+}
+
+fn inspect_online_manifest(
+    manifest_path: &Path,
+    data_dir: &Path,
+) -> InstallResult<AdvancedAIPackageInfo> {
+    let payload: serde_json::Value = serde_json::from_slice(
+        &fs::read(manifest_path).map_err(io_error("ADVANCED_AI_BOOTSTRAP_MANIFEST_MISSING"))?,
+    )
+    .map_err(|e| InstallError::new("ADVANCED_AI_BOOTSTRAP_MANIFEST_INVALID", e.to_string()))?;
+    if payload.get("schema_version").and_then(|v| v.as_u64()) != Some(1)
+        || payload.get("distribution_mode").and_then(|v| v.as_str()) != Some("online-bootstrap")
+    {
+        return Err(InstallError::new(
+            "ADVANCED_AI_BOOTSTRAP_MANIFEST_INVALID",
+            "Unsupported online bootstrap manifest.",
+        ));
+    }
+    let estimates = payload.get("estimates").ok_or_else(|| {
+        InstallError::new(
+            "ADVANCED_AI_BOOTSTRAP_MANIFEST_INVALID",
+            "Size estimates are missing.",
+        )
+    })?;
+    let download = estimates
+        .get("download_bytes")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(0);
+    let installed = estimates
+        .get("installed_bytes")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(0);
+    let temporary = estimates
+        .get("temporary_bytes")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(0);
+    let margin = estimates
+        .get("safety_margin_bytes")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(0);
+    fs::create_dir_all(data_dir).map_err(io_error("ADVANCED_AI_INSPECT_FAILED"))?;
+    let available = available_space(data_dir).map_err(io_error("ADVANCED_AI_INSPECT_FAILED"))?;
+    let required = installed.saturating_add(temporary).saturating_add(margin);
+    Ok(AdvancedAIPackageInfo {
+        package_version: payload["environment_version"]
+            .as_str()
+            .unwrap_or("unknown")
+            .into(),
+        runtime_version: format!(
+            "Python {}",
+            payload["python"]["version"].as_str().unwrap_or("unknown")
+        ),
+        model_version: payload["model"]["bundle_version"]
+            .as_str()
+            .unwrap_or("unknown")
+            .into(),
+        source_bytes: download,
+        installed_bytes: installed,
+        required_free_bytes: required,
+        available_free_bytes: available,
+        disk_space_sufficient: available >= required,
+        part_count: 0,
+        validation_status: "official_sources_pinned".into(),
+    })
+}
+
+fn install_online_bootstrap(
+    resources: &Path,
+    data_dir: &Path,
+    status: &Arc<RwLock<AdvancedAIInstallStatus>>,
+    cancelled: &Arc<AtomicBool>,
+) -> InstallResult<AdvancedAIInstallResult> {
+    let manifest = resources.join("bootstrap/advanced-ai-bootstrap-manifest.json");
+    let info = inspect_online_manifest(&manifest, data_dir)?;
+    if !info.disk_space_sufficient {
+        return Err(InstallError::new(
+            "ADVANCED_AI_DISK_SPACE_INSUFFICIENT",
+            "Not enough disk space for the managed Advanced AI environment.",
+        ));
+    }
+    let wheel_root = resources.join("bootstrap/packages");
+    let wheel = find_wheel(&wheel_root).ok_or_else(|| {
+        InstallError::new(
+            "BOOTSTRAP_PACKAGE_MISSING",
+            "Bundled VisionGuard VLM wheel is missing.",
+        )
+    })?;
+    let core = crate::models::active_runtime_executable(data_dir)
+        .or_else(|| {
+            let candidate = resources.join("components/core-runtime/visionguard-core-runtime.exe");
+            candidate.is_file().then_some(candidate)
+        })
+        .ok_or_else(|| {
+            InstallError::new("RUNTIME_COMPONENT_MISSING", "Core Runtime is missing.")
+        })?;
+    let status_file = data_dir.join("advanced-ai/bootstrap-status.json");
+    let cancel_file = data_dir.join("advanced-ai/bootstrap.cancel");
+    let _ = fs::remove_file(&cancel_file);
+    let prompts = resources.join("bootstrap/prompts/vlm");
+    if !prompts.is_dir() {
+        return Err(InstallError::new(
+            "BOOTSTRAP_PACKAGE_MISSING",
+            "Bundled VLM prompt resources are missing.",
+        ));
+    }
+    update_status(status, "Preparing", None, 0, info.source_bytes, None);
+    let mut command = Command::new(core);
+    command
+        .arg("bootstrap-advanced-ai")
+        .args(["--manifest"])
+        .arg(&manifest)
+        .args(["--data-dir"])
+        .arg(data_dir)
+        .args(["--status-file"])
+        .arg(&status_file)
+        .args(["--wheel"])
+        .arg(wheel)
+        .args(["--prompts"])
+        .arg(prompts)
+        .args(["--cancel-file"])
+        .arg(&cancel_file)
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null());
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        command.creation_flags(0x08000000);
+    }
+    let mut child = command
+        .spawn()
+        .map_err(|e| InstallError::new("ADVANCED_AI_BOOTSTRAP_FAILED", e.to_string()))?;
+    let mut cancel_requested_at: Option<std::time::Instant> = None;
+    loop {
+        if cancelled.load(Ordering::SeqCst) {
+            if cancel_requested_at.is_none() {
+                fs::write(&cancel_file, b"cancel")
+                    .map_err(io_error("ADVANCED_AI_INSTALL_CANCELLED"))?;
+                cancel_requested_at = Some(std::time::Instant::now());
+            } else if cancel_requested_at.is_some_and(|value| value.elapsed().as_secs() >= 15) {
+                let _ = child.kill();
+            }
+        }
+        if let Ok(payload) = fs::read(&status_file) {
+            if let Ok(value) = serde_json::from_slice::<serde_json::Value>(&payload) {
+                if let Some(state) = value.get("state").and_then(|item| item.as_str()) {
+                    let completed = value
+                        .get("bytes_completed")
+                        .and_then(|item| item.as_u64())
+                        .unwrap_or(0);
+                    let total = value
+                        .get("bytes_total")
+                        .and_then(|item| item.as_u64())
+                        .unwrap_or(info.source_bytes);
+                    update_status(status, state, None, completed, total, None);
+                }
+            }
+        }
+        if let Some(exit) = child
+            .try_wait()
+            .map_err(io_error("ADVANCED_AI_BOOTSTRAP_FAILED"))?
+        {
+            if !exit.success() {
+                if cancelled.load(Ordering::SeqCst) {
+                    let _ = fs::remove_file(&cancel_file);
+                    return Err(InstallError::new(
+                        "ADVANCED_AI_INSTALL_CANCELLED",
+                        "Installation cancelled safely.",
+                    ));
+                }
+                let bootstrap_error = fs::read(&status_file)
+                    .ok()
+                    .and_then(|payload| serde_json::from_slice::<serde_json::Value>(&payload).ok())
+                    .and_then(|payload| {
+                        let code = payload.get("error_code")?.as_str()?.to_string();
+                        let message = payload.get("error_message")?.as_str()?.to_string();
+                        Some((code, message))
+                    })
+                    .unwrap_or_else(|| {
+                        (
+                            "ADVANCED_AI_BOOTSTRAP_FAILED".into(),
+                            format!("Bootstrap process exited with {exit}."),
+                        )
+                    });
+                return Err(InstallError::new(bootstrap_error.0, bootstrap_error.1));
+            }
+            break;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(250));
+    }
+    let _ = fs::remove_file(cancel_file);
+    update_status(
+        status,
+        "Ready",
+        None,
+        info.source_bytes,
+        info.source_bytes,
+        None,
+    );
+    Ok(AdvancedAIInstallResult {
+        package_version: info.package_version,
+        runtime_version: info.runtime_version,
+        model_version: info.model_version,
+        validation_status: "ready".into(),
+    })
+}
+
+fn find_wheel(root: &Path) -> Option<PathBuf> {
+    let matches = fs::read_dir(root)
+        .ok()?
+        .filter_map(Result::ok)
+        .map(|entry| entry.path())
+        .filter(|path| {
+            path.is_file()
+                && path.extension().is_some_and(|ext| ext == "whl")
+                && path
+                    .file_name()
+                    .and_then(|name| name.to_str())
+                    .is_some_and(|name| name.starts_with("visionguard_moderation-"))
+        })
+        .collect::<Vec<_>>();
+    (matches.len() == 1).then(|| matches[0].clone())
 }
 
 pub fn active_vlm_paths(data_dir: &Path) -> Option<(PathBuf, PathBuf, ActiveComponentRegistry)> {
@@ -260,6 +575,42 @@ pub fn active_vlm_paths(data_dir: &Path) -> Option<(PathBuf, PathBuf, ActiveComp
     let runtime = root.join(&registry.vlm_runtime_directory);
     let models = root.join(&registry.vlm_models_directory);
     (runtime.is_dir() && models.is_dir()).then_some((runtime, models, registry))
+}
+
+pub fn active_managed_vlm_paths(data_dir: &Path) -> Option<ManagedVLMPaths> {
+    let registry: serde_json::Value =
+        serde_json::from_slice(&fs::read(data_dir.join("components/components.json")).ok()?)
+            .ok()?;
+    if registry.get("schema_version")?.as_u64()? != 2
+        || registry.get("distribution_mode")?.as_str()? != "online_bootstrap"
+    {
+        return None;
+    }
+    let python_relative = registry.get("python_executable")?.as_str()?;
+    let models_relative = registry.get("vlm_models_directory")?.as_str()?;
+    if !safe_relative(python_relative)
+        || !safe_relative(models_relative)
+        || !Path::new(python_relative).starts_with("advanced-ai/envs")
+        || !Path::new(models_relative).starts_with("advanced-ai/models")
+    {
+        return None;
+    }
+    let python_executable = data_dir.join(python_relative);
+    let models_directory = data_dir.join(models_relative);
+    let model_revision = registry.get("model_revision")?.as_str()?.to_string();
+    let model_bundle_version = registry.get("vlm_models_version")?.as_str()?.to_string();
+    if model_revision.len() != 40
+        || !model_revision.bytes().all(|byte| byte.is_ascii_hexdigit())
+        || !safe_version(&model_bundle_version)
+    {
+        return None;
+    }
+    (python_executable.is_file() && models_directory.is_dir()).then(|| ManagedVLMPaths {
+        python_executable,
+        models_directory,
+        model_revision,
+        model_bundle_version,
+    })
 }
 
 fn inspect_package(manifest_path: &Path, data_dir: &Path) -> InstallResult<AdvancedAIPackageInfo> {
@@ -919,13 +1270,11 @@ fn rollback_active(data_dir: &Path) -> InstallResult<()> {
     let root = data_dir.join("components");
     let active = root.join("components.json");
     let previous = root.join("components.previous.json");
-    let registry: ActiveComponentRegistry = serde_json::from_slice(
+    let registry: serde_json::Value = serde_json::from_slice(
         &fs::read(&previous).map_err(io_error("ADVANCED_AI_ROLLBACK_UNAVAILABLE"))?,
     )
     .map_err(|e| InstallError::new("ADVANCED_AI_ROLLBACK_UNAVAILABLE", e.to_string()))?;
-    if !root.join(&registry.vlm_runtime_directory).is_dir()
-        || !root.join(&registry.vlm_models_directory).is_dir()
-    {
+    if !registry_paths_exist(data_dir, &root, &registry) {
         return Err(InstallError::new(
             "ADVANCED_AI_ROLLBACK_UNAVAILABLE",
             "Previous component files are no longer available.",
@@ -940,14 +1289,64 @@ fn rollback_active(data_dir: &Path) -> InstallResult<()> {
 
 fn uninstall_active(data_dir: &Path) -> InstallResult<()> {
     let root = data_dir.join("components");
-    let Some((runtime, models, _)) = active_vlm_paths(data_dir) else {
+    if let Some(managed) = active_managed_vlm_paths(data_dir) {
+        let environment = managed.python_executable.parent().ok_or_else(|| {
+            InstallError::new("ADVANCED_AI_UNINSTALL_FAILED", "Invalid environment path.")
+        })?;
+        fs::remove_dir_all(environment).map_err(io_error("ADVANCED_AI_UNINSTALL_FAILED"))?;
+        fs::remove_dir_all(managed.models_directory)
+            .map_err(io_error("ADVANCED_AI_UNINSTALL_FAILED"))?;
+        let _ = fs::remove_dir_all(data_dir.join("advanced-ai"));
+    } else if let Some((runtime, models, _)) = active_vlm_paths(data_dir) {
+        fs::remove_dir_all(runtime).map_err(io_error("ADVANCED_AI_UNINSTALL_FAILED"))?;
+        fs::remove_dir_all(models).map_err(io_error("ADVANCED_AI_UNINSTALL_FAILED"))?;
+    } else {
         return Ok(());
-    };
-    fs::remove_dir_all(runtime).map_err(io_error("ADVANCED_AI_UNINSTALL_FAILED"))?;
-    fs::remove_dir_all(models).map_err(io_error("ADVANCED_AI_UNINSTALL_FAILED"))?;
+    }
     let _ = fs::remove_file(root.join("components.json"));
     let _ = fs::remove_file(root.join("components.previous.json"));
     Ok(())
+}
+
+fn registry_paths_exist(data_dir: &Path, legacy_root: &Path, registry: &serde_json::Value) -> bool {
+    if registry
+        .get("schema_version")
+        .and_then(|value| value.as_u64())
+        == Some(2)
+    {
+        let Some(python) = registry
+            .get("python_executable")
+            .and_then(|value| value.as_str())
+        else {
+            return false;
+        };
+        let Some(models) = registry
+            .get("vlm_models_directory")
+            .and_then(|value| value.as_str())
+        else {
+            return false;
+        };
+        return safe_relative(python)
+            && safe_relative(models)
+            && data_dir.join(python).is_file()
+            && data_dir.join(models).is_dir();
+    }
+    let Some(runtime) = registry
+        .get("vlm_runtime_directory")
+        .and_then(|value| value.as_str())
+    else {
+        return false;
+    };
+    let Some(models) = registry
+        .get("vlm_models_directory")
+        .and_then(|value| value.as_str())
+    else {
+        return false;
+    };
+    safe_relative(runtime)
+        && safe_relative(models)
+        && legacy_root.join(runtime).is_dir()
+        && legacy_root.join(models).is_dir()
 }
 
 fn update_status(
@@ -1059,6 +1458,34 @@ mod tests {
         let mut tail = [0_u8; 3];
         reader.read_exact(&mut tail).unwrap();
         assert_eq!(&tail, b"cde");
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn managed_registry_only_resolves_expected_application_paths() {
+        let root = std::env::temp_dir().join(format!("visionguard-managed-{}", Uuid::new_v4()));
+        let python = root.join("advanced-ai/envs/vlm-v1/python.exe");
+        let models = root.join("advanced-ai/models/vlm-models-v1");
+        fs::create_dir_all(python.parent().unwrap()).unwrap();
+        fs::create_dir_all(&models).unwrap();
+        fs::create_dir_all(root.join("components")).unwrap();
+        fs::write(&python, b"fixture").unwrap();
+        fs::write(
+            root.join("components/components.json"),
+            serde_json::to_vec(&serde_json::json!({
+                "schema_version": 2,
+                "distribution_mode": "online_bootstrap",
+                "python_executable": "advanced-ai/envs/vlm-v1/python.exe",
+                "vlm_models_directory": "advanced-ai/models/vlm-models-v1",
+                "vlm_models_version": "vlm-models-v1",
+                "model_revision": "89644892e4d85e24eaac8bacfd4f463576704203"
+            }))
+            .unwrap(),
+        )
+        .unwrap();
+        let resolved = active_managed_vlm_paths(&root).unwrap();
+        assert_eq!(resolved.python_executable, python);
+        assert_eq!(resolved.models_directory, models);
         fs::remove_dir_all(root).unwrap();
     }
 }

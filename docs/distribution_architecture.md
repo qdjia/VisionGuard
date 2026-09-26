@@ -2,7 +2,7 @@
 
 ## 当前结论
 
-Phase 16 最终选择 **Tauri v2 轻量 NSIS 按用户安装 + GPU Runtime 独立导入 + 模型独立导入**。
+当前默认选择 **Tauri v2 轻量 NSIS 按用户安装 + Advanced AI 在线引导安装 + 安装完成后完全本地推理**。Phase 16 的“GPU Runtime 分卷 + 模型分卷”方案已降级为 legacy/fallback/reference，仅在显式 `--advanced-ai-mode bundled` 时构建。
 
 不采用约 9 GiB 的单体安装器。当前 PyInstaller Runtime 为 `5,311,923,777` 字节，模型目录为 `4,418,141,986` 字节；把二者绑定会让每次桌面端更新都重复分发模型，并显著增加安装失败和回滚成本。实际把 Runtime 交给 NSIS 时，`makensis` 在约 1.91 GB 的 mmap 阶段报内部编译错误，因此原先优先评估的“App + Runtime 安装器”已被实测否决，而不是停留在理论判断。
 
@@ -16,8 +16,9 @@ Phase 16 最终选择 **Tauri v2 轻量 NSIS 按用户安装 + GPU Runtime 独�
 |---|---|---|---|---|
 | A. App + Runtime + Models 单体包 | 一次安装 | 任何改动都重下约 9 GiB | 最强 | 拒绝，过大且耦合 |
 | B. App + GPU Runtime；模型独立 | 首次启动选择模型包 | App 与模型可独立更新 | 完整 | NSIS 大文件实测失败 |
-| C. App、Runtime、Models 三包 | 首次启动分两步导入 | 最低 | 完整 | **采用** |
+| C. App、Runtime、Models 三包 | 首次启动分两步导入 | 较低 | 完整 | 旧版 fallback |
 | D. CPU/GPU 双 Runtime | 选择复杂 | 双倍维护 | 完整 | CPU VLM 当前不实用，暂不构建 |
+| E. 小型 Core + 官方源在线 bootstrap | 应用内一次确认 | 依赖与模型可固定版本独立更新 | 完整 | **当前默认** |
 
 Tauri 官方支持 NSIS 和 MSI。NSIS 的 `currentUser` 模式无需管理员权限，安装在 LocalAppData 范围，并原生提供 Start Menu 与安装完成页的桌面快捷方式选项。VisionGuard 使用 NSIS，避免维护第二套安装器。
 

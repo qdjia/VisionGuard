@@ -14,14 +14,15 @@
       "../../NOTICE": "NOTICE",
       "../../THIRD_PARTY_NOTICES.md": "THIRD_PARTY_NOTICES.md",
       "../../runtime-dist-core/visionguard-core-runtime": "components/core-runtime",
-      "../../models/core-models-v1": "components/core-models"
+      "../../models/core-models-v1": "components/core-models",
+      "../../packaging/bootstrap/advanced-ai-bootstrap-manifest.json": "bootstrap/advanced-ai-bootstrap-manifest.json",
+      "../../requirements-vlm-bootstrap.lock": "bootstrap/requirements-vlm-bootstrap.lock",
+      "../../bootstrap-dist": "bootstrap/packages",
+      "../../prompts/vlm": "bootstrap/prompts/vlm"
     },
     "windows": {
       "allowDowngrades": false,
-      "webviewInstallMode": {
-        "type": "offlineInstaller",
-        "silent": true
-      },
+      "webviewInstallMode": {"type": "offlineInstaller", "silent": true},
       "nsis": {
         "compression": "lzma",
         "displayLanguageSelector": false,

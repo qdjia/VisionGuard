@@ -38,12 +38,22 @@ RC_REQUIRED_GATES = {
     "qwen_evidence",
     "sbom",
 }
-REQUIRED_SBOMS = (
+ONLINE_REQUIRED_SBOMS = (
     "desktop.cdx.json",
     "core-runtime.cdx.json",
-    "vlm-runtime.cdx.json",
     "models.cdx.json",
     "distribution.cdx.json",
+)
+LEGACY_REQUIRED_SBOMS = (*ONLINE_REQUIRED_SBOMS, "vlm-runtime.cdx.json")
+FORBIDDEN_ONLINE_NAMES = (
+    "nvjitlink",
+    "cublas",
+    "cudnn",
+    "cusparse",
+    "cufft",
+    "curand",
+    "nvrtc",
+    "torch_cuda",
 )
 DEV_ONLY_PACKAGES = {"pytest", "ruff", "notebook", "jupyter", "tensorboard", "mlflow"}
 REQUIRED_MODEL_ROLES = {"vlm", "ocr_detection", "ocr_recognition", "ocr_orientation"}
@@ -148,7 +158,9 @@ def _validate_sbom(path: Path, errors: list[str], *, enforce_runtime_hygiene: bo
     return payload
 
 
-def _validate_release_evidence(root: Path, errors: list[str]) -> None:
+def _validate_release_evidence(
+    root: Path, errors: list[str], *, online_bootstrap: bool = False
+) -> None:
     evidence = root / "release-evidence"
     provenance = _load_json(evidence / "model-provenance.json", "model provenance", errors)
     roles = {str(item.get("role")) for item in provenance.get("models", [])}
@@ -194,7 +206,7 @@ def _validate_release_evidence(root: Path, errors: list[str]) -> None:
         if item.get("nvidia_redistribution", {}).get("status")
         not in {"ALLOWED", "ALLOWED_WITH_CONDITIONS"}
     ]
-    if unresolved:
+    if unresolved and not online_bootstrap:
         errors.append(
             f"NVIDIA redistribution remains unresolved: {', '.join(map(str, unresolved))}"
         )
@@ -246,7 +258,7 @@ def _validate_release_evidence(root: Path, errors: list[str]) -> None:
 
     nvjit = _load_json(evidence / "nvjitlink-analysis.json", "nvJitLink analysis", errors)
     nvjit_status = str(nvjit.get("redistribution_status", "")).upper()
-    if nvjit_status not in {"ALLOWED", "ALLOWED_WITH_CONDITIONS"}:
+    if not online_bootstrap and nvjit_status not in {"ALLOWED", "ALLOWED_WITH_CONDITIONS"}:
         errors.append(f"nvJitLink redistribution is not cleared: {nvjit_status or 'MISSING'}")
 
     acceptance = _load_json(evidence / "acceptance-status.json", "acceptance status", errors)
@@ -286,6 +298,9 @@ def validate_release(
     manifest = _load_json(manifest_path, "release manifest", errors)
     if not manifest:
         return errors
+    distribution = manifest.get("distribution", {})
+    online_bootstrap = distribution.get("advanced_ai") == "online-bootstrap"
+    required_sboms = ONLINE_REQUIRED_SBOMS if online_bootstrap else LEGACY_REQUIRED_SBOMS
     if manifest.get("schema_version") not in {1, 2, 3, 4}:
         errors.append("unsupported release manifest schema")
     release_version = str(manifest.get("release_version", ""))
@@ -343,7 +358,7 @@ def validate_release(
                 errors.append(f"metadata file is not checksummed: {name}")
         if manifest_path.name not in checksums:
             errors.append("release manifest is not checksummed")
-        for name in REQUIRED_SBOMS:
+        for name in required_sboms:
             path = root / "sbom" / name
             if path.is_file():
                 _validate_sbom(path, errors)
@@ -359,7 +374,15 @@ def validate_release(
             errors.append(f"absolute private path found: {text_file.name}")
         if SECRET_PATTERN.search(content):
             errors.append(f"possible secret found: {text_file.name}")
-    distribution = manifest.get("distribution", {})
+    if online_bootstrap:
+        for path in root.rglob("*"):
+            if not path.is_file():
+                continue
+            lowered = path.name.casefold()
+            if any(
+                token in lowered for token in FORBIDDEN_ONLINE_NAMES
+            ) or path.suffix.casefold() in {".whl", ".safetensors", ".gguf"}:
+                errors.append(f"forbidden online-bootstrap release asset: {path.relative_to(root)}")
     if public and not distribution.get("public_release_ready", False):
         errors.append("release manifest explicitly blocks public distribution")
     if gate in {"rc", "stable"}:
@@ -386,20 +409,28 @@ def validate_release(
         for name in sorted(RC_REQUIRED_GATES):
             if gates.get(name) != "passed":
                 errors.append(f"RC gate not passed: {name}")
-        for sbom in REQUIRED_SBOMS:
+        for sbom in required_sboms:
             sbom_path = root / "sbom" / sbom
             if not sbom_path.is_file():
                 errors.append(f"missing release SBOM: sbom/{sbom}")
             else:
                 _validate_sbom(sbom_path, errors, enforce_runtime_hygiene=True)
-        _validate_release_evidence(root, errors)
+        _validate_release_evidence(root, errors, online_bootstrap=online_bootstrap)
         models_path = root / "sbom/models.cdx.json"
         if models_path.is_file():
             model_names = {
                 str(item.get("name"))
                 for item in _load_json(models_path, "models SBOM", errors).get("components", [])
             }
-            for required_model in ("detector/model.onnx", "vlm/model.safetensors"):
+            required_models = (
+                ("detector/model.onnx",)
+                if online_bootstrap
+                else (
+                    "detector/model.onnx",
+                    "vlm/model.safetensors",
+                )
+            )
+            for required_model in required_models:
                 if required_model not in model_names:
                     errors.append(f"model is missing from SBOM: {required_model}")
         distribution_path = root / "sbom/distribution.cdx.json"

@@ -38,12 +38,22 @@ def main() -> None:
         type=Path,
         default=ROOT / "runtime-dist-vlm/visionguard-vlm-runtime/visionguard-vlm-runtime.exe",
     )
+    parser.add_argument(
+        "--managed-python",
+        type=Path,
+        help="Run the VLM module with a bootstrapped managed Python instead of the legacy EXE.",
+    )
     parser.add_argument("--models", type=Path, default=ROOT / "models/vlm-models-v1")
+    parser.add_argument(
+        "--model-revision",
+        default="89644892e4d85e24eaac8bacfd4f463576704203",
+    )
     parser.add_argument("--image", type=Path, default=ROOT / "data/vlm_eval/safe.png")
     parser.add_argument("--work-dir", type=Path, default=ROOT / "artifacts/vlm-runtime-smoke")
     parser.add_argument("--requests", type=int, default=3)
     args = parser.parse_args()
     runtime, bundle, work = args.runtime.resolve(), args.models.resolve(), args.work_dir.resolve()
+    managed_python = args.managed_python.resolve() if args.managed_python else None
     work.mkdir(parents=True, exist_ok=True)
     config_path, status_path = work / "config.yaml", work / "status.json"
     status_path.unlink(missing_ok=True)
@@ -54,6 +64,7 @@ def main() -> None:
                 "port": 0,
                 "model_path": str(bundle / "vlm"),
                 "model_bundle_version": "vlm-models-v1",
+                "model_revision": args.model_revision,
                 "cache_root": str(work / "cache"),
                 "log_root": str(work / "logs"),
                 "prompts_dir": str(ROOT / "prompts/vlm"),
@@ -78,7 +89,12 @@ def main() -> None:
     idle_gpu_mib = gpu_memory_mib()
     started = time.perf_counter()
     process = subprocess.Popen(
-        [str(runtime), "--config", str(config_path), "--status-file", str(status_path)],
+        (
+            [str(managed_python), "-m", "visionguard.vlm_runtime"]
+            if managed_python
+            else [str(runtime)]
+        )
+        + ["--config", str(config_path), "--status-file", str(status_path)],
         cwd=work,
         env=environment,
     )
@@ -130,6 +146,7 @@ def main() -> None:
         loaded_gpu_mib = gpu_memory_mib()
         report = {
             "offline": True,
+            "runtime_mode": "managed_python" if managed_python else "legacy_packaged_exe",
             "process_start_ms": process_start_ms,
             "first_review_ms": latencies[0],
             "subsequent_review_ms": latencies[1:],

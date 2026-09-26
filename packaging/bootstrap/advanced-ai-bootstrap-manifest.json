@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "distribution_mode": "online-bootstrap",
+  "environment_version": "vlm-v1",
+  "visionguard_package_version": "0.1.0",
+  "compatible_desktop_major": 1,
+  "platform": "windows",
+  "architecture": "x86_64",
+  "python": {
+    "version": "3.11.9",
+    "distribution": "official-embeddable-zip",
+    "url": "https://www.python.org/ftp/python/3.11.9/python-3.11.9-embed-amd64.zip",
+    "size_bytes": 11249023,
+    "sha256": "009d6bf7e3b2ddca3d784fa09f90fe54336d5b60f0e0f305c37f400bf83cfd3b",
+    "pip_bootstrap": {
+      "url": "https://bootstrap.pypa.io/get-pip.py",
+      "size_bytes": 2230488,
+      "sha256": "fb24e693bab954209a063d90953621412ccad4a500905a726286e038f508ddf6",
+      "packages": [
+        "pip==25.2",
+        "setuptools==80.9.0",
+        "wheel==0.45.1",
+        "packaging==25.0"
+      ]
+    }
+  },
+  "indexes": {
+    "pypi": "https://pypi.org/simple",
+    "pytorch": "https://download.pytorch.org/whl/cu128"
+  },
+  "packages": {
+    "pytorch": [
+      "torch==2.11.0+cu128",
+      "torchvision==0.26.0+cu128"
+    ],
+    "runtime": [
+      "accelerate==1.15.0",
+      "annotated-doc==0.0.5",
+      "annotated-types==0.8.0",
+      "anyio==4.15.1",
+      "certifi==2026.7.22",
+      "charset-normalizer==3.5.1",
+      "click==8.5.0",
+      "fastapi==0.141.1",
+      "filelock==3.32.6",
+      "fsspec==2026.7.0",
+      "h11==0.16.0",
+      "huggingface-hub==0.36.2",
+      "idna==3.19",
+      "Jinja2==3.1.6",
+      "MarkupSafe==3.0.3",
+      "mpmath==1.3.0",
+      "networkx==3.6.1",
+      "numpy==2.3.5",
+      "Pillow==12.3.0",
+      "psutil==7.2.2",
+      "pydantic==2.13.5",
+      "pydantic-core==2.46.5",
+      "python-multipart==0.0.32",
+      "PyYAML==6.0.3",
+      "regex==2026.9.10",
+      "requests==2.34.2",
+      "safetensors==0.7.0",
+      "starlette==1.6.0",
+      "sympy==1.14.0",
+      "tokenizers==0.22.2",
+      "tqdm==4.70.1",
+      "transformers==4.57.6",
+      "typing-extensions==4.16.0",
+      "typing-inspection==0.4.4",
+      "urllib3==2.7.0",
+      "uvicorn==0.53.0",
+      "colorama==0.4.6"
+    ]
+  },
+  "model": {
+    "id": "Qwen/Qwen3-VL-2B-Instruct",
+    "revision": "89644892e4d85e24eaac8bacfd4f463576704203",
+    "source": "https://huggingface.co/Qwen/Qwen3-VL-2B-Instruct",
+    "bundle_version": "vlm-models-v1",
+    "required_file": "model.safetensors",
+    "required_files": [
+      "chat_template.json",
+      "config.json",
+      "generation_config.json",
+      "model.safetensors",
+      "preprocessor_config.json",
+      "tokenizer.json",
+      "tokenizer_config.json"
+    ],
+    "required_file_size_bytes": 4255140312,
+    "required_file_sha256": "7de1838c87a5349b016c26a1c3f7d2bc400a3d485f95ef39a7059ffd734977a0"
+  },
+  "estimates": {
+    "download_bytes": 8900000000,
+    "installed_bytes": 9000000000,
+    "temporary_bytes": 5000000000,
+    "safety_margin_bytes": 1073741824
+  }
+}

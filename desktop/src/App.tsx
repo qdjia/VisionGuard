@@ -63,7 +63,7 @@ export function App({ backend, imageSource, runtime }: { backend: VisionGuardBac
       onRestart={() => void advancedAI.restart()}
       onStop={runtime?.stopAdvancedAI ? () => void advancedAI.stop() : undefined}
       onSelectPackage={runtime?.chooseAdvancedAIManifest ? () => void advancedAI.selectPackage() : undefined}
-      onInstall={runtime?.installAdvancedAIPackage ? () => void advancedAI.install() : undefined}
+      onInstall={runtime?.installAdvancedAIOnline || runtime?.installAdvancedAIPackage ? () => void advancedAI.install() : undefined}
       onCancelInstall={runtime?.cancelAdvancedAIInstall ? () => void advancedAI.cancelInstall() : undefined}
       onUninstall={runtime?.uninstallAdvancedAI ? () => void advancedAI.uninstall() : undefined}
       onRollback={runtime?.rollbackAdvancedAI ? () => void advancedAI.rollback() : undefined}

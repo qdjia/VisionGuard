@@ -69,6 +69,24 @@ async fn inspect_advanced_ai_package(
 }
 
 #[tauri::command]
+async fn inspect_advanced_ai_online(
+    installer: tauri::State<'_, Arc<AdvancedAIInstaller>>,
+) -> Result<AdvancedAIPackageInfo, String> {
+    installer.inspect_online().await
+}
+
+#[tauri::command]
+async fn install_advanced_ai_online(
+    installer: tauri::State<'_, Arc<AdvancedAIInstaller>>,
+    manager: tauri::State<'_, Arc<AdvancedAIManager>>,
+) -> Result<AdvancedAIInstallResult, String> {
+    manager.stop().await;
+    let result = installer.install_online().await?;
+    manager.start().await?;
+    Ok(result)
+}
+
+#[tauri::command]
 async fn install_advanced_ai_package(
     manifest: String,
     installer: tauri::State<'_, Arc<AdvancedAIInstaller>>,
@@ -178,6 +196,8 @@ pub fn run() {
             get_advanced_ai_install_status,
             inspect_advanced_ai_package,
             install_advanced_ai_package,
+            inspect_advanced_ai_online,
+            install_advanced_ai_online,
             cancel_advanced_ai_install,
             uninstall_advanced_ai,
             rollback_advanced_ai,

@@ -1,5 +1,5 @@
 use super::RuntimeManager;
-use crate::models::active_vlm_paths;
+use crate::models::{active_managed_vlm_paths, active_vlm_paths};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::{
@@ -56,6 +56,11 @@ struct Health {
     model_init_count: u32,
 }
 
+struct VLMLaunch {
+    executable: PathBuf,
+    prefix_args: Vec<String>,
+}
+
 pub struct AdvancedAIManager {
     app: AppHandle,
     core: Arc<RuntimeManager>,
@@ -107,7 +112,8 @@ impl AdvancedAIManager {
             .path()
             .app_local_data_dir()
             .map_err(|e| e.to_string())?;
-        let executable = self.resolve_executable(&data).ok_or_else(|| {
+        let managed = active_managed_vlm_paths(&data);
+        let launch = self.resolve_launch(&data).ok_or_else(|| {
             self.set_failure("VLM_NOT_INSTALLED", "Advanced AI Runtime is not installed");
             "VLM_NOT_INSTALLED".to_string()
         })?;
@@ -124,22 +130,41 @@ impl AdvancedAIManager {
         let id = Uuid::new_v4().simple().to_string();
         let config = run.join(format!("config-{id}.yaml"));
         let status = run.join(format!("status-{id}.json"));
-        let packaged_prompts = executable
+        let legacy_prompts = launch
+            .executable
             .parent()
             .unwrap_or(Path::new("."))
             .join("_internal/resources/prompts/vlm");
+        let packaged_prompts = self
+            .app
+            .path()
+            .resource_dir()
+            .ok()
+            .map(|root| root.join("bootstrap/prompts/vlm"))
+            .filter(|path| path.is_dir())
+            .unwrap_or(legacy_prompts);
         let prompts = std::env::var("VISIONGUARD_VLM_PROMPTS")
             .map(PathBuf::from)
             .unwrap_or(packaged_prompts);
+        let model_bundle_version = managed
+            .as_ref()
+            .map(|value| value.model_bundle_version.as_str())
+            .unwrap_or("vlm-models-v1");
+        let model_revision = managed
+            .as_ref()
+            .map(|value| value.model_revision.as_str())
+            .unwrap_or("");
         let yaml = format!(
-            "host: 127.0.0.1\nport: 0\nmodel_path: '{} '\ncache_root: '{} '\nlog_root: '{} '\nprompts_dir: '{} '\nprompt_version: v1\nmodel_bundle_version: vlm-models-v1\ndevice: auto\ndtype: auto\ntimeout_seconds: 120\nload_timeout_seconds: 300\nmax_new_tokens: 512\n",
+            "host: 127.0.0.1\nport: 0\nmodel_path: '{} '\ncache_root: '{} '\nlog_root: '{} '\nprompts_dir: '{} '\nprompt_version: v1\nmodel_bundle_version: '{} '\nmodel_revision: '{} '\ndevice: auto\ndtype: auto\ntimeout_seconds: 120\nload_timeout_seconds: 300\nmax_new_tokens: 512\n",
             path_text(&model), path_text(&data.join("cache/vlm")),
-            path_text(&data.join("logs/vlm")), path_text(&prompts),
+            path_text(&data.join("logs/vlm")), path_text(&prompts), model_bundle_version,
+            model_revision,
         ).replace("' ", "'");
         std::fs::write(&config, yaml).map_err(|e| e.to_string())?;
         let token = Uuid::new_v4().simple().to_string();
-        let mut command = Command::new(executable);
+        let mut command = Command::new(&launch.executable);
         command
+            .args(&launch.prefix_args)
             .args(["--config"])
             .arg(config)
             .args(["--status-file"])
@@ -277,7 +302,13 @@ impl AdvancedAIManager {
         });
     }
 
-    fn resolve_executable(&self, data: &Path) -> Option<PathBuf> {
+    fn resolve_launch(&self, data: &Path) -> Option<VLMLaunch> {
+        if let Some(managed) = active_managed_vlm_paths(data) {
+            return Some(VLMLaunch {
+                executable: managed.python_executable,
+                prefix_args: vec!["-m".into(), "visionguard.vlm_runtime".into()],
+            });
+        }
         std::env::var("VISIONGUARD_VLM_RUNTIME_EXECUTABLE")
             .ok()
             .map(PathBuf::from)
@@ -286,8 +317,15 @@ impl AdvancedAIManager {
                 let (runtime, _, _) = active_vlm_paths(data)?;
                 find_component_file(&runtime, "visionguard-vlm-runtime.exe")
             })
+            .map(|executable| VLMLaunch {
+                executable,
+                prefix_args: Vec::new(),
+            })
     }
     fn resolve_model(&self, data: &Path) -> Option<PathBuf> {
+        if let Some(managed) = active_managed_vlm_paths(data) {
+            return find_component_directory(&managed.models_directory, "vlm");
+        }
         std::env::var("VISIONGUARD_VLM_MODEL_BUNDLE")
             .ok()
             .map(PathBuf::from)

@@ -51,5 +51,15 @@
     "discrepancy": "The official Attachment A and the official Windows component guide use different base filenames. The bundled versioned filename matches the guide but not Attachment A exactly."
   },
   "redistribution_status": "UNCLEAR",
-  "closure_required": "Written license-holder clarification or qualified legal review confirming that nvJitLink_120_0.dll is a permitted Windows filename variation."
+  "closure_required": "Written license-holder clarification or qualified legal review confirming that nvJitLink_120_0.dll is a permitted Windows filename variation for the legacy prebuilt runtime.",
+  "default_online_bootstrap": {
+    "directly_redistributed_by_visionguard": false,
+    "acquisition": "Installed by pip from the official PyTorch cu128 index at user request.",
+    "gate_classification": "N/A_PENDING_FINAL_RELEASE_ASSET_SCAN",
+    "dependency_documentation_retained": true
+  },
+  "legacy_prebuilt_runtime": {
+    "status": "REFERENCE_ONLY",
+    "redistribution_status": "UNCLEAR"
+  }
 }

@@ -228,28 +228,26 @@ def write_sbom(output: Path, name: str, version: str, components: list[dict[str,
     return target
 
 
-def generate(output: Path, version: str, webview_installer: Path | None = None) -> list[Path]:
+def generate(
+    output: Path,
+    version: str,
+    webview_installer: Path | None = None,
+    *,
+    include_legacy_vlm: bool = False,
+) -> list[Path]:
     output.mkdir(parents=True, exist_ok=True)
     desktop = node_components(ROOT / "desktop/package-lock.json") + rust_components(
         ROOT / "desktop/src-tauri/Cargo.lock"
     )
     core_root = ROOT / "runtime-dist-core/visionguard-core-runtime"
-    vlm_root = ROOT / "runtime-dist-vlm/visionguard-vlm-runtime"
     core_python = frozen_python_components(core_root, "core") or python_components(
         ROOT / "requirements-runtime-core.txt", "core"
     )
-    vlm_python = frozen_python_components(vlm_root, "vlm") or python_components(
-        ROOT / "requirements-runtime-vlm.txt", "vlm"
-    )
     core = core_python + native_components(core_root, "core")
-    vlm = vlm_python + native_components(vlm_root, "vlm")
-    models = model_components(
-        ROOT / "models/core-models-v1/manifest.json", "core"
-    ) + model_components(ROOT / "models/vlm-models-v1/manifest.json", "vlm")
-    return [
+    models = model_components(ROOT / "models/core-models-v1/manifest.json", "core")
+    result = [
         write_sbom(output, "desktop", version, desktop),
         write_sbom(output, "core-runtime", version, core),
-        write_sbom(output, "vlm-runtime", version, vlm),
         write_sbom(output, "models", version, models),
         write_sbom(
             output,
@@ -258,6 +256,27 @@ def generate(output: Path, version: str, webview_installer: Path | None = None) 
             distribution_components(webview_installer),
         ),
     ]
+    if include_legacy_vlm:
+        vlm_root = ROOT / "runtime-dist-vlm/visionguard-vlm-runtime"
+        vlm_python = frozen_python_components(vlm_root, "vlm") or python_components(
+            ROOT / "requirements-runtime-vlm.txt", "vlm"
+        )
+        result.insert(
+            2,
+            write_sbom(
+                output,
+                "vlm-runtime",
+                version,
+                vlm_python + native_components(vlm_root, "vlm"),
+            ),
+        )
+        result[3] = write_sbom(
+            output,
+            "models",
+            version,
+            models + model_components(ROOT / "models/vlm-models-v1/manifest.json", "vlm"),
+        )
+    return result
 
 
 def main() -> None:
@@ -265,8 +284,14 @@ def main() -> None:
     parser.add_argument("--output", type=Path, default=ROOT / "artifacts/sbom")
     parser.add_argument("--version", required=True)
     parser.add_argument("--webview-installer", type=Path)
+    parser.add_argument("--include-legacy-vlm", action="store_true")
     args = parser.parse_args()
-    for path in generate(args.output, args.version, args.webview_installer):
+    for path in generate(
+        args.output,
+        args.version,
+        args.webview_installer,
+        include_legacy_vlm=args.include_legacy_vlm,
+    ):
         print(path)
 
 

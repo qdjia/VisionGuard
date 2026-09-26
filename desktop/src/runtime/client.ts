@@ -59,6 +59,8 @@ export const tauriRuntimeController: RuntimeController = {
   },
   inspectAdvancedAIPackage: (manifest) => invoke<AdvancedAIPackageInfo>("inspect_advanced_ai_package", { manifest }),
   installAdvancedAIPackage: (manifest) => invoke<AdvancedAIInstallResult>("install_advanced_ai_package", { manifest }),
+  inspectAdvancedAIOnline: () => invoke<AdvancedAIPackageInfo>("inspect_advanced_ai_online"),
+  installAdvancedAIOnline: () => invoke<AdvancedAIInstallResult>("install_advanced_ai_online"),
   advancedAIInstallStatus: () => invoke<AdvancedAIInstallStatus>("get_advanced_ai_install_status"),
   cancelAdvancedAIInstall: () => invoke<void>("cancel_advanced_ai_install"),
   uninstallAdvancedAI: () => invoke<void>("uninstall_advanced_ai"),

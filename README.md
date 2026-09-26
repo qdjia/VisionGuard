@@ -29,17 +29,17 @@ VisionGuard is a local-first desktop AI application. Internet access may be requ
 |---|---:|---:|---|
 | Slim Core Runtime | 是 | 约 0.697 GiB | ONNX Detector、PaddleOCR、Baseline、Routing、Fusion |
 | Core Models | 是 | 约 0.146 GiB | Core 模型资产 |
-| VLM Runtime | 否 | 约 4.216 GiB | PyTorch、Transformers、CUDA 侧运行环境 |
-| VLM Models | 否 | 约 3.974 GiB | Qwen3-VL-2B-Instruct 模型资产 |
+| Advanced AI 托管环境（含模型） | 否 | 预计约 8–10 GiB，待全新安装实测 | 固定版本的 Python、PyTorch CUDA、Transformers、VLM Runtime 与模型 |
+| 旧 VLM 分卷资产 | 否 | 约 8.191 GiB | 仅保留为开发/回退参考，不属于默认 Release |
 
-Core-only 安装体积约 0.843 GiB。Advanced AI 采用独立分卷、SHA-256 校验和原子激活，不会因 VLM 故障影响 Fast Review。
+Core-only 安装体积约 0.843 GiB。Advanced AI 默认不再随 GitHub Release 分发约 8.191 GiB 的 Runtime/模型分卷，而是在用户确认后从 Python、PyTorch 和 Hugging Face 官方来源按固定版本下载，校验后原子激活。安装失败不会影响 Fast Review。
 
 ## 计划中的安装体验
 
 1. 下载并校验 `VisionGuard-Setup-<version>.exe`。
 2. 安装并启动内置 Slim CPU Core。
-3. 如需 Deep Review，在应用内获取或导入 `advanced-ai-manifest.json`。
-4. VisionGuard 校验分卷和磁盘空间，安装并激活本地 VLM Runtime 与模型。
+3. 如需 Deep Review，在应用内选择“安装 Advanced AI”，确认预计下载量与磁盘需求。
+4. VisionGuard 创建自己的隔离 Python 环境，从固定官方来源获取依赖和固定 revision 模型，验证后原子激活。
 
 最终用户不需要安装 Python、Conda、Node 或 Rust。
 
@@ -51,7 +51,7 @@ Core-only 安装体积约 0.843 GiB。Advanced AI 采用独立分卷、SHA-256 �
 - Clean Windows、真实 GUI 安装生命周期和历史真实图片回归仍待独立环境验收。
 - Windows RC 计划为未签名包，可能出现 SmartScreen 提示。
 - Ultralytics Detector 在 AGPL 开源发行路径下为 `ALLOWED_WITH_CONDITIONS`；发布时必须同时满足源码、许可证、构建脚本、来源记录及发行版本映射条件。
-- NVIDIA `nvJitLink_120_0.dll` 再分发映射仍为 `UNCLEAR`，继续阻塞公开 RC。
+- 默认 online-bootstrap Release 不再直接携带 PyTorch/CUDA/NVIDIA DLL；这些依赖在安装时由官方 PyTorch 源获取。NVIDIA 依赖仍需记录，但 `nvJitLink` 的 VisionGuard 直接二进制再分发门禁因此为 N/A。
 
 当前门禁见 [Release Gate](docs/release_gate.md)，硬件记录见 [Hardware Compatibility](docs/hardware_compatibility.md)。
 
@@ -77,8 +77,8 @@ VisionGuard Desktop
 │   ├── Core Runtime
 │   └── Core Models
 └── optional Advanced AI
-    ├── VLM Runtime parts
-    └── VLM Model parts
+    ├── managed Python environment (official pinned dependencies)
+    └── managed immutable VLM model snapshot
 ```
 
 详细设计见 [架构说明](docs/architecture.md)、[组件化 Runtime](docs/componentized_runtime.md) 和 [Desktop 架构](docs/desktop_architecture.md)。

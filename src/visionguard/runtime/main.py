@@ -9,6 +9,7 @@ import os
 import platform
 import shutil
 import socket
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -245,6 +246,10 @@ def run(argv: list[str] | None = None) -> int:
 
 
 def main() -> None:
+    if len(sys.argv) > 1 and sys.argv[1] == "bootstrap-advanced-ai":
+        from visionguard.bootstrap.cli import run as bootstrap_run
+
+        raise SystemExit(bootstrap_run(sys.argv[2:]))
     raise SystemExit(run())
 
 

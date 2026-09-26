@@ -8,6 +8,7 @@
     "reason": "The development machine contains the source repository, toolchains, caches, runtimes, and models. No independent Windows Sandbox or VM evidence is available."
   },
   "gates": {
+    "advanced_ai_online_bootstrap": {"status": "BLOCKED", "evidence": "MANAGED_RUNTIME_PASS_FULL_FRESH_MODEL_DOWNLOAD_BLOCKED_BY_OFFICIAL_SOURCE_NETWORK"},
     "clean_machine": {"status": "BLOCKED", "evidence": "NOT_EXECUTED"},
     "local_inference": {"status": "PASS", "evidence": "release-evidence/local-inference-architecture.json"},
     "real_offline": {"status": "N/A", "evidence": "NOT_A_V1_PRODUCT_REQUIREMENT"},

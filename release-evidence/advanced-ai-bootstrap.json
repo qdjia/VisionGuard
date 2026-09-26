@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "audited_at": "2026-09-26",
+  "status": "BLOCKED",
+  "reason": "Managed runtime/CUDA/Deep Review passed, but the full fresh-cache model acquisition could not complete because the official Hugging Face connection repeatedly timed out or reset; clean Windows GUI acceptance is also pending.",
+  "distribution_mode": "online-bootstrap",
+  "managed_python": {
+    "version": "3.11.9",
+    "distribution": "official-embeddable-zip",
+    "source": "https://www.python.org/ftp/python/3.11.9/python-3.11.9-embed-amd64.zip",
+    "sha256": "009d6bf7e3b2ddca3d784fa09f90fe54336d5b60f0e0f305c37f400bf83cfd3b"
+  },
+  "pytorch": {
+    "version": "2.11.0+cu128",
+    "torchvision": "0.26.0+cu128",
+    "source": "https://download.pytorch.org/whl/cu128"
+  },
+  "model": {
+    "id": "Qwen/Qwen3-VL-2B-Instruct",
+    "revision": "89644892e4d85e24eaac8bacfd4f463576704203",
+    "source": "https://huggingface.co/Qwen/Qwen3-VL-2B-Instruct"
+  },
+  "security": {
+    "trusted_https_sources_only": true,
+    "arbitrary_user_url": false,
+    "structured_process_arguments": true,
+    "global_python_or_conda_required": false,
+    "cloud_inference": false
+  },
+  "automated_results": {
+    "manifest_trust_boundary": "PASS",
+    "network_failure_fail_safe": "PASS",
+    "http_range_resume": "PASS",
+    "atomic_activation": "PASS",
+    "managed_registry_resolution": "PASS",
+    "managed_module_entrypoint": "PASS"
+  },
+  "development_machine_validation": {
+    "managed_python_cuda": "PASS",
+    "torch_version": "2.11.0+cu128",
+    "cuda_available": true,
+    "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+    "managed_runtime_startup": "PASS",
+    "dynamic_port": "PASS",
+    "session_token_rejection_without_token": "PASS",
+    "deep_review_requests": 2,
+    "structured_results": "PASS",
+    "model_init_count": 1,
+    "fresh_dependency_install": "PASS",
+    "fresh_model_download": "BLOCKED_NETWORK",
+    "fresh_model_resume_observed": "88 MiB to 216 MiB without restarting from zero",
+    "model_note": "Deep Review used the existing model copy whose size and SHA-256 match the pinned bootstrap model; it is not counted as fresh-download acceptance evidence."
+  }
+}

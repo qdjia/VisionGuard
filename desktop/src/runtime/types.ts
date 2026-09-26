@@ -57,7 +57,10 @@ export interface AdvancedAIPackageInfo {
 }
 
 export interface AdvancedAIInstallStatus {
-  state: "idle" | "validating" | "installing" | "activating" | "ready" | "cancelled" | "failed";
+  state: "idle" | "NotInstalled" | "Preparing" | "DownloadingRuntime" | "CreatingEnvironment" |
+    "InstallingDependencies" | "DownloadingModel" | "Validating" | "Ready" |
+    "Updating" | "Removing" | "validating" | "installing" | "activating" |
+    "ready" | "cancelled" | "failed" | "Failed";
   package_version: string | null;
   bytes_completed: number;
   bytes_total: number;
@@ -141,6 +144,8 @@ export interface RuntimeController {
   chooseAdvancedAIManifest?(): Promise<string | null>;
   inspectAdvancedAIPackage?(manifest: string): Promise<AdvancedAIPackageInfo>;
   installAdvancedAIPackage?(manifest: string): Promise<AdvancedAIInstallResult>;
+  inspectAdvancedAIOnline?(): Promise<AdvancedAIPackageInfo>;
+  installAdvancedAIOnline?(): Promise<AdvancedAIInstallResult>;
   advancedAIInstallStatus?(): Promise<AdvancedAIInstallStatus>;
   cancelAdvancedAIInstall?(): Promise<void>;
   uninstallAdvancedAI?(): Promise<void>;

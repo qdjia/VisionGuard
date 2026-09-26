@@ -8,7 +8,7 @@
 |---|---|---|
 | 普通 Git 仓库文件 | 命令行单文件上限 100 MiB | 不提交 Runtime、模型或安装器 |
 | Git LFS | GitHub Free / Pro 单文件 2 GB；不同计划额度不同 | 不作为最终用户发行基础设施 |
-| GitHub Release asset | 每文件必须小于 2 GiB；每个 Release 最多 1000 个 asset；总 Release 大小和带宽无固定上限 | Core installer 和 1 GiB Advanced AI parts 可使用 |
+| GitHub Release asset | 每文件必须小于 2 GiB；每个 Release 最多 1000 个 asset；总 Release 大小和带宽无固定上限 | 只发布小型 Core installer 与实际发行元数据 |
 
 官方依据：
 
@@ -18,22 +18,20 @@
 
 ## 决策
 
-第一版 RC 采用 GitHub Release 分卷资产，默认每卷 1024 MiB：
+默认 RC 采用 online-bootstrap：
 
 - `VisionGuard-Setup-1.0.0-rc.1.exe`
-- `advanced-ai-manifest.json`
-- VLM Runtime `.partNN`
-- VLM Models `.partNN`
+- 内嵌 `advanced-ai-bootstrap-manifest.json` 与约 0.2 MiB 的 VisionGuard VLM wheel
 - `SHA256SUMS.txt`
 - `release-manifest.json`
 - CycloneDX SBOM
 - Release Notes
 - Third-Party Notices、release license report 与 detector provenance
 
-当前完整候选布局共 22 个 Release assets（1 个 installer、1 个 Advanced AI manifest、9 个分卷和 11 个校验/清单/说明文件），远低于 1000 个 asset 限制。该数量只是托管兼容性结论，不代表资产已经具备公开分发许可。
+旧的 VLM Runtime/Model `.partNN` 分卷只在显式 `--advanced-ai-mode bundled` 时生成，状态为 legacy/fallback/reference。默认 Release 不携带 PyTorch wheel、CUDA/NVIDIA DLL 或 Qwen 权重；用户确认安装后才从固定官方源获取。
 
-1 GiB 明显低于 2 GiB 边界，也为托管层额外元数据和以后体积波动保留空间。用户不手工合并分卷；Desktop 读取 manifest 并跨分卷流式解压。
+因此 GitHub 单资产 2 GiB 上限不再决定默认 Advanced AI 发行结构。构建器和 validator 会拒绝在线模式 staging 中出现 CUDA/NVIDIA DLL、外部 wheel 或模型权重。
 
-如果 GitHub 资产维护成本过高，VLM Models 可迁移到 Hugging Face Hub，Runtime 仍保留在 GitHub Release。迁移前必须保证模型包的 Apache-2.0 文本、模型卡、来源 revision 和哈希完整。个人网盘和临时分享站不作为正式基础设施。
+模型固定从 Hugging Face 上的 Qwen 官方仓库及 immutable revision 获取；PyTorch 固定从官方 CUDA 12.8 index 获取。个人网盘、自建镜像和临时分享站不作为正式基础设施。
 
-本阶段不实现网络下载器。未来下载器必须同时支持 resume、retry、SHA-256 和原子安装。
+网络失败不会修改 active registry；重试复用已通过哈希的 Python/PyPA 下载缓存。模型下载器使用 Hugging Face 官方客户端的续传能力，完成必需文件、revision、大小和已知 SHA-256 校验后才原子激活。

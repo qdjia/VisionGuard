@@ -18,8 +18,11 @@ export function useAdvancedAIStatus(controller?: RuntimeController) {
     try {
       setSnapshot(await controller.advancedAIStatus());
       if (controller.advancedAIInstallStatus) setInstallStatus(await controller.advancedAIInstallStatus());
+      if (controller.inspectAdvancedAIOnline && !packageInfo) {
+        setPackageInfo(await controller.inspectAdvancedAIOnline());
+      }
     } catch { setSnapshot(null); }
-  }, [controller]);
+  }, [controller, packageInfo]);
   const restart = useCallback(async () => {
     await controller?.restartAdvancedAI?.();
     await refresh();
@@ -41,12 +44,20 @@ export function useAdvancedAIStatus(controller?: RuntimeController) {
     }
   }, [controller]);
   const install = useCallback(async () => {
-    if (!manifest || !controller?.installAdvancedAIPackage) return;
+    if (packageInfo && !window.confirm(
+      `Advanced AI 需要联网下载约 ${(packageInfo.source_bytes / 1024 ** 3).toFixed(2)} GiB，` +
+      `并需要约 ${(packageInfo.required_free_bytes / 1024 ** 3).toFixed(2)} GiB 可用空间。安装后审核推理仍完全在本机运行。是否继续？`
+    )) return;
     setOperationError(null);
-    try { await controller.installAdvancedAIPackage(manifest); }
+    try {
+      if (controller?.installAdvancedAIOnline) await controller.installAdvancedAIOnline();
+      else if (controller?.installAdvancedAIPackage && manifest) {
+        await controller.installAdvancedAIPackage(manifest);
+      } else return;
+    }
     catch (error) { setOperationError(error instanceof Error ? error.message : String(error)); }
     await refresh();
-  }, [controller, manifest, refresh]);
+  }, [controller, manifest, packageInfo, refresh]);
   const cancelInstall = useCallback(async () => {
     await controller?.cancelAdvancedAIInstall?.();
     await refresh();

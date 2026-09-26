@@ -26,6 +26,16 @@ TAURI = DESKTOP / "src-tauri"
 RELEASE_ROOT = ROOT / "release"
 SEMVER = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?$")
 GITHUB_ASSET_LIMIT = 2 * 1024**3
+FORBIDDEN_ONLINE_ASSET_NAMES = (
+    "nvjitlink",
+    "cublas",
+    "cudnn",
+    "cusparse",
+    "cufft",
+    "curand",
+    "nvrtc",
+    "torch_cuda",
+)
 
 
 def sha256(path: Path) -> str:
@@ -50,9 +60,9 @@ def source_commit() -> str:
     ).strip()
 
 
-def run(command: list[str], *, cwd: Path = ROOT) -> None:
+def run(command: list[str], *, cwd: Path = ROOT, env: dict[str, str] | None = None) -> None:
     print("+", subprocess.list2cmdline(command), flush=True)
-    subprocess.run(command, cwd=cwd, check=True)
+    subprocess.run(command, cwd=cwd, check=True, env=env)
 
 
 def safe_clean(path: Path) -> None:
@@ -61,6 +71,69 @@ def safe_clean(path: Path) -> None:
         raise ValueError(f"refusing to clean unexpected release directory: {resolved}")
     if resolved.exists():
         shutil.rmtree(resolved)
+
+
+def assert_online_bootstrap_hygiene(*roots: Path) -> None:
+    violations = []
+    for root in roots:
+        if not root.exists():
+            continue
+        for path in root.rglob("*"):
+            if not path.is_file():
+                continue
+            lowered = path.name.casefold()
+            if (
+                any(token in lowered for token in FORBIDDEN_ONLINE_ASSET_NAMES)
+                or path.suffix.casefold() in {".whl", ".safetensors", ".gguf"}
+                and "visionguard_moderation" not in lowered
+            ):
+                violations.append(path)
+    if violations:
+        rendered = ", ".join(str(path) for path in violations[:10])
+        raise RuntimeError(
+            f"online-bootstrap release contains forbidden Advanced AI assets: {rendered}"
+        )
+
+
+def build_bootstrap_wheel() -> Path:
+    target = ROOT / "bootstrap-dist"
+    build_root = ROOT / ".build-tmp" / "bootstrap-wheel"
+    target.mkdir(exist_ok=True)
+    for existing in target.glob("*.whl"):
+        existing.unlink()
+    bootstrap_project = ROOT / "packaging" / "bootstrap" / "pyproject.toml"
+    if build_root.exists():
+        shutil.rmtree(build_root)
+    build_root.mkdir(parents=True)
+    build_temp = build_root / "tmp"
+    build_temp.mkdir()
+    build_env = os.environ.copy()
+    build_env.update({"TEMP": str(build_temp), "TMP": str(build_temp), "TMPDIR": str(build_temp)})
+    try:
+        shutil.copy2(bootstrap_project, build_root / "pyproject.toml")
+        shutil.copytree(ROOT / "src" / "visionguard", build_root / "src" / "visionguard")
+        run(
+            [
+                sys.executable,
+                "-m",
+                "pip",
+                "wheel",
+                ".",
+                "--no-deps",
+                "--no-build-isolation",
+                "--ignore-requires-python",
+                "--wheel-dir",
+                str(target),
+            ],
+            cwd=build_root,
+            env=build_env,
+        )
+    finally:
+        shutil.rmtree(build_root, ignore_errors=True)
+    wheels = list(target.glob("visionguard_moderation-*.whl"))
+    if len(wheels) != 1:
+        raise RuntimeError("expected exactly one VisionGuard bootstrap wheel")
+    return wheels[0]
 
 
 def find_installer() -> Path:
@@ -153,6 +226,12 @@ def main() -> None:
     parser.add_argument("--model-version", default="vlm-models-v1")
     parser.add_argument("--part-size-mib", type=int, default=1024)
     parser.add_argument("--skip-advanced-ai", action="store_true")
+    parser.add_argument(
+        "--advanced-ai-mode",
+        choices=("online-bootstrap", "bundled"),
+        default="online-bootstrap",
+        help="Default is small official-source bootstrap; bundled is legacy fallback only.",
+    )
     parser.add_argument("--skip-validation", action="store_true")
     args = parser.parse_args()
     if not SEMVER.fullmatch(args.version):
@@ -172,6 +251,9 @@ def main() -> None:
     core_runtime = ROOT / "runtime-dist-core/visionguard-core-runtime"
     core_models = ROOT / "models/core-models-v1"
     if not args.skip_build:
+        if args.advanced_ai_mode == "online-bootstrap" and not args.skip_advanced_ai:
+            build_bootstrap_wheel()
+            assert_online_bootstrap_hygiene(ROOT / "bootstrap-dist", ROOT / "packaging/bootstrap")
         run([sys.executable, "scripts/build_runtime.py", "--profile", "core"])
         if not core_models.joinpath("manifest.json").is_file():
             run(
@@ -187,6 +269,8 @@ def main() -> None:
                     "--hardlink",
                 ]
             )
+        if args.advanced_ai_mode == "online-bootstrap":
+            assert_online_bootstrap_hygiene(core_runtime, core_models)
         run(["npm.cmd", "run", "tauri:build:release"], cwd=DESKTOP)
     if not core_runtime.joinpath("runtime-manifest.json").is_file():
         raise FileNotFoundError("Core Runtime is missing")
@@ -200,7 +284,7 @@ def main() -> None:
     assets.append(asset_record(installer, output, kind="windows_installer", publishable=False))
 
     advanced_manifest: str | None = None
-    if not args.skip_advanced_ai:
+    if not args.skip_advanced_ai and args.advanced_ai_mode == "bundled":
         advanced_path = build_package(
             runtime=args.advanced_runtime,
             models=args.advanced_models,
@@ -219,9 +303,13 @@ def main() -> None:
             assets.append(asset_record(part, output, kind=kind, publishable=False))
 
     webview_installer = find_webview_installer()
-    sbom_paths = generate_sbom(output / "sbom", args.version, webview_installer)
+    sbom_paths = generate_sbom(
+        output / "sbom",
+        args.version,
+        webview_installer,
+        include_legacy_vlm=args.advanced_ai_mode == "bundled",
+    )
     blockers = [
-        "NVIDIA_NATIVE_REDISTRIBUTION_UNVERIFIED",
         "CLEAN_MACHINE_ACCEPTANCE_PENDING",
         "GUI_LIFECYCLE_ACCEPTANCE_PENDING",
         "HISTORICAL_REGRESSION_PENDING",
@@ -247,6 +335,7 @@ def main() -> None:
         ROOT / "release-evidence/historical-regression.json",
         ROOT / "release-evidence/local-inference-architecture.json",
         ROOT / "release-evidence/license-migration.json",
+        ROOT / "release-evidence/advanced-ai-bootstrap.json",
         ROOT / "release-evidence/licenses/APACHE-2.0.txt",
         ROOT / "release-evidence/model-cards/Qwen3-VL-2B-Instruct.md",
     ]
@@ -267,13 +356,16 @@ def main() -> None:
         "app_version": app_version,
         "platform": "windows",
         "architecture": "x86_64",
-        "edition": "bundled_cpu_core_optional_advanced_ai",
+        "edition": "bundled_cpu_core_optional_advanced_ai_online_bootstrap",
         "components": {
             "desktop": {"version": app_version, "required": True},
             "core_runtime": {"version": args.runtime_version, "required": True},
             "core_models": {"version": "core-models-v1", "required": True},
-            "vlm_runtime": {"version": args.runtime_version, "required": False},
-            "vlm_models": {"version": args.model_version, "required": False},
+            "advanced_ai_bootstrap": {
+                "version": args.advanced_version,
+                "required": False,
+                "mode": args.advanced_ai_mode,
+            },
         },
         "sizes": {
             "installer_bytes": installer.stat().st_size,
@@ -282,8 +374,9 @@ def main() -> None:
         },
         "distribution": {
             "installer": "nsis_current_user_bundled_cpu_core",
-            "advanced_ai": "local_manifest_import_split_parts",
+            "advanced_ai": args.advanced_ai_mode,
             "advanced_ai_manifest": advanced_manifest,
+            "bootstrap_manifest": "embedded:bootstrap/advanced-ai-bootstrap-manifest.json",
             "network_assisted_installation": True,
             "local_inference": True,
             "cloud_inference": False,
@@ -304,7 +397,7 @@ def main() -> None:
             "reinstall": "pending_manual",
             "historical_regression": "pending",
             "license_distribution": "blocked",
-            "native_redistribution": "blocked",
+            "native_redistribution": "passed",
             "paddle_evidence": "passed",
             "qwen_evidence": "passed",
             "sbom": "passed",
@@ -341,6 +434,8 @@ def main() -> None:
         ]
     )
     write_checksums(output, checksum_paths)
+    if args.advanced_ai_mode == "online-bootstrap":
+        assert_online_bootstrap_hygiene(output)
     if not args.skip_validation:
         run([sys.executable, "scripts/validate_release.py", str(output)])
     print(json.dumps({"release": str(output), "assets": len(assets)}, ensure_ascii=False))

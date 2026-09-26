@@ -87,6 +87,9 @@ runtime-build-vlm/
 runtime-dist-vlm/
 release/
 release-staging/
+bootstrap-dist/*
+!bootstrap-dist/.gitkeep
+.build-tmp/
 models/*
 !models/README.md
 desktop/src-tauri/binaries/*.exe
