@@ -2,20 +2,25 @@
   "schema_version": 1,
   "gate": "clean_core",
   "status": "BLOCKED",
-  "reason": "GITHUB_ACTIONS_CANDIDATE_SMOKE_NOT_EXECUTED",
+  "reason": "BLOCKED_WAITING_FOR_CI",
   "executed_at": null,
+  "git_sha": null,
+  "workflow_run_id": null,
+  "installer_name": null,
+  "installer_sha256": null,
   "runner": null,
-  "candidate": null,
-  "checks": {
-    "silent_install": "NOT_EXECUTED",
+  "install": {
+    "exit_code": null,
+    "install_directory": "NOT_EXECUTED",
+    "desktop_executable": "NOT_EXECUTED",
     "core_runtime": "NOT_EXECUTED",
-    "core_models": "NOT_EXECUTED",
-    "forbidden_nvidia_binaries": "NOT_EXECUTED",
-    "live": "NOT_EXECUTED",
-    "ready": "NOT_EXECUTED",
-    "meta": "NOT_EXECUTED",
-    "fast_review": "NOT_EXECUTED",
-    "silent_uninstall": "NOT_EXECUTED",
-    "orphan_processes": "NOT_EXECUTED"
-  }
+    "core_models": "NOT_EXECUTED"
+  },
+  "live": "NOT_EXECUTED",
+  "ready": "NOT_EXECUTED",
+  "meta": "NOT_EXECUTED",
+  "fast_review": "NOT_EXECUTED",
+  "nvidia_binary_scan": "NOT_EXECUTED",
+  "uninstall": "NOT_EXECUTED",
+  "orphan_check": "NOT_EXECUTED"
 }

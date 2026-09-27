@@ -11,16 +11,19 @@ Windows 验收拆成三个边界明确的 Gate；只有三者全部 PASS，才�
 
 Workflow：`.github/workflows/windows-release-smoke.yml`
 
-手动触发时必须提供：
+手动触发不需要输入参数。进入 GitHub **Actions → Windows Release Smoke → Run workflow** 后，
+`build-candidate` 会从当前 commit 的 tracked source、锁文件和固定官方模型来源构建临时 Core-only
+NSIS candidate，自动计算 SHA-256，并上传 `visionguard-gate1-candidate`。随后独立的
+`clean-core-smoke` Windows runner 下载该 artifact，并用 build metadata 重新校验 commit、run ID、
+文件名和 SHA-256。
 
-- 候选 NSIS 安装器的 HTTPS URL；
-- 该文件预先计算的 SHA-256。
-
-Workflow 会校验 hash、静默安装到隔离目录、定位安装包内 Desktop/Core Runtime/Core Models、
+Workflow 会静默安装到隔离目录、定位安装包内 Desktop/Core Runtime/Core Models、
 扫描禁止的 CUDA/NVIDIA 二进制、执行 `/health/live`、`/health/ready`、`/v1/meta` 和 Fast Review，
-最后静默卸载并检查 orphan process。它只上传 JSON、日志和 checksum 信息，不上传模型或 Runtime。
+最后静默卸载并检查 orphan process。Candidate artifact 保留 5 天，仅用于同一次 CI 验收；evidence
+artifact 不重复包含 installer，也不会创建 GitHub Release、Tag 或公开下载。
 
-PR 触发只运行验收合同测试。没有指定候选安装器时，PR job 不能产生 Gate 1 PASS。
+PR 触发只运行验收合同测试，不执行重型 installer build，也不能产生 Gate 1 PASS。Gate 1 PASS
+只证明 evidence 中 `git_sha` 对应的 commit；installer、runtime 或 Core Models 变化后必须重新运行。
 
 ## Gate 2：Fresh-user GUI Acceptance
 
@@ -61,7 +64,8 @@ Hugging Face/Transformers offline 标志，不调用云端推理 Provider。
 | Advanced AI GPU | `release-evidence/advanced-ai-gpu-acceptance.json` | PASS / BLOCKED_NETWORK / BLOCKED / FAIL |
 | Aggregate | `release-evidence/windows-acceptance-summary.json` | PASS / BLOCKED / FAIL |
 
-下载 GitHub Actions artifact 后，将 Gate 1 JSON 放入 `release-evidence/`，完成 Gate 2/3 记录后运行：
+下载 `visionguard-gate1-evidence` artifact 后，将 Gate 1 JSON 放入 `release-evidence/`，完成 Gate 2/3
+记录后运行：
 
 ```powershell
 python scripts/run_windows_acceptance.py
@@ -76,4 +80,3 @@ python scripts/run_windows_acceptance.py
 - Gate 3 PASS：可声明 Advanced AI 在已记录 RTX 4060 配置上从空受管环境安装并本地推理。
 - 三者 PASS：可声明 split clean-environment acceptance PASS。
 - 任何组合都不能自动扩展为“完全离线”“所有 GPU 兼容”或“独立全新 GPU Windows”。
-

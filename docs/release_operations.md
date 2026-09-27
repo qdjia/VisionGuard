@@ -21,6 +21,10 @@
 证据边界见 [`windows_acceptance.md`](windows_acceptance.md)。以下流程由三个 Gate 分别覆盖，
 不再要求一台机器同时证明所有性质。
 
+Gate 1 使用 GitHub Actions 临时自构建 candidate：Build Job 从当前 commit 重建 Core Models、
+Core Runtime 和 Tauri/NSIS installer，Smoke Job 在另一个 `windows-latest` runner 下载同一次运行的
+artifact 后验收。该 artifact 不是 Final Candidate 或 GitHub Release，不得跨 commit 复用。
+
 候选包必须在没有源码仓库、开发工具、已有模型缓存或旧组件残留的独立 Windows 环境执行：
 
 1. 核对安装器、manifest 和资产 SHA-256。

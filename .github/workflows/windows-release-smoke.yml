@@ -2,26 +2,26 @@ name: Windows Release Smoke
 
 on:
   workflow_dispatch:
-    inputs:
-      candidate_url:
-        description: HTTPS URL of the exact VisionGuard NSIS candidate
-        required: true
-        type: string
-      candidate_sha256:
-        description: Expected lowercase SHA-256 of the candidate
-        required: true
-        type: string
   pull_request:
     paths:
       - ".github/workflows/windows-release-smoke.yml"
-      - "scripts/run_windows_acceptance.py"
+      - "desktop/**"
+      - "packaging/**"
+      - "scripts/build_runtime.py"
+      - "scripts/build_release.py"
+      - "scripts/prepare_gate1_core_models.py"
       - "scripts/run_windows_core_acceptance.py"
-      - "scripts/validate_release.py"
+      - "scripts/smoke_test_packaged_runtime.py"
       - "tests/test_windows_acceptance.py"
       - "tests/test_release_validation.py"
 
 permissions:
   contents: read
+
+env:
+  PYTHON_VERSION: "3.11.9"
+  NODE_VERSION: "24.14.0"
+  RUST_VERSION: "1.98.1"
 
 jobs:
   acceptance-contract:
@@ -30,7 +30,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: ${{ env.PYTHON_VERSION }}
       - name: Record runner environment
         shell: pwsh
         run: |
@@ -41,44 +41,221 @@ jobs:
       - name: Validate split acceptance contracts
         run: python -m pytest -q tests/test_windows_acceptance.py tests/test_release_validation.py
 
-  clean-core-smoke:
+  build-candidate:
     if: github.event_name == 'workflow_dispatch'
     needs: acceptance-contract
     runs-on: windows-latest
-    env:
-      CANDIDATE_URL: ${{ inputs.candidate_url }}
-      CANDIDATE_SHA256: ${{ inputs.candidate_sha256 }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Record build start
+        shell: pwsh
+        run: '"GATE1_BUILD_STARTED=$([DateTime]::UtcNow.ToString("o"))" >> $env:GITHUB_ENV'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: |
+            requirements-runtime-core.txt
+            packaging/runtime/requirements-build.txt
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - name: Select pinned Rust toolchain
+        shell: pwsh
+        run: |
+          rustup toolchain install $env:RUST_VERSION --profile minimal
+          rustup default $env:RUST_VERSION
+          rustc --version
+          cargo --version
+          cargo fetch --manifest-path desktop/src-tauri/Cargo.toml --locked
+      - name: Install pinned Python build dependencies
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip==25.2 setuptools==80.9.0 wheel==0.45.1
+          python -m pip install -r requirements-runtime-core.txt -r packaging/runtime/requirements-build.txt
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch==2.11.0+cpu torchvision==0.26.0+cpu
+          python -m pip install --no-deps ultralytics==8.4.151
+          python -m pip install cloudpickle==3.1.2 filelock==3.32.6 matplotlib==3.11.2 requests==2.34.2 psutil==7.2.2 polars==1.44.2 nvidia-ml-py==13.610.43 ultralytics-thop==2.1.6 ultralytics-platform==0.1.40 scipy==1.17.1
+          python -m pip install onnx==1.20.1 onnxslim==0.1.96 huggingface-hub==0.36.2
+          python -m pip install --no-deps .
+      - name: Build Core models from tracked and pinned sources
+        run: python scripts/prepare_gate1_core_models.py
+      - name: Build packaged Core Runtime
+        run: python scripts/build_runtime.py --profile core
+      - name: Build Advanced AI bootstrap wheel only
+        shell: pwsh
+        run: python -c "from scripts.build_release import build_bootstrap_wheel; print(build_bootstrap_wheel())"
+      - name: Install locked frontend dependencies
+        working-directory: desktop
+        run: npm ci
+      - name: Build Tauri NSIS candidate
+        working-directory: desktop
+        run: npm run tauri:build:release
+      - name: Verify dependency locks were not modified
+        run: git diff --exit-code -- desktop/package-lock.json desktop/src-tauri/Cargo.lock
+      - name: Stage candidate and build metadata
+        id: metadata
+        shell: pwsh
+        run: |
+          $installers = @(Get-ChildItem -LiteralPath "desktop/src-tauri/target/release/bundle/nsis" -Filter "*.exe" -File)
+          if ($installers.Count -ne 1) { throw "Expected exactly one NSIS installer, found $($installers.Count)" }
+          $shortSha = $env:GITHUB_SHA.Substring(0, 12).ToLowerInvariant()
+          $candidateName = "VisionGuard-gate1-$shortSha.exe"
+          $artifactRoot = Join-Path $env:RUNNER_TEMP "visionguard-gate1-candidate"
+          New-Item -ItemType Directory -Force -Path $artifactRoot | Out-Null
+          $candidate = Join-Path $artifactRoot $candidateName
+          Copy-Item -LiteralPath $installers[0].FullName -Destination $candidate
+          $hash = (Get-FileHash -LiteralPath $candidate -Algorithm SHA256).Hash.ToLowerInvariant()
+          $buildDuration = ([DateTime]::UtcNow - [DateTime]::Parse($env:GATE1_BUILD_STARTED)).TotalSeconds
+          $metadata = [ordered]@{
+            schema_version = 1
+            git_sha = $env:GITHUB_SHA
+            git_ref = $env:GITHUB_REF
+            workflow_run_id = $env:GITHUB_RUN_ID
+            installer_name = $candidateName
+            installer_size = (Get-Item -LiteralPath $candidate).Length
+            sha256 = $hash
+            build_timestamp = [DateTime]::UtcNow.ToString("o")
+            build_duration_seconds = [Math]::Round($buildDuration, 3)
+            runner_os = $env:RUNNER_OS
+            runner_arch = $env:RUNNER_ARCH
+          }
+          $metadata | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath (Join-Path $artifactRoot "gate1-build-metadata.json") -Encoding utf8
+          "candidate_name=$candidateName" >> $env:GITHUB_OUTPUT
+          "candidate_sha256=$hash" >> $env:GITHUB_OUTPUT
+          "candidate_size=$($metadata.installer_size)" >> $env:GITHUB_OUTPUT
+      - name: Upload ephemeral self-built candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: visionguard-gate1-candidate
+          path: ${{ runner.temp }}/visionguard-gate1-candidate
+          if-no-files-found: error
+          retention-days: 5
+      - name: Write build summary
+        if: success()
+        shell: pwsh
+        run: |
+          @"
+          ## Gate 1 candidate build
+          - Commit: `${{ github.sha }}`
+          - Installer: `${{ steps.metadata.outputs.candidate_name }}`
+          - Size: `${{ steps.metadata.outputs.candidate_size }}` bytes
+          - SHA-256: `${{ steps.metadata.outputs.candidate_sha256 }}`
+          - Artifact: `visionguard-gate1-candidate` (5 days)
+          "@ >> $env:GITHUB_STEP_SUMMARY
+      - name: Record blocked CI build
+        if: failure()
+        shell: pwsh
+        run: |
+          $target = Join-Path $env:RUNNER_TEMP "visionguard-gate1-build-failure"
+          New-Item -ItemType Directory -Force -Path $target | Out-Null
+          $failure = [ordered]@{
+            schema_version = 1
+            status = "BLOCKED_CI_BUILD"
+            git_sha = $env:GITHUB_SHA
+            git_ref = $env:GITHUB_REF
+            workflow_run_id = $env:GITHUB_RUN_ID
+            recorded_at = [DateTime]::UtcNow.ToString("o")
+            runner_os = $env:RUNNER_OS
+            runner_arch = $env:RUNNER_ARCH
+            reason = "Inspect the failed build-candidate step; no external candidate fallback was used."
+          }
+          $failure | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $target "gate1-build-failure.json") -Encoding utf8
+          "## Gate 1 candidate build`n- Status: BLOCKED_CI_BUILD`n- Commit: $env:GITHUB_SHA" >> $env:GITHUB_STEP_SUMMARY
+      - name: Upload CI build failure evidence
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visionguard-gate1-build-failure
+          path: ${{ runner.temp }}/visionguard-gate1-build-failure/gate1-build-failure.json
+          if-no-files-found: error
+          retention-days: 14
+
+  clean-core-smoke:
+    if: github.event_name == 'workflow_dispatch'
+    needs: build-candidate
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
-      - name: Download and verify candidate
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Record clean runner environment
         shell: pwsh
         run: |
-          $uri = [Uri]$env:CANDIDATE_URL
-          if ($uri.Scheme -ne "https") { throw "candidate_url must use HTTPS" }
-          if ($env:CANDIDATE_SHA256 -notmatch '^[0-9a-fA-F]{64}$') { throw "invalid SHA-256" }
-          New-Item -ItemType Directory -Force -Path "$env:RUNNER_TEMP\visionguard-candidate" | Out-Null
-          $target = "$env:RUNNER_TEMP\visionguard-candidate\VisionGuard-Setup.exe"
-          Invoke-WebRequest -Uri $uri -OutFile $target
-          $actual = (Get-FileHash -LiteralPath $target -Algorithm SHA256).Hash.ToLowerInvariant()
-          if ($actual -ne $env:CANDIDATE_SHA256.ToLowerInvariant()) { throw "candidate SHA-256 mismatch" }
-      - name: Run packaged Core acceptance
+          $PSVersionTable
+          Get-CimInstance Win32_OperatingSystem | Select-Object Caption, Version, OSArchitecture
+      - name: Download exact self-built candidate
+        uses: actions/download-artifact@v4
+        with:
+          name: visionguard-gate1-candidate
+          path: ${{ runner.temp }}/visionguard-gate1-candidate
+      - name: Resolve candidate from metadata and verify SHA-256
+        shell: pwsh
+        run: |
+          $artifactRoot = (Resolve-Path "$env:RUNNER_TEMP\visionguard-gate1-candidate").Path
+          $metadataPath = Join-Path $artifactRoot "gate1-build-metadata.json"
+          $metadata = Get-Content -LiteralPath $metadataPath -Raw | ConvertFrom-Json
+          if ($metadata.schema_version -ne 1) { throw "Unsupported build metadata schema" }
+          if ($metadata.git_sha -ne $env:GITHUB_SHA) { throw "Candidate commit does not match workflow commit" }
+          if ($metadata.workflow_run_id.ToString() -ne $env:GITHUB_RUN_ID) { throw "Candidate workflow run does not match" }
+          if ($metadata.installer_name -notmatch '^VisionGuard-gate1-[0-9a-f]{12}\.exe$') { throw "Unsafe candidate name" }
+          $candidate = [System.IO.Path]::GetFullPath((Join-Path $artifactRoot $metadata.installer_name))
+          if ([System.IO.Path]::GetDirectoryName($candidate) -ne $artifactRoot) { throw "Candidate path escaped artifact root" }
+          if (-not (Test-Path -LiteralPath $candidate -PathType Leaf)) { throw "Candidate installer is missing" }
+          $actual = (Get-FileHash -LiteralPath $candidate -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actual -ne $metadata.sha256.ToLowerInvariant()) { throw "Candidate SHA-256 mismatch" }
+          "GATE1_INSTALLER=$candidate" >> $env:GITHUB_ENV
+          "GATE1_SHA256=$actual" >> $env:GITHUB_ENV
+          "GATE1_METADATA=$metadataPath" >> $env:GITHUB_ENV
+      - name: Run packaged Core acceptance on clean runner
         shell: pwsh
         run: |
           python scripts/run_windows_core_acceptance.py `
-            --installer "$env:RUNNER_TEMP\visionguard-candidate\VisionGuard-Setup.exe" `
-            --expected-sha256 "$env:CANDIDATE_SHA256" `
+            --installer "$env:GATE1_INSTALLER" `
+            --expected-sha256 "$env:GATE1_SHA256" `
+            --build-metadata "$env:GATE1_METADATA" `
+            --git-sha "$env:GITHUB_SHA" `
+            --workflow-run-id "$env:GITHUB_RUN_ID" `
             --output-dir "$env:RUNNER_TEMP\visionguard-core-evidence"
-      - name: Upload small acceptance evidence
+      - name: Copy build metadata into evidence artifact
+        if: always()
+        shell: pwsh
+        run: |
+          $evidence = "$env:RUNNER_TEMP\visionguard-core-evidence"
+          New-Item -ItemType Directory -Force -Path $evidence | Out-Null
+          if (Test-Path -LiteralPath $env:GATE1_METADATA) {
+            Copy-Item -LiteralPath $env:GATE1_METADATA -Destination (Join-Path $evidence "gate1-build-metadata.json") -Force
+          }
+      - name: Write Gate 1 summary
+        if: always()
+        shell: pwsh
+        run: |
+          $evidence = "$env:RUNNER_TEMP\visionguard-core-evidence\windows-core-acceptance.json"
+          if (Test-Path -LiteralPath $evidence) {
+            $result = Get-Content -LiteralPath $evidence -Raw | ConvertFrom-Json
+            @"
+            ## Clean Core Acceptance
+            - Status: `$($result.status)`
+            - Installer SHA-256: `$($result.installer_sha256)`
+            - Core startup: `$($result.install.core_runtime)`
+            - Fast Review: `$($result.fast_review.schema_valid)`
+            - Uninstall: `$($result.uninstall.install_directory_removed)`
+            - Orphan processes: `$($result.orphan_check.processes -join ', ')`
+            "@ >> $env:GITHUB_STEP_SUMMARY
+          } else {
+            "## Clean Core Acceptance`n- Status: FAIL (evidence missing)" >> $env:GITHUB_STEP_SUMMARY
+          }
+      - name: Upload small Gate 1 evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: windows-core-acceptance
+          name: visionguard-gate1-evidence
           path: |
             ${{ runner.temp }}/visionguard-core-evidence/windows-core-acceptance.json
-            ${{ runner.temp }}/visionguard-core-evidence/windows-core-acceptance.log
+            ${{ runner.temp }}/visionguard-core-evidence/gate1-build-metadata.json
+            ${{ runner.temp }}/visionguard-core-evidence/acceptance.log
           if-no-files-found: error
           retention-days: 14
-

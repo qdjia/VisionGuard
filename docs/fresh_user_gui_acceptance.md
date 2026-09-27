@@ -5,7 +5,8 @@
 
 ## 准备
 
-1. 在开发账户预先记录候选安装器 SHA-256，并把安装器放到新用户可访问的普通目录。
+1. 从已通过 Gate 1 的 `visionguard-gate1-candidate` workflow artifact 取得同一安装器；其 SHA-256
+   以同一次 workflow 的 `gate1-build-metadata.json` 为准。把安装器放到新用户可访问的普通目录。
 2. 打开 Windows **设置 → 账户 → 其他用户 → 添加账户**。
 3. 选择“我没有此人的登录信息”与“添加没有 Microsoft 账户的用户”（不同 Windows 版本文字可能略有差异）。
 4. 创建普通用户，不授予管理员角色，不为其安装 Python、Conda、Node、Rust 或开发工具。
@@ -46,4 +47,3 @@
 - 未执行的步骤保持 `NOT_EXECUTED`，Gate 状态保持 BLOCKED。
 
 只有所有 required checks 均 PASS，才可把顶层 `status` 改为 PASS。
-

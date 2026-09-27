@@ -6,7 +6,7 @@
     "clean_core": {
       "status": "BLOCKED",
       "evidence": "windows-core-acceptance.json",
-      "reason": "GITHUB_ACTIONS_CANDIDATE_SMOKE_NOT_EXECUTED"
+      "reason": "BLOCKED_WAITING_FOR_CI"
     },
     "fresh_user_gui": {
       "status": "BLOCKED",

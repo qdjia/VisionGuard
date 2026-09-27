@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 
+from scripts.prepare_gate1_core_models import BASE_CHECKPOINT, OCR_MODELS, verify_file
 from scripts.run_windows_acceptance import GATE_FILES, aggregate
 from scripts.run_windows_core_acceptance import forbidden_core_files, parse_smoke
 from scripts.smoke_test_packaged_runtime import _validate_review_result
@@ -90,3 +92,25 @@ def test_packaged_review_rejects_free_text_only_payload() -> None:
         assert "risk_level" in str(exc)
     else:
         raise AssertionError("an incomplete review contract must fail closed")
+
+
+def test_gate1_workflow_self_builds_and_uses_a_separate_smoke_job() -> None:
+    workflow = Path(".github/workflows/windows-release-smoke.yml").read_text(encoding="utf-8")
+    assert "candidate_url" not in workflow
+    assert "build-candidate:" in workflow
+    assert "clean-core-smoke:" in workflow
+    assert "needs: build-candidate" in workflow
+    assert "name: visionguard-gate1-candidate" in workflow
+    assert "name: visionguard-gate1-evidence" in workflow
+    assert "actions/download-artifact@v4" in workflow
+    assert "permissions:\n  contents: read" in workflow
+    assert "create release" not in workflow.casefold()
+
+
+def test_gate1_model_sources_are_immutable_and_hash_checked(tmp_path: Path) -> None:
+    assert BASE_CHECKPOINT["url"].startswith("https://github.com/ultralytics/")
+    assert len(str(BASE_CHECKPOINT["sha256"])) == 64
+    assert all(len(str(model["revision"])) == 40 for model in OCR_MODELS.values())
+    artifact = tmp_path / "artifact.bin"
+    artifact.write_bytes(b"verified")
+    verify_file(artifact, expected_sha256=hashlib.sha256(b"verified").hexdigest())

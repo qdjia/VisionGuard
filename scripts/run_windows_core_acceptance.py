@@ -117,15 +117,20 @@ def run(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--installer", required=True, type=Path)
     parser.add_argument("--expected-sha256", required=True)
+    parser.add_argument("--build-metadata", required=True, type=Path)
+    parser.add_argument("--git-sha", required=True)
+    parser.add_argument("--workflow-run-id", required=True)
     parser.add_argument("--output-dir", required=True, type=Path)
     parser.add_argument("--install-dir", type=Path)
     args = parser.parse_args(argv)
     output = args.output_dir.resolve()
     output.mkdir(parents=True, exist_ok=True)
-    log_path = output / "windows-core-acceptance.log"
+    log_path = output / "acceptance.log"
     evidence_path = output / "windows-core-acceptance.json"
     install_dir = (args.install_dir or output / "installed-app").resolve()
     installer = args.installer.resolve()
+    metadata_path = args.build_metadata.resolve()
+    build_metadata: dict[str, object] = {}
     checks: dict[str, object] = {}
     started = time.perf_counter()
     status, reason = "FAIL", "ACCEPTANCE_DID_NOT_COMPLETE"
@@ -145,10 +150,31 @@ def run(argv: list[str] | None = None) -> int:
             raise RuntimeError("Gate 1 requires an official 64-bit Windows runner")
         if not installer.is_file():
             raise FileNotFoundError(f"candidate installer is missing: {installer.name}")
+        build_metadata = json.loads(metadata_path.read_text(encoding="utf-8-sig"))
+        if build_metadata.get("schema_version") != 1:
+            raise RuntimeError("unsupported Gate 1 build metadata schema")
+        if build_metadata.get("installer_name") != installer.name:
+            raise RuntimeError("candidate filename does not match build metadata")
+        if build_metadata.get("git_sha") != args.git_sha:
+            raise RuntimeError("candidate git SHA does not match acceptance run")
+        if str(build_metadata.get("workflow_run_id")) != args.workflow_run_id:
+            raise RuntimeError("candidate workflow run does not match acceptance run")
         actual_hash = sha256(installer)
         if actual_hash.casefold() != args.expected_sha256.casefold():
             raise RuntimeError("candidate installer SHA-256 mismatch")
+        if actual_hash.casefold() != str(build_metadata.get("sha256", "")).casefold():
+            raise RuntimeError("candidate SHA-256 does not match build metadata")
         checks["installer_sha256"] = True
+        preexisting_processes = running_product_processes()
+        preexisting_shortcuts = product_shortcuts()
+        checks["visionguard_not_preinstalled"] = (
+            not install_dir.exists()
+            and not preexisting_processes
+            and not preexisting_shortcuts["desktop"]
+            and not preexisting_shortcuts["start_menu"]
+        )
+        if not checks["visionguard_not_preinstalled"]:
+            raise RuntimeError("VisionGuard is already present on the clean acceptance runner")
         dev_paths = [
             ROOT / ".venv",
             ROOT / "desktop/node_modules",
@@ -163,7 +189,12 @@ def run(argv: list[str] | None = None) -> int:
         if not checks["no_project_development_cache"]:
             raise RuntimeError("project development caches exist on the acceptance runner")
         record("Installing candidate silently")
-        subprocess.run([str(installer), "/S", f"/D={install_dir}"], check=True, timeout=300)
+        install_result = subprocess.run(
+            [str(installer), "/S", f"/D={install_dir}"], check=False, timeout=300
+        )
+        checks["silent_install_exit_code"] = install_result.returncode
+        if install_result.returncode:
+            raise RuntimeError(f"silent installer exited with {install_result.returncode}")
         desktop = install_dir / "VisionGuard.exe"
         runtime_candidates = list(install_dir.rglob("visionguard-core-runtime.exe"))
         model_candidates = [
@@ -173,6 +204,7 @@ def run(argv: list[str] | None = None) -> int:
         ]
         if not desktop.is_file() or len(runtime_candidates) != 1 or len(model_candidates) != 1:
             raise RuntimeError("installed Desktop/Core Runtime/Core Models layout is incomplete")
+        checks["install_directory"] = install_dir.is_dir()
         checks["desktop_executable"] = True
         checks["core_runtime"] = True
         checks["core_models"] = True
@@ -249,6 +281,10 @@ def run(argv: list[str] | None = None) -> int:
             "status": status,
             "reason": reason,
             "executed_at": datetime.now(UTC).isoformat(),
+            "git_sha": args.git_sha,
+            "workflow_run_id": args.workflow_run_id,
+            "installer_name": installer.name,
+            "installer_sha256": actual_hash,
             "runner": {
                 "provider": "GitHub-hosted Windows runner",
                 "os": os.environ.get("RUNNER_OS", platform.platform()),
@@ -258,8 +294,37 @@ def run(argv: list[str] | None = None) -> int:
             "candidate": {
                 "installer_name": installer.name,
                 "sha256": actual_hash,
+                "size_bytes": installer.stat().st_size if installer.is_file() else None,
+                "build_metadata": build_metadata,
             },
             "checks": checks,
+            "install": {
+                "exit_code": checks.get("silent_install_exit_code"),
+                "install_directory": checks.get("install_directory", False),
+                "desktop_executable": checks.get("desktop_executable", False),
+                "core_runtime": checks.get("core_runtime", False),
+                "core_models": checks.get("core_models", False),
+            },
+            "live": smoke.get("live"),
+            "ready": smoke.get("ready"),
+            "meta": smoke.get("meta"),
+            "fast_review": smoke.get("review"),
+            "nvidia_binary_scan": {
+                "scope": "VisionGuard install directory only",
+                "violations": checks.get("forbidden_nvidia_binaries", []),
+                "passed": checks.get("forbidden_nvidia_binaries") == [],
+            },
+            "uninstall": {
+                "exit_code": checks.get("silent_uninstall_exit_code"),
+                "install_directory_removed": checks.get("install_directory_removed", False),
+                "desktop_shortcut_removed": checks.get("desktop_shortcut_removed", False),
+                "start_menu_removed": checks.get("start_menu_removed", False),
+                "user_data_policy": "AppData may be retained by product design",
+            },
+            "orphan_check": {
+                "processes": orphans,
+                "passed": not orphans,
+            },
             "core": {
                 "live": smoke.get("live"),
                 "ready": smoke.get("ready"),
