@@ -8,6 +8,7 @@ from scripts.prepare_gate1_core_models import BASE_CHECKPOINT, OCR_MODELS, verif
 from scripts.run_windows_acceptance import GATE_FILES, aggregate
 from scripts.run_windows_core_acceptance import (
     EXPECTED_MODEL_ROLES,
+    PACKAGED_RUNTIME_CONFIGS,
     console_safe_text,
     forbidden_core_files,
     format_install_tree,
@@ -88,6 +89,10 @@ def _installed_core_layout(root: Path) -> None:
     runtime = root / "components/core-runtime"
     runtime.mkdir(parents=True)
     (runtime / "visionguard-core-runtime.exe").write_bytes(b"runtime")
+    resource_configs = runtime / "_internal/resources/configs"
+    resource_configs.mkdir(parents=True)
+    for name in PACKAGED_RUNTIME_CONFIGS:
+        (resource_configs / name).write_text("test: true\n", encoding="utf-8")
     (runtime / "runtime-manifest.json").write_text(
         json.dumps(
             {

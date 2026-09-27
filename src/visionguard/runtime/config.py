@@ -12,6 +12,19 @@ from pydantic import Field, ValidationError, model_validator
 from visionguard.api.config import APIConfig, load_api_config
 from visionguard.config.models import StrictConfigModel
 
+RUNTIME_CONFIG_FILES = (
+    "api.yaml",
+    "classes.yaml",
+    "detector.yaml",
+    "fusion.yaml",
+    "moderation_policy.yaml",
+    "ocr.yaml",
+    "pipeline.yaml",
+    "pipeline_cascaded.yaml",
+    "routing.yaml",
+    "vlm.yaml",
+)
+
 
 class RuntimeConfig(StrictConfigModel):
     host: Literal["127.0.0.1"] = "127.0.0.1"
@@ -85,6 +98,13 @@ def materialize_api_config(
     """Create per-run configs without mutating packaged read-only resources."""
 
     source_configs = resource_root / "configs"
+    missing = [
+        f"configs/{name}" for name in RUNTIME_CONFIG_FILES if not (source_configs / name).is_file()
+    ]
+    if missing:
+        raise FileNotFoundError(
+            "required packaged runtime configuration is missing: " + ", ".join(missing)
+        )
     generated = run_dir / "configs"
     generated.mkdir(parents=True, exist_ok=True)
 
@@ -123,7 +143,9 @@ def materialize_api_config(
         baseline["baseline"][key] = str(model_paths["baseline"] / f"unused-{key}.csv")
     _write_yaml(generated / "baseline.yaml", baseline)
 
-    vlm = deepcopy(_read_yaml(source_configs / "local_vlm.yaml"))
+    # vlm.yaml is the tracked, reproducible template. local_vlm.yaml is deliberately
+    # gitignored because developers may put machine-specific paths in it.
+    vlm = deepcopy(_read_yaml(source_configs / "vlm.yaml"))
     vlm["vlm"].update(
         {
             "provider": "remote",

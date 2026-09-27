@@ -38,17 +38,41 @@ EXPECTED_MODEL_ROLES = {
     "ocr_orientation",
     "ocr_recognition",
 }
+PACKAGED_RUNTIME_CONFIGS = (
+    "api.yaml",
+    "classes.yaml",
+    "detector.yaml",
+    "fusion.yaml",
+    "moderation_policy.yaml",
+    "ocr.yaml",
+    "pipeline.yaml",
+    "pipeline_cascaded.yaml",
+    "routing.yaml",
+    "vlm.yaml",
+)
 INSTALL_LAYOUT = (
-    ("desktop_executable", "visionguard-desktop.exe", "file"),
-    ("core_runtime_directory", "components/core-runtime", "directory"),
     (
-        "core_runtime_executable",
-        "components/core-runtime/visionguard-core-runtime.exe",
-        "file",
-    ),
-    ("core_runtime_manifest", "components/core-runtime/runtime-manifest.json", "file"),
-    ("core_models_directory", "components/core-models", "directory"),
-    ("core_models_manifest", "components/core-models/manifest.json", "file"),
+        ("desktop_executable", "visionguard-desktop.exe", "file"),
+        ("core_runtime_directory", "components/core-runtime", "directory"),
+        (
+            "core_runtime_executable",
+            "components/core-runtime/visionguard-core-runtime.exe",
+            "file",
+        ),
+        ("core_runtime_manifest", "components/core-runtime/runtime-manifest.json", "file"),
+    )
+    + tuple(
+        (
+            f"core_runtime_config_{Path(name).stem}",
+            f"components/core-runtime/_internal/resources/configs/{name}",
+            "file",
+        )
+        for name in PACKAGED_RUNTIME_CONFIGS
+    )
+    + (
+        ("core_models_directory", "components/core-models", "directory"),
+        ("core_models_manifest", "components/core-models/manifest.json", "file"),
+    )
 )
 
 
