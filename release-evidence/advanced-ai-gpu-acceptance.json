@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "gate": "advanced_ai_gpu",
+  "status": "BLOCKED_NETWORK",
+  "reason": "PREVIOUS_FRESH_MANAGED_BOOTSTRAP_REACHED_CUDA_VALIDATION_BUT_FULL_OFFICIAL_MODEL_DOWNLOAD_DID_NOT_COMPLETE",
+  "executed_at": "2026-09-26",
+  "evidence_scope": "migrated engineering observation; rerun the dedicated acceptance runner for final Gate 3 evidence",
+  "fresh_environment": true,
+  "independent_cache": true,
+  "gpu": {
+    "name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+    "memory_mib": 8188,
+    "driver": "580.97",
+    "torch_cuda_available": true,
+    "torch_cuda_version": "12.8"
+  },
+  "versions": {
+    "python": "3.11.9",
+    "torch": "2.11.0+cu128",
+    "torchvision": "0.26.0+cu128",
+    "transformers": "4.57.6",
+    "accelerate": "1.15.0"
+  },
+  "model": {
+    "id": "Qwen/Qwen3-VL-2B-Instruct",
+    "revision": "89644892e4d85e24eaac8bacfd4f463576704203"
+  },
+  "measurements": {
+    "download_bytes": null,
+    "install_duration_seconds": null,
+    "installed_size_bytes": null
+  },
+  "checks": {
+    "complete_fresh_bootstrap": "BLOCKED_NETWORK",
+    "retry": "PARTIAL_RANGE_RESUME_OBSERVED",
+    "atomicity": "PASS",
+    "managed_cuda": "PASS",
+    "dynamic_port": "PASS_ON_EXISTING_EXACT_MODEL_SMOKE",
+    "session_token": "PASS_ON_EXISTING_EXACT_MODEL_SMOKE",
+    "model_init_count": "PASS_ON_EXISTING_EXACT_MODEL_SMOKE",
+    "deep_review_safe": "PASS_ON_EXISTING_EXACT_MODEL_SMOKE",
+    "deep_review_risky": "NOT_EXECUTED_IN_FRESH_BOOTSTRAP",
+    "routing_triggered_vlm": "AUTOMATED_CONTRACT_ONLY",
+    "crash_restart": "AUTOMATED_CONTRACT_ONLY",
+    "local_inference_boundary": "PASS"
+  }
+}

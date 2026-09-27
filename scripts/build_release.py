@@ -310,8 +310,9 @@ def main() -> None:
         include_legacy_vlm=args.advanced_ai_mode == "bundled",
     )
     blockers = [
-        "CLEAN_MACHINE_ACCEPTANCE_PENDING",
-        "GUI_LIFECYCLE_ACCEPTANCE_PENDING",
+        "CLEAN_CORE_ACCEPTANCE_PENDING",
+        "FRESH_USER_GUI_ACCEPTANCE_PENDING",
+        "ADVANCED_AI_GPU_ACCEPTANCE_PENDING",
         "HISTORICAL_REGRESSION_PENDING",
     ]
     notes = write_release_notes(output, args.version, blockers)
@@ -336,6 +337,10 @@ def main() -> None:
         ROOT / "release-evidence/local-inference-architecture.json",
         ROOT / "release-evidence/license-migration.json",
         ROOT / "release-evidence/advanced-ai-bootstrap.json",
+        ROOT / "release-evidence/windows-core-acceptance.json",
+        ROOT / "release-evidence/fresh-user-gui.json",
+        ROOT / "release-evidence/advanced-ai-gpu-acceptance.json",
+        ROOT / "release-evidence/windows-acceptance-summary.json",
         ROOT / "release-evidence/licenses/APACHE-2.0.txt",
         ROOT / "release-evidence/model-cards/Qwen3-VL-2B-Instruct.md",
     ]
@@ -385,12 +390,13 @@ def main() -> None:
             "blockers": blockers,
         },
         "gates": {
-            "advanced_ai_install": "pending_manual",
+            "advanced_ai_gpu": "pending_manual",
             "asset_hosting": "passed",
-            "clean_machine": "pending",
+            "clean_core": "pending",
             "detector_license": "passed",
-            "gui_lifecycle": "pending_manual",
+            "fresh_user_gui": "pending_manual",
             "local_inference": "passed",
+            "overall_clean_environment": "pending",
             "upgrade": "pending_manual",
             "rollback": "pending_manual",
             "uninstall": "pending_manual",

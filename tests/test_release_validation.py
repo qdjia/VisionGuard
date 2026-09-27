@@ -162,14 +162,40 @@ def test_release_evidence_fails_closed_for_unclear_native_file(tmp_path: Path) -
                 "gates": {
                     name: {"status": "PASS"}
                     for name in (
-                        "clean_machine",
-                        "gui_lifecycle",
+                        "clean_core",
+                        "fresh_user_gui",
+                        "advanced_ai_gpu",
+                        "overall_clean_environment",
                         "upgrade",
                         "rollback",
                         "uninstall",
                         "reinstall",
                     )
                 }
+            }
+        ),
+        encoding="utf-8",
+    )
+    windows_gates = {
+        "clean_core": "windows-core-acceptance.json",
+        "fresh_user_gui": "fresh-user-gui.json",
+        "advanced_ai_gpu": "advanced-ai-gpu-acceptance.json",
+    }
+    for gate, filename in windows_gates.items():
+        (evidence / filename).write_text(
+            json.dumps({"schema_version": 1, "gate": gate, "status": "PASS"}),
+            encoding="utf-8",
+        )
+    (evidence / "windows-acceptance-summary.json").write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "acceptance_model": "split-windows-acceptance",
+                "gates": {
+                    gate: {"status": "PASS", "evidence": filename}
+                    for gate, filename in windows_gates.items()
+                },
+                "overall_clean_environment": "PASS",
             }
         ),
         encoding="utf-8",
@@ -200,5 +226,6 @@ def test_repository_blocker_evidence_fails_closed() -> None:
     _validate_release_evidence(Path.cwd(), errors)
     assert not any("detector redistribution" in error for error in errors)
     assert "nvJitLink redistribution is not cleared: UNCLEAR" in errors
-    assert "acceptance evidence not passed: clean_machine=BLOCKED" in errors
+    assert "acceptance evidence not passed: clean_core=BLOCKED" in errors
+    assert "Windows acceptance gate not passed: advanced_ai_gpu=BLOCKED_NETWORK" in errors
     assert "historical real-image regression is not passed: BLOCKED" in errors

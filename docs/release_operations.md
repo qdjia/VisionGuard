@@ -15,7 +15,11 @@
 旧 VLM Runtime/Models 分卷仅用于显式 fallback 和历史复现。生成的 Release、Runtime、
 模型分卷与 staging 在上传或验证结束后应删除，需要时由脚本重新生成。
 
-## Clean Windows 验收
+## Split Windows 验收
+
+当前验收拆分为 Clean Core、Fresh-user GUI 和 Advanced AI GPU 三个 Gate。具体环境、命令与
+证据边界见 [`windows_acceptance.md`](windows_acceptance.md)。以下流程由三个 Gate 分别覆盖，
+不再要求一台机器同时证明所有性质。
 
 候选包必须在没有源码仓库、开发工具、已有模型缓存或旧组件残留的独立 Windows 环境执行：
 
@@ -29,7 +33,10 @@
 
 ## RC Checklist
 
-- [ ] 独立 Clean Windows 验收记录完整
+- [ ] GitHub-hosted Windows Clean Core 验收 PASS
+- [ ] 当前机器新普通用户 Fresh-user GUI 验收 PASS
+- [ ] RTX 4060 独立受管环境 Advanced AI GPU 验收 PASS
+- [ ] `overall_clean_environment` 聚合结果 PASS
 - [ ] 完整 fresh-cache Advanced AI 下载与恢复流程通过
 - [ ] Core readiness、Fast Review、Deep Review 和 fail-safe 通过
 - [ ] 动态端口、session token、关闭与无 orphan process 通过
@@ -71,4 +78,3 @@ Qwen3-VL-2B 本地推理与 CUDA 12.8 环境。这是 `Validated On`，不是最
 - RC validator 未通过时，不创建 Tag、Pre-release 或 Stable Release。
 - 最终构建必须重新生成 SBOM、manifest、SHA-256 和来源 commit。
 - 上传后本地生成资产可删除；仓库长期只保留源码、配置、lock、模板和小型证据。
-

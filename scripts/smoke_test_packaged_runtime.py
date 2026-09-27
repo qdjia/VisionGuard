@@ -79,6 +79,20 @@ def _review(endpoint: str, image: Path, timeout: float, mode: str) -> dict:
         return json.load(response)
 
 
+def _validate_review_result(result: dict) -> None:
+    required = {
+        "risk_level": str,
+        "categories": list,
+        "reason": str,
+        "evidence": list,
+        "confidence_score": (int, float),
+        "requires_manual_review": bool,
+    }
+    for field, expected_type in required.items():
+        if field not in result or not isinstance(result[field], expected_type):
+            raise RuntimeError(f"packaged review result has an invalid {field!r} field")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -152,6 +166,8 @@ def main() -> None:
                 else _review(endpoint, args.image.resolve(), args.timeout, args.mode)
             )
             review_result = review.get("result", review) if review is not None else None
+            if review_result is not None:
+                _validate_review_result(review_result)
             print(
                 json.dumps(
                     {
@@ -162,7 +178,9 @@ def main() -> None:
                         if review_result is None
                         else {
                             "request_id": review.get("request_id"),
+                            "status": review.get("status"),
                             "risk_level": review_result.get("risk_level"),
+                            "schema_valid": True,
                             "vlm_called": (review.get("routing") or {}).get("call_vlm"),
                             "mode": args.mode,
                         },

@@ -21,12 +21,13 @@ SECRET_PATTERN = re.compile(
     r"(?i)(?:api[_-]?key|access[_-]?token|secret)\s*[:=]\s*[\"']?[A-Za-z0-9_\-]{16,}"
 )
 RC_REQUIRED_GATES = {
-    "advanced_ai_install",
+    "advanced_ai_gpu",
     "asset_hosting",
-    "clean_machine",
+    "clean_core",
     "detector_license",
-    "gui_lifecycle",
+    "fresh_user_gui",
     "local_inference",
+    "overall_clean_environment",
     "reinstall",
     "rollback",
     "upgrade",
@@ -58,13 +59,21 @@ FORBIDDEN_ONLINE_NAMES = (
 DEV_ONLY_PACKAGES = {"pytest", "ruff", "notebook", "jupyter", "tensorboard", "mlflow"}
 REQUIRED_MODEL_ROLES = {"vlm", "ocr_detection", "ocr_recognition", "ocr_orientation"}
 REQUIRED_ACCEPTANCE_GATES = {
-    "clean_machine",
-    "gui_lifecycle",
+    "clean_core",
+    "fresh_user_gui",
+    "advanced_ai_gpu",
+    "overall_clean_environment",
     "upgrade",
     "rollback",
     "uninstall",
     "reinstall",
 }
+WINDOWS_ACCEPTANCE_FILES = {
+    "clean_core": "windows-core-acceptance.json",
+    "fresh_user_gui": "fresh-user-gui.json",
+    "advanced_ai_gpu": "advanced-ai-gpu-acceptance.json",
+}
+WINDOWS_ACCEPTANCE_STATUSES = {"PASS", "BLOCKED", "BLOCKED_NETWORK", "FAIL"}
 
 
 def sha256(path: Path) -> str:
@@ -156,6 +165,50 @@ def _validate_sbom(path: Path, errors: list[str], *, enforce_runtime_hygiene: bo
         if dev_only:
             errors.append(f"dev-only packages found in {path.name}: {', '.join(dev_only)}")
     return payload
+
+
+def _validate_windows_acceptance(evidence: Path, errors: list[str]) -> None:
+    summary = _load_json(
+        evidence / "windows-acceptance-summary.json", "Windows acceptance summary", errors
+    )
+    if (
+        summary.get("schema_version") != 1
+        or summary.get("acceptance_model") != "split-windows-acceptance"
+    ):
+        errors.append("unsupported Windows acceptance summary")
+        return
+    summary_gates = summary.get("gates", {})
+    statuses: list[str] = []
+    for gate, filename in WINDOWS_ACCEPTANCE_FILES.items():
+        entry = summary_gates.get(gate, {})
+        status = str(entry.get("status", "MISSING")).upper()
+        statuses.append(status)
+        if status not in WINDOWS_ACCEPTANCE_STATUSES:
+            errors.append(f"invalid Windows acceptance status: {gate}={status}")
+        if entry.get("evidence") != filename:
+            errors.append(f"Windows acceptance evidence mapping mismatch: {gate}")
+        detail = _load_json(evidence / filename, f"Windows acceptance {gate}", errors)
+        if detail.get("schema_version") != 1 or detail.get("gate") != gate:
+            errors.append(f"invalid Windows acceptance evidence: {gate}")
+        if str(detail.get("status", "MISSING")).upper() != status:
+            errors.append(f"Windows acceptance detail status mismatch: {gate}")
+        if status != "PASS":
+            errors.append(f"Windows acceptance gate not passed: {gate}={status}")
+    expected_overall = (
+        "PASS"
+        if statuses and all(status == "PASS" for status in statuses)
+        else "FAIL"
+        if any(status == "FAIL" for status in statuses)
+        else "BLOCKED"
+    )
+    actual_overall = str(summary.get("overall_clean_environment", "MISSING")).upper()
+    if actual_overall != expected_overall:
+        errors.append(
+            "Windows acceptance overall status is inconsistent: "
+            f"expected {expected_overall}, got {actual_overall}"
+        )
+    if actual_overall != "PASS":
+        errors.append(f"overall clean-environment acceptance not passed: {actual_overall}")
 
 
 def _validate_release_evidence(
@@ -267,6 +320,7 @@ def _validate_release_evidence(
         status = str(acceptance_gates.get(name, {}).get("status", "MISSING")).upper()
         if status != "PASS":
             errors.append(f"acceptance evidence not passed: {name}={status}")
+    _validate_windows_acceptance(evidence, errors)
 
     regression = _load_json(
         evidence / "historical-regression.json", "historical regression", errors

@@ -45,4 +45,5 @@
 - 默认发行不再直接携带 PyTorch/CUDA/NVIDIA DLL，因此旧的直接再分发门禁不适用于默认包。
 - “完全离线安装”不是 v1.0 产品承诺；联网只用于安装、模型获取和更新，图片审核推理本地完成。
 - 旧 multipart Advanced AI 只保留为显式兼容路径，不应被描述为当前用户安装流程。
-
+- 旧的单一 `Clean Windows` Gate 已由 Clean Core、Fresh-user GUI、Advanced AI GPU 三个分层
+  Gate 取代；历史记录中的旧字段只表示当时状态，不是当前验收 Schema。
