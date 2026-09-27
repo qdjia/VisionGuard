@@ -80,17 +80,36 @@ def _review(endpoint: str, image: Path, timeout: float, mode: str) -> dict:
 
 
 def _validate_review_result(result: dict) -> None:
+    """Validate the versioned public API decision, not the internal pipeline schema."""
     required = {
-        "risk_level": str,
+        "risk_level": (str, type(None)),
+        "risk_score": (int, float, type(None)),
         "categories": list,
         "reason": str,
-        "evidence": list,
-        "confidence_score": (int, float),
         "requires_manual_review": bool,
+        "decision_source": str,
     }
     for field, expected_type in required.items():
         if field not in result or not isinstance(result[field], expected_type):
             raise RuntimeError(f"packaged review result has an invalid {field!r} field")
+    if result["risk_level"] not in {"low", "medium", "high", None}:
+        raise RuntimeError("packaged review result has an invalid 'risk_level' value")
+    risk_score = result["risk_score"]
+    if isinstance(risk_score, bool) or (risk_score is not None and not 0 <= float(risk_score) <= 1):
+        raise RuntimeError("packaged review result has an invalid 'risk_score' value")
+    for category in result["categories"]:
+        if not isinstance(category, dict):
+            raise RuntimeError("packaged review result has an invalid category")
+        name = category.get("name")
+        score = category.get("score")
+        if (
+            not isinstance(name, str)
+            or not name
+            or isinstance(score, bool)
+            or not isinstance(score, (int, float))
+            or not 0 <= float(score) <= 1
+        ):
+            raise RuntimeError("packaged review result has an invalid category")
 
 
 def main() -> None:

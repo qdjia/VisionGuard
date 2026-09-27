@@ -210,11 +210,11 @@ def test_packaged_review_requires_the_structured_contract() -> None:
     _validate_review_result(
         {
             "risk_level": "low",
+            "risk_score": 0.1,
             "categories": [],
             "reason": "No risk detected.",
-            "evidence": [],
-            "confidence_score": 0.9,
             "requires_manual_review": False,
+            "decision_source": "fusion",
         }
     )
 
@@ -226,6 +226,37 @@ def test_packaged_review_rejects_free_text_only_payload() -> None:
         assert "risk_level" in str(exc)
     else:
         raise AssertionError("an incomplete review contract must fail closed")
+
+
+def test_packaged_review_accepts_public_api_categories() -> None:
+    _validate_review_result(
+        {
+            "risk_level": "medium",
+            "risk_score": 0.65,
+            "categories": [{"name": "watermark", "score": 0.7}],
+            "reason": "Review required.",
+            "requires_manual_review": True,
+            "decision_source": "fusion",
+        }
+    )
+
+
+def test_packaged_review_rejects_internal_pipeline_contract() -> None:
+    try:
+        _validate_review_result(
+            {
+                "risk_level": "low",
+                "categories": [],
+                "reason": "Legacy internal result.",
+                "evidence": [],
+                "confidence_score": 0.9,
+                "requires_manual_review": False,
+            }
+        )
+    except RuntimeError as exc:
+        assert "risk_score" in str(exc)
+    else:
+        raise AssertionError("the packaged smoke must validate the public API contract")
 
 
 def test_gate1_workflow_self_builds_and_uses_a_separate_smoke_job() -> None:

@@ -457,6 +457,12 @@ def run(argv: list[str] | None = None) -> int:
         )
         log_lines.extend([result.stdout, result.stderr])
         if result.returncode:
+            record("Packaged Core smoke stdout:")
+            for line in result.stdout.splitlines() or ["<empty>"]:
+                record(line)
+            record("Packaged Core smoke stderr:")
+            for line in result.stderr.splitlines() or ["<empty>"]:
+                record(line)
             raise RuntimeError(f"packaged Core smoke exited with {result.returncode}")
         smoke = parse_smoke(result.stdout)
         checks["live"] = smoke["live"].get("status") == "ok"
