@@ -6,9 +6,8 @@
 
 不采用约 9 GiB 的单体安装器。当前 PyInstaller Runtime 为 `5,311,923,777` 字节，模型目录为 `4,418,141,986` 字节；把二者绑定会让每次桌面端更新都重复分发模型，并显著增加安装失败和回滚成本。实际把 Runtime 交给 NSIS 时，`makensis` 在约 1.91 GB 的 mmap 阶段报内部编译错误，因此原先优先评估的“App + Runtime 安装器”已被实测否决，而不是停留在理论判断。
 
-当前生成的是 `0.1.0-rc.*` 本地候选包，不是可以公开上传的 v1.0 正式版。公开发行门禁见本文末尾。
-
-当前实测：Desktop 主程序约 16.7 MiB，捆绑 WebView2 的安装器约 209.7 MiB，Runtime 安装目录约 4.95 GiB，模型目录约 4.12 GiB，安装后的核心组件合计约 9.08 GiB。下载包与安装文件同时保留并加 15% 余量时，建议至少准备 22 GiB 可用磁盘空间。
+当前只生成本地候选包，不是可以公开上传的 v1.0 正式版。历史单体与分卷体积见
+[`release_history.md`](release_history.md)；当前发布门禁见 [`release_gate.md`](release_gate.md)。
 
 ## 方案比较
 
@@ -105,7 +104,9 @@ python scripts/validate_release.py release/v0.1.0-rc.1
 python scripts/validate_release.py release/v0.1.0-rc.1 --public
 ```
 
-第一条命令构建 Runtime、前端、轻量 Tauri NSIS、Runtime ZIP、模型 ZIP、`SHA256SUMS.txt`、`release-manifest.json` 和 `RELEASE_NOTES.md`。生成内容位于 Git 忽略的 `release/`。
+第一条命令默认构建 Core Runtime、前端、轻量 Tauri NSIS、bootstrap 元数据、
+`SHA256SUMS.txt`、`release-manifest.json` 和 `RELEASE_NOTES.md`。只有显式选择 bundled fallback
+时才生成旧 VLM Runtime/Models 分卷。生成内容位于 Git 忽略的 `release/`。
 
 普通验证只证明本地候选包内部一致。`--public` 还会检查每个资产是否允许公开、是否小于 GitHub 单资产 2 GiB 限制，以及 manifest 是否解除全部发行门禁。当前它应当失败。
 
@@ -122,12 +123,12 @@ python scripts/validate_release.py release/v0.1.0-rc.1 --public
 
 ## 仍需人工完成的发行门禁
 
-1. Ultralytics/YOLO 再分发方式未解决；
-2. NVIDIA CUDA Runtime 随 PyTorch 打包的再分发条款未完成法律核验；
-3. Windows 安装器尚未代码签名；
-4. 当前环境不能替代 Windows Sandbox/干净 VM；
-5. 安装、快捷方式、卸载、重装、升级和完整 GUI 必须在候选安装器上人工验收；
-6. 模型 ZIP 与 Runtime ZIP 均超过 GitHub 单资产 2 GiB 限制；分卷/外部托管方案应在许可解除后再定稿；
-7. Runtime review/meta/ready 的 session token 仍未迁移到 Rust HTTP proxy，保留为后续安全加固项。
+1. 完整 fresh-cache Advanced AI 官方源下载尚未完成；
+2. 当前环境不能替代 Windows Sandbox 或干净 VM；
+3. 安装、快捷方式、卸载、重装、升级、回滚和完整 GUI 必须在最终候选包上验收；
+4. 历史真实图片回归与签字证据仍不足；
+5. Windows 安装器尚未使用受信任证书签名；
+6. 最终候选包、SBOM、hash 和严格 validator 尚未重新生成并通过。
 
-只有这些门禁解除，`release-manifest.json` 的 `public_release_ready` 才能改为 `true`。
+操作清单统一维护在 [`release_operations.md`](release_operations.md)。只有这些门禁解除，
+`release-manifest.json` 的 `public_release_ready` 才能改为 `true`。

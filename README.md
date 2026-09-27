@@ -53,7 +53,9 @@ Core-only 安装体积约 0.843 GiB。Advanced AI 默认不再随 GitHub Release
 - Ultralytics Detector 在 AGPL 开源发行路径下为 `ALLOWED_WITH_CONDITIONS`；发布时必须同时满足源码、许可证、构建脚本、来源记录及发行版本映射条件。
 - 默认 online-bootstrap Release 不再直接携带 PyTorch/CUDA/NVIDIA DLL；这些依赖在安装时由官方 PyTorch 源获取。NVIDIA 依赖仍需记录，但 `nvJitLink` 的 VisionGuard 直接二进制再分发门禁因此为 N/A。
 
-当前门禁见 [Release Gate](docs/release_gate.md)，硬件记录见 [Hardware Compatibility](docs/hardware_compatibility.md)。
+当前门禁见 [Release Gate](docs/release_gate.md)，候选验收、硬件和签名策略统一见
+[Release Operations](docs/release_operations.md)，历史架构演进见
+[Release Engineering History](docs/release_history.md)。
 
 ## 架构
 

@@ -1,0 +1,74 @@
+# Release Operations
+
+本文集中维护候选包验收、硬件记录、签名、模型许可和资产策略。当前是否允许发布由
+[`release_gate.md`](release_gate.md) 决定。
+
+## 默认发行资产
+
+默认使用 Tauri NSIS + Slim CPU Core + Advanced AI Online Bootstrap：
+
+- 安装器携带 Core Runtime、Core Models、bootstrap manifest、lock 和项目 wheel；
+- 不携带 Qwen 权重、外部 wheel、PyTorch CUDA Runtime 或旧 `.partNN` 分卷；
+- Advanced AI 只能从 manifest 固定的 Python、PyTorch 和 Hugging Face 官方来源获取；
+- 安装失败不得替换已激活组件，也不得影响 Fast Review。
+
+旧 VLM Runtime/Models 分卷仅用于显式 fallback 和历史复现。生成的 Release、Runtime、
+模型分卷与 staging 在上传或验证结束后应删除，需要时由脚本重新生成。
+
+## Clean Windows 验收
+
+候选包必须在没有源码仓库、开发工具、已有模型缓存或旧组件残留的独立 Windows 环境执行：
+
+1. 核对安装器、manifest 和资产 SHA-256。
+2. 安装、首次启动，确认 Slim Core readiness 与 Fast Review。
+3. 确认运行流量仅访问 loopback；安装/更新阶段的官方源网络访问需与 manifest 一致。
+4. 安装 Advanced AI，验证空间预检、断点续传、取消、失败恢复和原子激活。
+5. 执行 Deep Review，确认使用本地 VLM sidecar，图片未发送至云端推理 API。
+6. 验证更新、回滚、卸载、重装、窗口关闭和无 orphan process。
+7. 回放可再分发的历史真实图片集，保存版本、硬件、哈希、日志摘要和验收人。
+
+## RC Checklist
+
+- [ ] 独立 Clean Windows 验收记录完整
+- [ ] 完整 fresh-cache Advanced AI 下载与恢复流程通过
+- [ ] Core readiness、Fast Review、Deep Review 和 fail-safe 通过
+- [ ] 动态端口、session token、关闭与无 orphan process 通过
+- [ ] 更新、回滚、卸载与重装通过
+- [ ] 历史真实图片回归完成
+- [ ] Detector AGPL 来源、Corresponding Source、commit/tag 映射完整
+- [ ] SBOM、LICENSE、NOTICE 和第三方声明随候选包分发
+- [ ] 最终候选包未包含禁止的模型、wheel、CUDA/NVIDIA DLL 或旧分卷
+- [ ] `python scripts/validate_release.py <candidate> --rc` 无绕过通过
+
+## 硬件验证边界
+
+当前仅在 Windows、NVIDIA GeForce RTX 4060 Laptop 8 GiB、Driver 580.97 上验证过
+Qwen3-VL-2B 本地推理与 CUDA 12.8 环境。这是 `Validated On`，不是最低硬件要求。
+最低 GPU、VRAM、RAM 和 CPU 要求必须经过多设备重复测试后才能声明。
+
+## 签名策略
+
+当前没有 Authenticode 证书。未签名 RC 可能触发 SmartScreen，必须在 Release Notes 和下载页
+显著披露。自签名只可用于流程测试，不能描述为正式签名。面向普通用户的 Stable Release
+应使用受信任证书，并重新验证安装、升级与卸载。
+
+## 模型与依赖许可
+
+| 组件 | 当前依据 | 决策 |
+|---|---|---|
+| Qwen3-VL-2B-Instruct | Apache-2.0 元数据、固定 revision 与文件哈希 | 允许按记录来源获取 |
+| PaddleOCR 模型 | Apache-2.0 来源和模型文件清单 | 允许按证据链分发 |
+| Ultralytics YOLO 衍生 Detector | AGPL-3.0 或适用 Enterprise 条款 | AGPL 路径下有条件允许 |
+| PyTorch/CUDA 依赖 | 官方 PyTorch 索引在线安装 | 默认 Release 不直接再分发其二进制 |
+
+项目根许可证不会自动重新许可第三方模型或依赖。详细 Detector 证据见
+[`detector_provenance.md`](detector_provenance.md)，最终发行声明见
+[`release_licenses.md`](release_licenses.md)。
+
+## 发布操作规则
+
+- 普通本地校验只证明内部一致性，不代表可公开发布。
+- RC validator 未通过时，不创建 Tag、Pre-release 或 Stable Release。
+- 最终构建必须重新生成 SBOM、manifest、SHA-256 和来源 commit。
+- 上传后本地生成资产可删除；仓库长期只保留源码、配置、lock、模板和小型证据。
+
