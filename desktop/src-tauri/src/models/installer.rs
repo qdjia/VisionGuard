@@ -414,7 +414,7 @@ fn locate_manifest_root(directory: &Path) -> SetupResult<PathBuf> {
 }
 
 fn validate_manifest_shape(manifest: &ModelManifest) -> SetupResult<()> {
-    if manifest.schema_version != 1
+    if !matches!(manifest.schema_version, 1 | 2)
         || !valid_bundle_version(&manifest.bundle_version)
         || !safe_relative_path(&manifest.bundle_version)
     {
@@ -429,7 +429,6 @@ fn validate_manifest_shape(manifest: &ModelManifest) -> SetupResult<()> {
         "ocr_recognition",
         "ocr_orientation",
         "baseline",
-        "vlm",
     ]);
     if required
         .iter()
@@ -776,12 +775,15 @@ fn valid_hash(value: &str) -> bool {
 }
 
 fn valid_bundle_version(value: &str) -> bool {
-    value.strip_prefix("models-v").is_some_and(|suffix| {
-        !suffix.is_empty()
-            && suffix
-                .split('.')
-                .all(|part| !part.is_empty() && part.bytes().all(|byte| byte.is_ascii_digit()))
-    })
+    ["models-v", "core-models-v"]
+        .iter()
+        .find_map(|prefix| value.strip_prefix(prefix))
+        .is_some_and(|suffix| {
+            !suffix.is_empty()
+                && suffix
+                    .split('.')
+                    .all(|part| !part.is_empty() && part.bytes().all(|byte| byte.is_ascii_digit()))
+        })
 }
 
 fn io_error(code: &'static str) -> impl FnOnce(io::Error) -> ModelSetupError {
@@ -821,12 +823,41 @@ mod tests {
         }).to_string()
     }
 
+    fn core_manifest_without_vlm(hash: &str) -> ModelManifest {
+        serde_json::from_value(serde_json::json!({
+            "schema_version": 2,
+            "bundle_version": "core-models-v1",
+            "compatible_runtime": {"min_inclusive": "0.1.0", "max_exclusive": "0.2.0"},
+            "models": {
+                "detector": {"path": "detector.bin", "kind": "file", "required": true, "size_bytes": 1, "sha256": hash, "files": []},
+                "ocr_detection": {"path": "ocr-det.bin", "kind": "file", "required": true, "size_bytes": 1, "sha256": hash, "files": []},
+                "ocr_recognition": {"path": "ocr-rec.bin", "kind": "file", "required": true, "size_bytes": 1, "sha256": hash, "files": []},
+                "ocr_orientation": {"path": "ocr-ori.bin", "kind": "file", "required": true, "size_bytes": 1, "sha256": hash, "files": []},
+                "baseline": {"path": "baseline.bin", "kind": "file", "required": true, "size_bytes": 1, "sha256": hash, "files": []}
+            }
+        })).unwrap()
+    }
+
     #[test]
     fn relative_paths_reject_traversal_and_absolute_paths() {
         assert!(safe_relative_path("vlm/model.safetensors"));
         assert!(!safe_relative_path("../outside"));
         assert!(!safe_relative_path("C:\\outside"));
         assert!(!safe_relative_path("/outside"));
+    }
+
+    #[test]
+    fn slim_core_manifest_accepts_schema_two_without_vlm() {
+        let manifest = core_manifest_without_vlm(&"0".repeat(64));
+        assert!(validate_manifest_shape(&manifest).is_ok());
+    }
+
+    #[test]
+    fn slim_core_manifest_still_requires_every_core_component() {
+        let mut manifest = core_manifest_without_vlm(&"0".repeat(64));
+        manifest.models.remove("ocr_recognition");
+        let error = validate_manifest_shape(&manifest).unwrap_err();
+        assert_eq!(error.code, "MODEL_BUNDLE_INVALID");
     }
 
     #[test]

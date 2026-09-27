@@ -274,6 +274,21 @@ impl AdvancedAIManager {
 
     pub async fn stop(&self) {
         let _guard = self.operation.lock().await;
+        let snapshot = self.snapshot();
+        let child_missing = self
+            .child
+            .lock()
+            .expect("advanced AI child poisoned")
+            .is_none();
+        if child_missing && snapshot.endpoint.is_none() {
+            *self.token.lock().expect("advanced AI token poisoned") = None;
+            self.update(|s| {
+                s.state = AdvancedAIState::Stopped;
+                s.pid = None;
+                s.model_loaded = false;
+            });
+            return;
+        }
         self.update(|s| s.state = AdvancedAIState::Stopping);
         self.core.unregister_vlm().await;
         let snap = self.snapshot();

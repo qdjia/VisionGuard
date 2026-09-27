@@ -19,6 +19,13 @@ const LAUNCH_TIMEOUT: Duration = Duration::from_secs(10);
 const READY_TIMEOUT: Duration = Duration::from_secs(120);
 const POLL_INTERVAL: Duration = Duration::from_millis(500);
 const STOP_TIMEOUT: Duration = Duration::from_secs(5);
+const REQUIRED_CORE_MODELS: [&str; 5] = [
+    "detector",
+    "ocr_detection",
+    "ocr_recognition",
+    "ocr_orientation",
+    "baseline",
+];
 
 #[derive(Debug, Deserialize)]
 struct ModelManifest {
@@ -449,6 +456,14 @@ impl RuntimeManager {
             self.update(|state| state.state = RuntimeState::Stopped);
             return;
         }
+        // Closing the Tauri window can request shutdown again while the app is
+        // already exiting. A failed startup can also leave no child process at
+        // all. Treat both cases as an already-completed stop instead of waiting
+        // for the full graceful-shutdown timeout.
+        if self.child.lock().expect("runtime child poisoned").is_none() {
+            self.finish_stop();
+            return;
+        }
         self.update(|state| state.state = RuntimeState::Stopping);
         let endpoint = self.snapshot().endpoint;
         let token = self
@@ -477,6 +492,10 @@ impl RuntimeManager {
         } else {
             self.child.lock().expect("runtime child poisoned").take();
         }
+        self.finish_stop();
+    }
+
+    fn finish_stop(&self) {
         *self.control_token.lock().expect("runtime token poisoned") = None;
         self.update(|state| {
             state.state = RuntimeState::Stopped;
@@ -569,18 +588,7 @@ impl RuntimeManager {
         let manifest: ModelManifest = serde_json::from_slice(&bytes).map_err(|_| {
             RuntimeError::new("MODEL_BUNDLE_INVALID", "Model bundle manifest is invalid.")
         })?;
-        let required = [
-            "detector",
-            "ocr_detection",
-            "ocr_recognition",
-            "ocr_orientation",
-            "baseline",
-            "vlm",
-        ];
-        if required
-            .iter()
-            .any(|name| !manifest.models.contains_key(*name))
-        {
+        if missing_required_core_model(&manifest).is_some() {
             return Err(RuntimeError::new(
                 "MODEL_BUNDLE_INVALID",
                 "Model bundle manifest is incomplete.",
@@ -654,6 +662,13 @@ fn component_statuses(manifest: &ModelManifest) -> HashMap<String, String> {
     ])
 }
 
+fn missing_required_core_model(manifest: &ModelManifest) -> Option<&'static str> {
+    REQUIRED_CORE_MODELS
+        .iter()
+        .copied()
+        .find(|name| !manifest.models.contains_key(*name))
+}
+
 fn runtime_file_error(status: &RuntimeFileStatus) -> RuntimeError {
     let code = match status.error_code.as_deref() {
         Some("MODEL_BUNDLE_MISSING") => "MODEL_BUNDLE_MISSING",
@@ -673,4 +688,43 @@ fn runtime_file_error(status: &RuntimeFileStatus) -> RuntimeError {
             .clone()
             .unwrap_or_else(|| "runtime startup failed".to_string()),
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn manifest_with(names: &[&str]) -> ModelManifest {
+        ModelManifest {
+            bundle_version: "core-models-v1".to_string(),
+            models: names
+                .iter()
+                .map(|name| ((*name).to_string(), serde_json::json!({})))
+                .collect(),
+        }
+    }
+
+    #[test]
+    fn core_component_status_does_not_require_optional_vlm() {
+        let manifest = manifest_with(&REQUIRED_CORE_MODELS);
+        let statuses = component_statuses(&manifest);
+
+        assert_eq!(statuses.get("detector").map(String::as_str), Some("ready"));
+        assert_eq!(statuses.get("ocr").map(String::as_str), Some("ready"));
+        assert_eq!(statuses.get("baseline").map(String::as_str), Some("ready"));
+        assert_eq!(statuses.get("vlm").map(String::as_str), Some("missing"));
+    }
+
+    #[test]
+    fn required_core_model_set_excludes_vlm() {
+        let manifest = manifest_with(&REQUIRED_CORE_MODELS);
+        assert_eq!(missing_required_core_model(&manifest), None);
+
+        let incomplete =
+            manifest_with(&["detector", "ocr_detection", "ocr_orientation", "baseline"]);
+        assert_eq!(
+            missing_required_core_model(&incomplete),
+            Some("ocr_recognition")
+        );
+    }
 }
