@@ -2,6 +2,7 @@ import hashlib
 import json
 from pathlib import Path
 
+from scripts.build_model_bundle import attach_provenance
 from visionguard.runtime.manifest import validate_model_bundle
 
 
@@ -113,3 +114,51 @@ def test_core_bundle_is_ready_without_optional_vlm(tmp_path):
     assert manifest.bundle_type == "core"
     assert result.status == "ready"
     assert result.components["vlm"] == "missing"
+
+
+def test_model_bundle_accepts_release_provenance(tmp_path):
+    bundle = _bundle(tmp_path)
+    manifest_path = bundle / "manifest.json"
+    payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    attach_provenance(
+        payload["models"],
+        {
+            "ocr_detection": {
+                "model_id": "PaddlePaddle/PP-OCRv6_medium_det",
+                "revision": "8e0f56fb2ef86b461d99cfc7ac5c137738985f61",
+                "license": "Apache-2.0",
+                "source": "https://huggingface.co/PaddlePaddle/PP-OCRv6_medium_det",
+                "artifact": "inference.pdiparams",
+                "sha256": "8" * 64,
+            }
+        },
+    )
+    manifest_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    manifest, result = validate_model_bundle(bundle, runtime_version="0.1.0")
+
+    assert manifest is not None
+    assert result.status == "ready"
+    assert manifest.models["ocr_detection"].provenance is not None
+    assert manifest.models["ocr_detection"].provenance.license == "Apache-2.0"
+
+
+def test_model_bundle_rejects_malformed_release_provenance(tmp_path):
+    bundle = _bundle(tmp_path)
+    manifest_path = bundle / "manifest.json"
+    payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    payload["models"]["ocr_detection"]["provenance"] = {
+        "model_id": "PaddlePaddle/PP-OCRv6_medium_det",
+        "revision": "revision",
+        "license": "Apache-2.0",
+        "source": "https://example.invalid/model",
+        "artifact": "inference.pdiparams",
+        "sha256": "not-a-sha256",
+    }
+    manifest_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    manifest, result = validate_model_bundle(bundle, runtime_version="0.1.0")
+
+    assert manifest is None
+    assert result.status == "invalid"
+    assert result.errors == ("MODEL_BUNDLE_INVALID",)

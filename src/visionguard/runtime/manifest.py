@@ -25,6 +25,17 @@ class ManifestFile(StrictConfigModel):
         return path.as_posix()
 
 
+class ModelProvenance(StrictConfigModel):
+    """Immutable upstream identity embedded by the release bundle builder."""
+
+    model_id: str = Field(min_length=1)
+    revision: str = Field(min_length=1)
+    license: str = Field(min_length=1)
+    source: str = Field(min_length=1)
+    artifact: str = Field(min_length=1)
+    sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+
+
 class ModelArtifact(StrictConfigModel):
     path: str
     kind: Literal["file", "directory"]
@@ -32,6 +43,7 @@ class ModelArtifact(StrictConfigModel):
     size_bytes: int = Field(ge=0)
     sha256: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
     files: tuple[ManifestFile, ...] = ()
+    provenance: ModelProvenance | None = None
 
     _safe_path = field_validator("path")(ManifestFile.safe_relative_path.__func__)
 

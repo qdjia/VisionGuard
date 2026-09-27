@@ -169,7 +169,13 @@ def main() -> None:
     try:
         status = _wait_status(status_path, args.timeout, {"ready", "failed"})
         if status["state"] == "failed":
-            raise RuntimeError(f"{status.get('error_code')}: {status.get('error_message')}")
+            validation = json.dumps(
+                status.get("model_validation"), ensure_ascii=False, sort_keys=True
+            )
+            raise RuntimeError(
+                f"{status.get('error_code')}: {status.get('error_message')}; "
+                f"model_validation={validation}"
+            )
         if args.validate_only:
             return_code = process.wait(timeout=10)
             if return_code:
