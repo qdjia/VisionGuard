@@ -26,7 +26,30 @@ FORBIDDEN_CORE_NAMES = (
     "nvrtc",
     "torch_cuda",
 )
-PROCESS_NAMES = {"visionguard.exe", "visionguard-core-runtime.exe"}
+PROCESS_NAMES = {
+    "visionguard.exe",
+    "visionguard-desktop.exe",
+    "visionguard-core-runtime.exe",
+}
+EXPECTED_MODEL_ROLES = {
+    "baseline",
+    "detector",
+    "ocr_detection",
+    "ocr_orientation",
+    "ocr_recognition",
+}
+INSTALL_LAYOUT = (
+    ("desktop_executable", "visionguard-desktop.exe", "file"),
+    ("core_runtime_directory", "components/core-runtime", "directory"),
+    (
+        "core_runtime_executable",
+        "components/core-runtime/visionguard-core-runtime.exe",
+        "file",
+    ),
+    ("core_runtime_manifest", "components/core-runtime/runtime-manifest.json", "file"),
+    ("core_models_directory", "components/core-models", "directory"),
+    ("core_models_manifest", "components/core-models/manifest.json", "file"),
+)
 
 
 def sha256(path: Path) -> str:
@@ -65,9 +88,181 @@ def powershell_version() -> str:
 def forbidden_core_files(root: Path) -> list[str]:
     violations = []
     for path in root.rglob("*"):
-        if path.is_file() and any(token in path.name.casefold() for token in FORBIDDEN_CORE_NAMES):
+        relative = path.relative_to(root).as_posix().casefold()
+        name = path.name.casefold()
+        is_advanced_ai_payload = (
+            "components/vlm-runtime" in relative
+            or "components/vlm-models" in relative
+            or "qwen" in name
+            or name == "visionguard-vlm-runtime.exe"
+            or path.suffix.casefold() in {".gguf", ".safetensors"}
+        )
+        if path.is_file() and (
+            any(token in name for token in FORBIDDEN_CORE_NAMES) or is_advanced_ai_payload
+        ):
             violations.append(path.relative_to(root).as_posix())
-    return violations
+    return sorted(violations)
+
+
+def _safe_manifest_path(root: Path, relative: object) -> Path | None:
+    if not isinstance(relative, str) or not relative.strip():
+        return None
+    candidate = Path(relative.replace("/", os.sep))
+    if candidate.is_absolute() or ".." in candidate.parts:
+        return None
+    resolved = (root / candidate).resolve()
+    try:
+        resolved.relative_to(root.resolve())
+    except ValueError:
+        return None
+    return resolved
+
+
+def inspect_installed_layout(root: Path) -> dict[str, list[dict[str, object]] | list[str]]:
+    """Describe the official installed layout without leaking the absolute runner path."""
+    expected: list[dict[str, object]] = []
+    observed: list[dict[str, object]] = []
+    missing: list[dict[str, object]] = []
+    errors: list[str] = []
+
+    def inspect(role: str, relative: str, kind: str) -> None:
+        item = {"role": role, "path": relative, "kind": kind}
+        expected.append(item)
+        path = root / Path(relative.replace("/", os.sep))
+        exists = path.is_file() if kind == "file" else path.is_dir()
+        if exists:
+            observed_item = dict(item)
+            if kind == "file":
+                observed_item["size_bytes"] = path.stat().st_size
+            observed.append(observed_item)
+        else:
+            missing.append(item)
+
+    for role, relative, kind in INSTALL_LAYOUT:
+        inspect(role, relative, kind)
+
+    runtime_manifest_path = root / "components/core-runtime/runtime-manifest.json"
+    if runtime_manifest_path.is_file():
+        try:
+            runtime_manifest = json.loads(runtime_manifest_path.read_text(encoding="utf-8"))
+            if runtime_manifest.get("component") != "core":
+                errors.append("Core Runtime manifest component is not 'core'")
+            if runtime_manifest.get("entrypoint") != "visionguard-core-runtime.exe":
+                errors.append("Core Runtime manifest entrypoint is unexpected")
+        except (OSError, json.JSONDecodeError) as exc:
+            errors.append(f"Core Runtime manifest is unreadable: {type(exc).__name__}")
+
+    models_root = root / "components/core-models"
+    model_manifest_path = models_root / "manifest.json"
+    if model_manifest_path.is_file():
+        try:
+            model_manifest = json.loads(model_manifest_path.read_text(encoding="utf-8"))
+            models = model_manifest.get("models")
+            if model_manifest.get("bundle_type") != "core":
+                errors.append("Core Models manifest bundle_type is not 'core'")
+            if not isinstance(models, dict):
+                errors.append("Core Models manifest has no models mapping")
+                models = {}
+            actual_roles = set(models)
+            if actual_roles != EXPECTED_MODEL_ROLES:
+                errors.append(
+                    "Core Models roles differ from the required Detector/OCR/Baseline set: "
+                    f"{sorted(actual_roles)}"
+                )
+            for model_role in sorted(EXPECTED_MODEL_ROLES & actual_roles):
+                model = models[model_role]
+                if not isinstance(model, dict):
+                    errors.append(f"Core Models role {model_role} has invalid metadata")
+                    continue
+                model_path = _safe_manifest_path(models_root, model.get("path"))
+                if model_path is None:
+                    errors.append(f"Core Models role {model_role} has an unsafe artifact path")
+                    continue
+                relative = model_path.relative_to(root).as_posix()
+                kind = str(model.get("kind", ""))
+                if kind not in {"file", "directory"}:
+                    errors.append(f"Core Models role {model_role} has invalid kind {kind!r}")
+                    continue
+                inspect(f"model_{model_role}", relative, kind)
+                if kind == "directory":
+                    files = model.get("files")
+                    if not isinstance(files, list):
+                        errors.append(f"Core Models role {model_role} has no file inventory")
+                        continue
+                    for file_index, file_metadata in enumerate(files):
+                        declared = (
+                            file_metadata.get("path") if isinstance(file_metadata, dict) else None
+                        )
+                        declared_path = _safe_manifest_path(model_path, declared)
+                        if declared_path is None:
+                            errors.append(
+                                "Core Models role "
+                                f"{model_role} file {file_index} has an unsafe path"
+                            )
+                            continue
+                        inspect(
+                            f"model_{model_role}_file",
+                            declared_path.relative_to(root).as_posix(),
+                            "file",
+                        )
+        except (OSError, json.JSONDecodeError) as exc:
+            errors.append(f"Core Models manifest is unreadable: {type(exc).__name__}")
+
+    return {
+        "expected_paths": expected,
+        "observed_paths": observed,
+        "missing_paths": missing,
+        "layout_errors": errors,
+    }
+
+
+def format_install_tree(
+    root: Path, *, max_depth: int = 4, max_entries: int = 240, max_children: int = 40
+) -> list[str]:
+    """Return a bounded, relative install tree suitable for public CI evidence."""
+    lines = ["<install-root>/"]
+    if not root.is_dir():
+        lines.append("  [missing]")
+        return lines
+    emitted = 0
+    truncated = False
+
+    def visit(directory: Path, depth: int, prefix: str) -> None:
+        nonlocal emitted, truncated
+        if depth >= max_depth or emitted >= max_entries:
+            if emitted >= max_entries:
+                truncated = True
+            return
+        children = sorted(
+            directory.iterdir(), key=lambda item: (not item.is_dir(), item.name.casefold())
+        )
+        shown = children[:max_children]
+        for index, child in enumerate(shown):
+            if emitted >= max_entries:
+                truncated = True
+                return
+            last = index == len(shown) - 1 and len(children) <= max_children
+            branch = "└── " if last else "├── "
+            suffix = "/" if child.is_dir() else f" ({child.stat().st_size} bytes)"
+            lines.append(f"{prefix}{branch}{child.name}{suffix}")
+            emitted += 1
+            if child.is_dir():
+                visit(child, depth + 1, prefix + ("    " if last else "│   "))
+        if len(children) > max_children and emitted < max_entries:
+            lines.append(f"{prefix}└── … {len(children) - max_children} entries omitted")
+            emitted += 1
+            truncated = True
+
+    visit(root, 0, "")
+    if truncated:
+        lines.append(f"… tree bounded to depth {max_depth} and {max_entries} entries")
+    return lines
+
+
+def write_evidence(path: Path, payload: dict[str, object]) -> None:
+    """Serialize failure or success evidence consistently for artifact upload."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
 def running_product_processes() -> list[str]:
@@ -137,6 +332,12 @@ def run(argv: list[str] | None = None) -> int:
     smoke: dict[str, object] = {}
     actual_hash = ""
     log_lines: list[str] = []
+    layout_evidence: dict[str, list[dict[str, object]] | list[str]] = {
+        "expected_paths": [],
+        "observed_paths": [],
+        "missing_paths": [],
+        "layout_errors": [],
+    }
 
     def record(message: str) -> None:
         log_lines.append(message)
@@ -195,15 +396,22 @@ def run(argv: list[str] | None = None) -> int:
         checks["silent_install_exit_code"] = install_result.returncode
         if install_result.returncode:
             raise RuntimeError(f"silent installer exited with {install_result.returncode}")
-        desktop = install_dir / "VisionGuard.exe"
-        runtime_candidates = list(install_dir.rglob("visionguard-core-runtime.exe"))
-        model_candidates = [
-            path.parent
-            for path in install_dir.rglob("manifest.json")
-            if path.parent.name == "core-models"
-        ]
-        if not desktop.is_file() or len(runtime_candidates) != 1 or len(model_candidates) != 1:
-            raise RuntimeError("installed Desktop/Core Runtime/Core Models layout is incomplete")
+        record("Installed application tree (relative, bounded):")
+        for tree_line in format_install_tree(install_dir):
+            record(tree_line)
+        layout_evidence = inspect_installed_layout(install_dir)
+        checks["expected_paths"] = layout_evidence["expected_paths"]
+        checks["observed_paths"] = layout_evidence["observed_paths"]
+        checks["missing_paths"] = layout_evidence["missing_paths"]
+        checks["layout_errors"] = layout_evidence["layout_errors"]
+        if layout_evidence["missing_paths"] or layout_evidence["layout_errors"]:
+            missing_names = [item["path"] for item in layout_evidence["missing_paths"]]
+            raise RuntimeError(
+                "installed layout validation failed; "
+                f"missing_paths={missing_names}; errors={layout_evidence['layout_errors']}"
+            )
+        runtime = install_dir / "components/core-runtime/visionguard-core-runtime.exe"
+        models = install_dir / "components/core-models"
         checks["install_directory"] = install_dir.is_dir()
         checks["desktop_executable"] = True
         checks["core_runtime"] = True
@@ -222,9 +430,9 @@ def run(argv: list[str] | None = None) -> int:
             sys.executable,
             str(ROOT / "scripts/smoke_test_packaged_runtime.py"),
             "--runtime",
-            str(runtime_candidates[0]),
+            str(runtime),
             "--models",
-            str(model_candidates[0]),
+            str(models),
             "--work-dir",
             str(smoke_dir),
             "--image",
@@ -297,6 +505,10 @@ def run(argv: list[str] | None = None) -> int:
                 "size_bytes": installer.stat().st_size if installer.is_file() else None,
                 "build_metadata": build_metadata,
             },
+            "expected_paths": layout_evidence["expected_paths"],
+            "observed_paths": layout_evidence["observed_paths"],
+            "missing_paths": layout_evidence["missing_paths"],
+            "layout_errors": layout_evidence["layout_errors"],
             "checks": checks,
             "install": {
                 "exit_code": checks.get("silent_install_exit_code"),
@@ -333,9 +545,7 @@ def run(argv: list[str] | None = None) -> int:
             },
             "elapsed_seconds": round(time.perf_counter() - started, 3),
         }
-        evidence_path.write_text(
-            json.dumps(evidence, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
-        )
+        write_evidence(evidence_path, evidence)
     return 0 if status == "PASS" else 1
 
 

@@ -137,14 +137,15 @@ jobs:
         if: success()
         shell: pwsh
         run: |
-          @"
-          ## Gate 1 candidate build
-          - Commit: `${{ github.sha }}`
-          - Installer: `${{ steps.metadata.outputs.candidate_name }}`
-          - Size: `${{ steps.metadata.outputs.candidate_size }}` bytes
-          - SHA-256: `${{ steps.metadata.outputs.candidate_sha256 }}`
-          - Artifact: `visionguard-gate1-candidate` (5 days)
-          "@ >> $env:GITHUB_STEP_SUMMARY
+          $summary = @(
+            "## Gate 1 candidate build"
+            "- Commit: $env:GITHUB_SHA"
+            "- Installer: ${{ steps.metadata.outputs.candidate_name }}"
+            "- Size: ${{ steps.metadata.outputs.candidate_size }} bytes"
+            "- SHA-256: ${{ steps.metadata.outputs.candidate_sha256 }}"
+            "- Artifact: visionguard-gate1-candidate (5 days)"
+          )
+          $summary | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
       - name: Record blocked CI build
         if: failure()
         shell: pwsh
@@ -226,28 +227,35 @@ jobs:
         run: |
           $evidence = "$env:RUNNER_TEMP\visionguard-core-evidence"
           New-Item -ItemType Directory -Force -Path $evidence | Out-Null
-          if (Test-Path -LiteralPath $env:GATE1_METADATA) {
-            Copy-Item -LiteralPath $env:GATE1_METADATA -Destination (Join-Path $evidence "gate1-build-metadata.json") -Force
+          $metadataSource = $env:GATE1_METADATA
+          if (-not $metadataSource) {
+            $metadataSource = "$env:RUNNER_TEMP\visionguard-gate1-candidate\gate1-build-metadata.json"
+          }
+          if (Test-Path -LiteralPath $metadataSource) {
+            Copy-Item -LiteralPath $metadataSource -Destination (Join-Path $evidence "gate1-build-metadata.json") -Force
           }
       - name: Write Gate 1 summary
         if: always()
         shell: pwsh
         run: |
           $evidence = "$env:RUNNER_TEMP\visionguard-core-evidence\windows-core-acceptance.json"
+          $status = "FAIL"
+          $installerSha = if ($env:GATE1_SHA256) { $env:GATE1_SHA256 } else { "unavailable" }
+          $primaryFailure = "Acceptance evidence is missing; inspect the clean-core-smoke log."
           if (Test-Path -LiteralPath $evidence) {
             $result = Get-Content -LiteralPath $evidence -Raw | ConvertFrom-Json
-            @"
-            ## Clean Core Acceptance
-            - Status: `$($result.status)`
-            - Installer SHA-256: `$($result.installer_sha256)`
-            - Core startup: `$($result.install.core_runtime)`
-            - Fast Review: `$($result.fast_review.schema_valid)`
-            - Uninstall: `$($result.uninstall.install_directory_removed)`
-            - Orphan processes: `$($result.orphan_check.processes -join ', ')`
-            "@ >> $env:GITHUB_STEP_SUMMARY
-          } else {
-            "## Clean Core Acceptance`n- Status: FAIL (evidence missing)" >> $env:GITHUB_STEP_SUMMARY
+            $status = $result.status
+            $installerSha = $result.installer_sha256
+            $primaryFailure = $result.reason
           }
+          $summary = @(
+            "## Clean Core Acceptance"
+            "- Status: $status"
+            "- Installer SHA-256: $installerSha"
+            "- Primary failure: $primaryFailure"
+            "- Evidence artifact: visionguard-gate1-evidence"
+          )
+          $summary | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
       - name: Upload small Gate 1 evidence
         if: always()
         uses: actions/upload-artifact@v4

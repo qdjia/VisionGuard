@@ -2,7 +2,7 @@
   "schema_version": 1,
   "gate": "clean_core",
   "status": "BLOCKED",
-  "reason": "BLOCKED_WAITING_FOR_CI",
+  "reason": "BLOCKED_WAITING_FOR_CI_RETRY",
   "executed_at": null,
   "git_sha": null,
   "workflow_run_id": null,
