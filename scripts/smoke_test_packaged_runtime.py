@@ -172,9 +172,12 @@ def main() -> None:
             validation = json.dumps(
                 status.get("model_validation"), ensure_ascii=False, sort_keys=True
             )
+            diagnostics = json.dumps(
+                status.get("diagnostics"), ensure_ascii=False, sort_keys=True
+            )
             raise RuntimeError(
                 f"{status.get('error_code')}: {status.get('error_message')}; "
-                f"model_validation={validation}"
+                f"model_validation={validation}; diagnostics={diagnostics}"
             )
         if args.validate_only:
             return_code = process.wait(timeout=10)

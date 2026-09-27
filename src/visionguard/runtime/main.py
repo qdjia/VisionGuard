@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import hmac
+import importlib.metadata
 import logging
 import os
 import platform
@@ -33,6 +34,18 @@ class HardwarePreflightError(RuntimeError):
     def __init__(self, code: str, message: str) -> None:
         super().__init__(message)
         self.code = code
+
+
+def _exception_chain(exc: BaseException, *, limit: int = 6) -> list[dict[str, str]]:
+    """Return bounded startup diagnostics while preserving wrapped provider failures."""
+    chain = []
+    current: BaseException | None = exc
+    seen: set[int] = set()
+    while current is not None and len(chain) < limit and id(current) not in seen:
+        seen.add(id(current))
+        chain.append({"type": type(current).__name__, "message": str(current)})
+        current = current.__cause__ or current.__context__
+    return chain
 
 
 class RuntimeControl:
@@ -69,7 +82,15 @@ def _diagnostics() -> dict[str, Any]:
         "python_version": platform.python_version(),
         "platform": platform.system(),
         "architecture": platform.machine(),
+        "cpu_count": os.cpu_count(),
     }
+    dependency_versions = {}
+    for distribution in ("paddleocr", "paddlepaddle", "paddlex", "numpy", "opencv-contrib-python"):
+        try:
+            dependency_versions[distribution] = importlib.metadata.version(distribution)
+        except importlib.metadata.PackageNotFoundError:
+            dependency_versions[distribution] = None
+    values["dependency_versions"] = dependency_versions
     try:
         import torch
 
@@ -195,10 +216,14 @@ def run(argv: list[str] | None = None) -> int:
             if phase == "ready":
                 status.update(state="ready", diagnostics={**_diagnostics(), "startup": value or {}})
             elif phase == "failed":
+                error_chain = _exception_chain(value)
                 status.update(
                     state="failed",
                     error_code="RUNTIME_NOT_READY",
-                    error_message=f"Model initialization failed ({type(value).__name__}).",
+                    error_message=(
+                        f"Model initialization failed ({type(value).__name__}): {value}"
+                    ),
+                    diagnostics={**_diagnostics(), "startup_error_chain": error_chain},
                 )
             elif phase == "stopping":
                 status.update(state="stopping")

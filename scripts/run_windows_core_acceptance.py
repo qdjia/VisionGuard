@@ -487,6 +487,11 @@ def run(argv: list[str] | None = None) -> int:
             record("Packaged Core smoke stderr:")
             for line in result.stderr.splitlines() or ["<empty>"]:
                 record(line)
+            runtime_logs = sorted((smoke_dir / "logs").glob("*.log"))
+            for runtime_log in runtime_logs:
+                record(f"Packaged Core runtime log: {runtime_log.name}")
+                for line in runtime_log.read_text(encoding="utf-8", errors="replace").splitlines():
+                    record(line)
             raise RuntimeError(f"packaged Core smoke exited with {result.returncode}")
         smoke = parse_smoke(result.stdout)
         checks["live"] = smoke["live"].get("status") == "ok"
