@@ -7,7 +7,7 @@
     "reason": "Core self-containment, fresh-user GUI isolation, and GPU bootstrap are proven in separate environments with explicit claim boundaries."
   },
   "gates": {
-    "clean_core": {"status": "BLOCKED", "evidence": "release-evidence/windows-core-acceptance.json"},
+    "clean_core": {"status": "PASS", "evidence": "release-evidence/windows-core-acceptance.json"},
     "fresh_user_gui": {"status": "BLOCKED", "evidence": "release-evidence/fresh-user-gui.json"},
     "advanced_ai_gpu": {"status": "BLOCKED_NETWORK", "evidence": "release-evidence/advanced-ai-gpu-acceptance.json"},
     "overall_clean_environment": {"status": "BLOCKED", "evidence": "release-evidence/windows-acceptance-summary.json"},

@@ -1,12 +1,12 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-09-27T00:00:00+00:00",
+  "generated_at": "2026-09-27T15:08:48.216350+00:00",
   "acceptance_model": "split-windows-acceptance",
   "gates": {
     "clean_core": {
-      "status": "BLOCKED",
+      "status": "PASS",
       "evidence": "windows-core-acceptance.json",
-      "reason": "BLOCKED_WAITING_FOR_CI_RETRY"
+      "reason": "ALL_REQUIRED_CORE_CHECKS_PASSED"
     },
     "fresh_user_gui": {
       "status": "BLOCKED",

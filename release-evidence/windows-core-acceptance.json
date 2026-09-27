@@ -1,26 +1,1239 @@
 {
   "schema_version": 1,
   "gate": "clean_core",
-  "status": "BLOCKED",
-  "reason": "BLOCKED_WAITING_FOR_CI_RETRY",
-  "executed_at": null,
-  "git_sha": null,
-  "workflow_run_id": null,
-  "installer_name": null,
-  "installer_sha256": null,
-  "runner": null,
-  "install": {
-    "exit_code": null,
-    "install_directory": "NOT_EXECUTED",
-    "desktop_executable": "NOT_EXECUTED",
-    "core_runtime": "NOT_EXECUTED",
-    "core_models": "NOT_EXECUTED"
+  "status": "PASS",
+  "reason": "ALL_REQUIRED_CORE_CHECKS_PASSED",
+  "executed_at": "2026-09-27T14:29:24.161053+00:00",
+  "git_sha": "9626426caf35a8ef8447f2b9f0ebd77756284da5",
+  "workflow_run_id": "36324494006",
+  "installer_name": "VisionGuard-gate1-9626426caf35.exe",
+  "installer_sha256": "d7c2d80dd012b4995136f28545e4842761fab0085bc3618ad1f32a829be92fc5",
+  "runner": {
+    "provider": "GitHub-hosted Windows runner",
+    "os": "Windows",
+    "architecture": "AMD64",
+    "powershell_version": "7.6.6"
   },
-  "live": "NOT_EXECUTED",
-  "ready": "NOT_EXECUTED",
-  "meta": "NOT_EXECUTED",
-  "fast_review": "NOT_EXECUTED",
-  "nvidia_binary_scan": "NOT_EXECUTED",
-  "uninstall": "NOT_EXECUTED",
-  "orphan_check": "NOT_EXECUTED"
+  "candidate": {
+    "installer_name": "VisionGuard-gate1-9626426caf35.exe",
+    "sha256": "d7c2d80dd012b4995136f28545e4842761fab0085bc3618ad1f32a829be92fc5",
+    "size_bytes": 527799759,
+    "build_metadata": {
+      "schema_version": 1,
+      "git_sha": "9626426caf35a8ef8447f2b9f0ebd77756284da5",
+      "git_ref": "refs/heads/main",
+      "workflow_run_id": "36324494006",
+      "installer_name": "VisionGuard-gate1-9626426caf35.exe",
+      "installer_size": 527799759,
+      "sha256": "d7c2d80dd012b4995136f28545e4842761fab0085bc3618ad1f32a829be92fc5",
+      "build_timestamp": "2026-09-27T14:27:25.8362152Z",
+      "build_duration_seconds": 1442.716,
+      "runner_os": "Windows",
+      "runner_arch": "X64"
+    }
+  },
+  "expected_paths": [
+    {
+      "role": "desktop_executable",
+      "path": "visionguard-desktop.exe",
+      "kind": "file"
+    },
+    {
+      "role": "core_runtime_directory",
+      "path": "components/core-runtime",
+      "kind": "directory"
+    },
+    {
+      "role": "core_runtime_executable",
+      "path": "components/core-runtime/visionguard-core-runtime.exe",
+      "kind": "file"
+    },
+    {
+      "role": "core_runtime_manifest",
+      "path": "components/core-runtime/runtime-manifest.json",
+      "kind": "file"
+    },
+    {
+      "role": "core_runtime_config_api",
+      "path": "components/core-runtime/_internal/resources/configs/api.yaml",
+      "kind": "file"
+    },
+    {
+      "role": "core_runtime_config_classes",
+      "path": "components/core-runtime/_internal/resources/configs/classes.yaml",
+      "kind": "file"
+    },
+    {
+      "role": "core_runtime_config_detector",
+      "path": "components/core-runtime/_internal/resources/configs/detector.yaml",
+      "kind": "file"
+    },
+    {
+      "role": "core_runtime_config_fusion",
+      "path": "components/core-runtime/_internal/resources/configs/fusion.yaml",
+      "kind": "file"
+    },
+    {
+      "role": "core_runtime_config_moderation_policy",
+      "path": "components/core-runtime/_internal/resources/configs/moderation_policy.yaml",
+      "kind": "file"
+    },
+    {
+      "role": "core_runtime_config_ocr",
+      "path": "components/core-runtime/_internal/resources/configs/ocr.yaml",
+      "kind": "file"
+    },
+    {
+      "role": "core_runtime_config_pipeline",
+      "path": "components/core-runtime/_internal/resources/configs/pipeline.yaml",
+      "kind": "file"
+    },
+    {
+      "role": "core_runtime_config_pipeline_cascaded",
+      "path": "components/core-runtime/_internal/resources/configs/pipeline_cascaded.yaml",
+      "kind": "file"
+    },
+    {
+      "role": "core_runtime_config_routing",
+      "path": "components/core-runtime/_internal/resources/configs/routing.yaml",
+      "kind": "file"
+    },
+    {
+      "role": "core_runtime_config_vlm",
+      "path": "components/core-runtime/_internal/resources/configs/vlm.yaml",
+      "kind": "file"
+    },
+    {
+      "role": "core_models_directory",
+      "path": "components/core-models",
+      "kind": "directory"
+    },
+    {
+      "role": "core_models_manifest",
+      "path": "components/core-models/manifest.json",
+      "kind": "file"
+    },
+    {
+      "role": "model_baseline",
+      "path": "components/core-models/baseline/char_2_4_gbdt_sample_v1",
+      "kind": "directory"
+    },
+    {
+      "role": "model_baseline_file",
+      "path": "components/core-models/baseline/char_2_4_gbdt_sample_v1/config.yaml",
+      "kind": "file"
+    },
+    {
+      "role": "model_baseline_file",
+      "path": "components/core-models/baseline/char_2_4_gbdt_sample_v1/confusion_matrix.json",
+      "kind": "file"
+    },
+    {
+      "role": "model_baseline_file",
+      "path": "components/core-models/baseline/char_2_4_gbdt_sample_v1/error_cases.jsonl",
+      "kind": "file"
+    },
+    {
+      "role": "model_baseline_file",
+      "path": "components/core-models/baseline/char_2_4_gbdt_sample_v1/feature_importance.json",
+      "kind": "file"
+    },
+    {
+      "role": "model_baseline_file",
+      "path": "components/core-models/baseline/char_2_4_gbdt_sample_v1/gbdt.joblib",
+      "kind": "file"
+    },
+    {
+      "role": "model_baseline_file",
+      "path": "components/core-models/baseline/char_2_4_gbdt_sample_v1/metrics.json",
+      "kind": "file"
+    },
+    {
+      "role": "model_baseline_file",
+      "path": "components/core-models/baseline/char_2_4_gbdt_sample_v1/sklearn_version.txt",
+      "kind": "file"
+    },
+    {
+      "role": "model_baseline_file",
+      "path": "components/core-models/baseline/char_2_4_gbdt_sample_v1/tfidf.joblib",
+      "kind": "file"
+    },
+    {
+      "role": "model_baseline_file",
+      "path": "components/core-models/baseline/char_2_4_gbdt_sample_v1/threshold_metrics.csv",
+      "kind": "file"
+    },
+    {
+      "role": "model_baseline_file",
+      "path": "components/core-models/baseline/char_2_4_gbdt_sample_v1/threshold_summary.json",
+      "kind": "file"
+    },
+    {
+      "role": "model_baseline_file",
+      "path": "components/core-models/baseline/char_2_4_gbdt_sample_v1/training_summary.json",
+      "kind": "file"
+    },
+    {
+      "role": "model_detector",
+      "path": "components/core-models/detector/model.onnx",
+      "kind": "file"
+    },
+    {
+      "role": "model_ocr_detection",
+      "path": "components/core-models/ocr/text_detection",
+      "kind": "directory"
+    },
+    {
+      "role": "model_ocr_detection_file",
+      "path": "components/core-models/ocr/text_detection/.gitattributes",
+      "kind": "file"
+    },
+    {
+      "role": "model_ocr_detection_file",
+      "path": "components/core-models/ocr/text_detection/inference.json",
+      "kind": "file"
+    },
+    {
+      "role": "model_ocr_detection_file",
+      "path": "components/core-models/ocr/text_detection/inference.pdiparams",
+      "kind": "file"
+    },
+    {
+      "role": "model_ocr_detection_file",
+      "path": "components/core-models/ocr/text_detection/inference.yml",
+      "kind": "file"
+    },
+    {
+      "role": "model_ocr_detection_file",
+      "path": "components/core-models/ocr/text_detection/README.md",
+      "kind": "file"
+    },
+    {
+      "role": "model_ocr_orientation",
+      "path": "components/core-models/ocr/textline_orientation",
+      "kind": "directory"
+    },
+    {
+      "role": "model_ocr_orientation_file",
+      "path": "components/core-models/ocr/textline_orientation/.gitattributes",
+      "kind": "file"
+    },
+    {
+      "role": "model_ocr_orientation_file",
+      "path": "components/core-models/ocr/textline_orientation/config.json",
+      "kind": "file"
+    },
+    {
+      "role": "model_ocr_orientation_file",
+      "path": "components/core-models/ocr/textline_orientation/inference.json",
+      "kind": "file"
+    },
+    {
+      "role": "model_ocr_orientation_file",
+      "path": "components/core-models/ocr/textline_orientation/inference.pdiparams",
+      "kind": "file"
+    },
+    {
+      "role": "model_ocr_orientation_file",
+      "path": "components/core-models/ocr/textline_orientation/inference.yml",
+      "kind": "file"
+    },
+    {
+      "role": "model_ocr_orientation_file",
+      "path": "components/core-models/ocr/textline_orientation/README.md",
+      "kind": "file"
+    },
+    {
+      "role": "model_ocr_recognition",
+      "path": "components/core-models/ocr/text_recognition",
+      "kind": "directory"
+    },
+    {
+      "role": "model_ocr_recognition_file",
+      "path": "components/core-models/ocr/text_recognition/.gitattributes",
+      "kind": "file"
+    },
+    {
+      "role": "model_ocr_recognition_file",
+      "path": "components/core-models/ocr/text_recognition/inference.json",
+      "kind": "file"
+    },
+    {
+      "role": "model_ocr_recognition_file",
+      "path": "components/core-models/ocr/text_recognition/inference.pdiparams",
+      "kind": "file"
+    },
+    {
+      "role": "model_ocr_recognition_file",
+      "path": "components/core-models/ocr/text_recognition/inference.yml",
+      "kind": "file"
+    },
+    {
+      "role": "model_ocr_recognition_file",
+      "path": "components/core-models/ocr/text_recognition/README.md",
+      "kind": "file"
+    }
+  ],
+  "observed_paths": [
+    {
+      "role": "desktop_executable",
+      "path": "visionguard-desktop.exe",
+      "kind": "file",
+      "size_bytes": 18256384
+    },
+    {
+      "role": "core_runtime_directory",
+      "path": "components/core-runtime",
+      "kind": "directory"
+    },
+    {
+      "role": "core_runtime_executable",
+      "path": "components/core-runtime/visionguard-core-runtime.exe",
+      "kind": "file",
+      "size_bytes": 46539875
+    },
+    {
+      "role": "core_runtime_manifest",
+      "path": "components/core-runtime/runtime-manifest.json",
+      "kind": "file",
+      "size_bytes": 551249
+    },
+    {
+      "role": "core_runtime_config_api",
+      "path": "components/core-runtime/_internal/resources/configs/api.yaml",
+      "kind": "file",
+      "size_bytes": 893
+    },
+    {
+      "role": "core_runtime_config_classes",
+      "path": "components/core-runtime/_internal/resources/configs/classes.yaml",
+      "kind": "file",
+      "size_bytes": 304
+    },
+    {
+      "role": "core_runtime_config_detector",
+      "path": "components/core-runtime/_internal/resources/configs/detector.yaml",
+      "kind": "file",
+      "size_bytes": 1029
+    },
+    {
+      "role": "core_runtime_config_fusion",
+      "path": "components/core-runtime/_internal/resources/configs/fusion.yaml",
+      "kind": "file",
+      "size_bytes": 937
+    },
+    {
+      "role": "core_runtime_config_moderation_policy",
+      "path": "components/core-runtime/_internal/resources/configs/moderation_policy.yaml",
+      "kind": "file",
+      "size_bytes": 927
+    },
+    {
+      "role": "core_runtime_config_ocr",
+      "path": "components/core-runtime/_internal/resources/configs/ocr.yaml",
+      "kind": "file",
+      "size_bytes": 370
+    },
+    {
+      "role": "core_runtime_config_pipeline",
+      "path": "components/core-runtime/_internal/resources/configs/pipeline.yaml",
+      "kind": "file",
+      "size_bytes": 379
+    },
+    {
+      "role": "core_runtime_config_pipeline_cascaded",
+      "path": "components/core-runtime/_internal/resources/configs/pipeline_cascaded.yaml",
+      "kind": "file",
+      "size_bytes": 383
+    },
+    {
+      "role": "core_runtime_config_routing",
+      "path": "components/core-runtime/_internal/resources/configs/routing.yaml",
+      "kind": "file",
+      "size_bytes": 401
+    },
+    {
+      "role": "core_runtime_config_vlm",
+      "path": "components/core-runtime/_internal/resources/configs/vlm.yaml",
+      "kind": "file",
+      "size_bytes": 500
+    },
+    {
+      "role": "core_models_directory",
+      "path": "components/core-models",
+      "kind": "directory"
+    },
+    {
+      "role": "core_models_manifest",
+      "path": "components/core-models/manifest.json",
+      "kind": "file",
+      "size_bytes": 7424
+    },
+    {
+      "role": "model_baseline",
+      "path": "components/core-models/baseline/char_2_4_gbdt_sample_v1",
+      "kind": "directory"
+    },
+    {
+      "role": "model_baseline_file",
+      "path": "components/core-models/baseline/char_2_4_gbdt_sample_v1/config.yaml",
+      "kind": "file",
+      "size_bytes": 670
+    },
+    {
+      "role": "model_baseline_file",
+      "path": "components/core-models/baseline/char_2_4_gbdt_sample_v1/confusion_matrix.json",
+      "kind": "file",
+      "size_bytes": 51
+    },
+    {
+      "role": "model_baseline_file",
+      "path": "components/core-models/baseline/char_2_4_gbdt_sample_v1/error_cases.jsonl",
+      "kind": "file",
+      "size_bytes": 144
+    },
+    {
+      "role": "model_baseline_file",
+      "path": "components/core-models/baseline/char_2_4_gbdt_sample_v1/feature_importance.json",
+      "kind": "file",
+      "size_bytes": 1927
+    },
+    {
+      "role": "model_baseline_file",
+      "path": "components/core-models/baseline/char_2_4_gbdt_sample_v1/gbdt.joblib",
+      "kind": "file",
+      "size_bytes": 71672
+    },
+    {
+      "role": "model_baseline_file",
+      "path": "components/core-models/baseline/char_2_4_gbdt_sample_v1/metrics.json",
+      "kind": "file",
+      "size_bytes": 873
+    },
+    {
+      "role": "model_baseline_file",
+      "path": "components/core-models/baseline/char_2_4_gbdt_sample_v1/sklearn_version.txt",
+      "kind": "file",
+      "size_bytes": 5
+    },
+    {
+      "role": "model_baseline_file",
+      "path": "components/core-models/baseline/char_2_4_gbdt_sample_v1/tfidf.joblib",
+      "kind": "file",
+      "size_bytes": 14528
+    },
+    {
+      "role": "model_baseline_file",
+      "path": "components/core-models/baseline/char_2_4_gbdt_sample_v1/threshold_metrics.csv",
+      "kind": "file",
+      "size_bytes": 600
+    },
+    {
+      "role": "model_baseline_file",
+      "path": "components/core-models/baseline/char_2_4_gbdt_sample_v1/threshold_summary.json",
+      "kind": "file",
+      "size_bytes": 140
+    },
+    {
+      "role": "model_baseline_file",
+      "path": "components/core-models/baseline/char_2_4_gbdt_sample_v1/training_summary.json",
+      "kind": "file",
+      "size_bytes": 262
+    },
+    {
+      "role": "model_detector",
+      "path": "components/core-models/detector/model.onnx",
+      "kind": "file",
+      "size_bytes": 10284574
+    },
+    {
+      "role": "model_ocr_detection",
+      "path": "components/core-models/ocr/text_detection",
+      "kind": "directory"
+    },
+    {
+      "role": "model_ocr_detection_file",
+      "path": "components/core-models/ocr/text_detection/.gitattributes",
+      "kind": "file",
+      "size_bytes": 1575
+    },
+    {
+      "role": "model_ocr_detection_file",
+      "path": "components/core-models/ocr/text_detection/inference.json",
+      "kind": "file",
+      "size_bytes": 312150
+    },
+    {
+      "role": "model_ocr_detection_file",
+      "path": "components/core-models/ocr/text_detection/inference.pdiparams",
+      "kind": "file",
+      "size_bytes": 61960476
+    },
+    {
+      "role": "model_ocr_detection_file",
+      "path": "components/core-models/ocr/text_detection/inference.yml",
+      "kind": "file",
+      "size_bytes": 886
+    },
+    {
+      "role": "model_ocr_detection_file",
+      "path": "components/core-models/ocr/text_detection/README.md",
+      "kind": "file",
+      "size_bytes": 23247
+    },
+    {
+      "role": "model_ocr_orientation",
+      "path": "components/core-models/ocr/textline_orientation",
+      "kind": "directory"
+    },
+    {
+      "role": "model_ocr_orientation_file",
+      "path": "components/core-models/ocr/textline_orientation/.gitattributes",
+      "kind": "file",
+      "size_bytes": 1575
+    },
+    {
+      "role": "model_ocr_orientation_file",
+      "path": "components/core-models/ocr/textline_orientation/config.json",
+      "kind": "file",
+      "size_bytes": 2487
+    },
+    {
+      "role": "model_ocr_orientation_file",
+      "path": "components/core-models/ocr/textline_orientation/inference.json",
+      "kind": "file",
+      "size_bytes": 104399
+    },
+    {
+      "role": "model_ocr_orientation_file",
+      "path": "components/core-models/ocr/textline_orientation/inference.pdiparams",
+      "kind": "file",
+      "size_bytes": 6743918
+    },
+    {
+      "role": "model_ocr_orientation_file",
+      "path": "components/core-models/ocr/textline_orientation/inference.yml",
+      "kind": "file",
+      "size_bytes": 735
+    },
+    {
+      "role": "model_ocr_orientation_file",
+      "path": "components/core-models/ocr/textline_orientation/README.md",
+      "kind": "file",
+      "size_bytes": 3554
+    },
+    {
+      "role": "model_ocr_recognition",
+      "path": "components/core-models/ocr/text_recognition",
+      "kind": "directory"
+    },
+    {
+      "role": "model_ocr_recognition_file",
+      "path": "components/core-models/ocr/text_recognition/.gitattributes",
+      "kind": "file",
+      "size_bytes": 1575
+    },
+    {
+      "role": "model_ocr_recognition_file",
+      "path": "components/core-models/ocr/text_recognition/inference.json",
+      "kind": "file",
+      "size_bytes": 221814
+    },
+    {
+      "role": "model_ocr_recognition_file",
+      "path": "components/core-models/ocr/text_recognition/inference.pdiparams",
+      "kind": "file",
+      "size_bytes": 76465087
+    },
+    {
+      "role": "model_ocr_recognition_file",
+      "path": "components/core-models/ocr/text_recognition/inference.yml",
+      "kind": "file",
+      "size_bytes": 150580
+    },
+    {
+      "role": "model_ocr_recognition_file",
+      "path": "components/core-models/ocr/text_recognition/README.md",
+      "kind": "file",
+      "size_bytes": 23474
+    }
+  ],
+  "missing_paths": [],
+  "layout_errors": [],
+  "checks": {
+    "installer_sha256": true,
+    "visionguard_not_preinstalled": true,
+    "no_project_development_cache": true,
+    "silent_install_exit_code": 0,
+    "expected_paths": [
+      {
+        "role": "desktop_executable",
+        "path": "visionguard-desktop.exe",
+        "kind": "file"
+      },
+      {
+        "role": "core_runtime_directory",
+        "path": "components/core-runtime",
+        "kind": "directory"
+      },
+      {
+        "role": "core_runtime_executable",
+        "path": "components/core-runtime/visionguard-core-runtime.exe",
+        "kind": "file"
+      },
+      {
+        "role": "core_runtime_manifest",
+        "path": "components/core-runtime/runtime-manifest.json",
+        "kind": "file"
+      },
+      {
+        "role": "core_runtime_config_api",
+        "path": "components/core-runtime/_internal/resources/configs/api.yaml",
+        "kind": "file"
+      },
+      {
+        "role": "core_runtime_config_classes",
+        "path": "components/core-runtime/_internal/resources/configs/classes.yaml",
+        "kind": "file"
+      },
+      {
+        "role": "core_runtime_config_detector",
+        "path": "components/core-runtime/_internal/resources/configs/detector.yaml",
+        "kind": "file"
+      },
+      {
+        "role": "core_runtime_config_fusion",
+        "path": "components/core-runtime/_internal/resources/configs/fusion.yaml",
+        "kind": "file"
+      },
+      {
+        "role": "core_runtime_config_moderation_policy",
+        "path": "components/core-runtime/_internal/resources/configs/moderation_policy.yaml",
+        "kind": "file"
+      },
+      {
+        "role": "core_runtime_config_ocr",
+        "path": "components/core-runtime/_internal/resources/configs/ocr.yaml",
+        "kind": "file"
+      },
+      {
+        "role": "core_runtime_config_pipeline",
+        "path": "components/core-runtime/_internal/resources/configs/pipeline.yaml",
+        "kind": "file"
+      },
+      {
+        "role": "core_runtime_config_pipeline_cascaded",
+        "path": "components/core-runtime/_internal/resources/configs/pipeline_cascaded.yaml",
+        "kind": "file"
+      },
+      {
+        "role": "core_runtime_config_routing",
+        "path": "components/core-runtime/_internal/resources/configs/routing.yaml",
+        "kind": "file"
+      },
+      {
+        "role": "core_runtime_config_vlm",
+        "path": "components/core-runtime/_internal/resources/configs/vlm.yaml",
+        "kind": "file"
+      },
+      {
+        "role": "core_models_directory",
+        "path": "components/core-models",
+        "kind": "directory"
+      },
+      {
+        "role": "core_models_manifest",
+        "path": "components/core-models/manifest.json",
+        "kind": "file"
+      },
+      {
+        "role": "model_baseline",
+        "path": "components/core-models/baseline/char_2_4_gbdt_sample_v1",
+        "kind": "directory"
+      },
+      {
+        "role": "model_baseline_file",
+        "path": "components/core-models/baseline/char_2_4_gbdt_sample_v1/config.yaml",
+        "kind": "file"
+      },
+      {
+        "role": "model_baseline_file",
+        "path": "components/core-models/baseline/char_2_4_gbdt_sample_v1/confusion_matrix.json",
+        "kind": "file"
+      },
+      {
+        "role": "model_baseline_file",
+        "path": "components/core-models/baseline/char_2_4_gbdt_sample_v1/error_cases.jsonl",
+        "kind": "file"
+      },
+      {
+        "role": "model_baseline_file",
+        "path": "components/core-models/baseline/char_2_4_gbdt_sample_v1/feature_importance.json",
+        "kind": "file"
+      },
+      {
+        "role": "model_baseline_file",
+        "path": "components/core-models/baseline/char_2_4_gbdt_sample_v1/gbdt.joblib",
+        "kind": "file"
+      },
+      {
+        "role": "model_baseline_file",
+        "path": "components/core-models/baseline/char_2_4_gbdt_sample_v1/metrics.json",
+        "kind": "file"
+      },
+      {
+        "role": "model_baseline_file",
+        "path": "components/core-models/baseline/char_2_4_gbdt_sample_v1/sklearn_version.txt",
+        "kind": "file"
+      },
+      {
+        "role": "model_baseline_file",
+        "path": "components/core-models/baseline/char_2_4_gbdt_sample_v1/tfidf.joblib",
+        "kind": "file"
+      },
+      {
+        "role": "model_baseline_file",
+        "path": "components/core-models/baseline/char_2_4_gbdt_sample_v1/threshold_metrics.csv",
+        "kind": "file"
+      },
+      {
+        "role": "model_baseline_file",
+        "path": "components/core-models/baseline/char_2_4_gbdt_sample_v1/threshold_summary.json",
+        "kind": "file"
+      },
+      {
+        "role": "model_baseline_file",
+        "path": "components/core-models/baseline/char_2_4_gbdt_sample_v1/training_summary.json",
+        "kind": "file"
+      },
+      {
+        "role": "model_detector",
+        "path": "components/core-models/detector/model.onnx",
+        "kind": "file"
+      },
+      {
+        "role": "model_ocr_detection",
+        "path": "components/core-models/ocr/text_detection",
+        "kind": "directory"
+      },
+      {
+        "role": "model_ocr_detection_file",
+        "path": "components/core-models/ocr/text_detection/.gitattributes",
+        "kind": "file"
+      },
+      {
+        "role": "model_ocr_detection_file",
+        "path": "components/core-models/ocr/text_detection/inference.json",
+        "kind": "file"
+      },
+      {
+        "role": "model_ocr_detection_file",
+        "path": "components/core-models/ocr/text_detection/inference.pdiparams",
+        "kind": "file"
+      },
+      {
+        "role": "model_ocr_detection_file",
+        "path": "components/core-models/ocr/text_detection/inference.yml",
+        "kind": "file"
+      },
+      {
+        "role": "model_ocr_detection_file",
+        "path": "components/core-models/ocr/text_detection/README.md",
+        "kind": "file"
+      },
+      {
+        "role": "model_ocr_orientation",
+        "path": "components/core-models/ocr/textline_orientation",
+        "kind": "directory"
+      },
+      {
+        "role": "model_ocr_orientation_file",
+        "path": "components/core-models/ocr/textline_orientation/.gitattributes",
+        "kind": "file"
+      },
+      {
+        "role": "model_ocr_orientation_file",
+        "path": "components/core-models/ocr/textline_orientation/config.json",
+        "kind": "file"
+      },
+      {
+        "role": "model_ocr_orientation_file",
+        "path": "components/core-models/ocr/textline_orientation/inference.json",
+        "kind": "file"
+      },
+      {
+        "role": "model_ocr_orientation_file",
+        "path": "components/core-models/ocr/textline_orientation/inference.pdiparams",
+        "kind": "file"
+      },
+      {
+        "role": "model_ocr_orientation_file",
+        "path": "components/core-models/ocr/textline_orientation/inference.yml",
+        "kind": "file"
+      },
+      {
+        "role": "model_ocr_orientation_file",
+        "path": "components/core-models/ocr/textline_orientation/README.md",
+        "kind": "file"
+      },
+      {
+        "role": "model_ocr_recognition",
+        "path": "components/core-models/ocr/text_recognition",
+        "kind": "directory"
+      },
+      {
+        "role": "model_ocr_recognition_file",
+        "path": "components/core-models/ocr/text_recognition/.gitattributes",
+        "kind": "file"
+      },
+      {
+        "role": "model_ocr_recognition_file",
+        "path": "components/core-models/ocr/text_recognition/inference.json",
+        "kind": "file"
+      },
+      {
+        "role": "model_ocr_recognition_file",
+        "path": "components/core-models/ocr/text_recognition/inference.pdiparams",
+        "kind": "file"
+      },
+      {
+        "role": "model_ocr_recognition_file",
+        "path": "components/core-models/ocr/text_recognition/inference.yml",
+        "kind": "file"
+      },
+      {
+        "role": "model_ocr_recognition_file",
+        "path": "components/core-models/ocr/text_recognition/README.md",
+        "kind": "file"
+      }
+    ],
+    "observed_paths": [
+      {
+        "role": "desktop_executable",
+        "path": "visionguard-desktop.exe",
+        "kind": "file",
+        "size_bytes": 18256384
+      },
+      {
+        "role": "core_runtime_directory",
+        "path": "components/core-runtime",
+        "kind": "directory"
+      },
+      {
+        "role": "core_runtime_executable",
+        "path": "components/core-runtime/visionguard-core-runtime.exe",
+        "kind": "file",
+        "size_bytes": 46539875
+      },
+      {
+        "role": "core_runtime_manifest",
+        "path": "components/core-runtime/runtime-manifest.json",
+        "kind": "file",
+        "size_bytes": 551249
+      },
+      {
+        "role": "core_runtime_config_api",
+        "path": "components/core-runtime/_internal/resources/configs/api.yaml",
+        "kind": "file",
+        "size_bytes": 893
+      },
+      {
+        "role": "core_runtime_config_classes",
+        "path": "components/core-runtime/_internal/resources/configs/classes.yaml",
+        "kind": "file",
+        "size_bytes": 304
+      },
+      {
+        "role": "core_runtime_config_detector",
+        "path": "components/core-runtime/_internal/resources/configs/detector.yaml",
+        "kind": "file",
+        "size_bytes": 1029
+      },
+      {
+        "role": "core_runtime_config_fusion",
+        "path": "components/core-runtime/_internal/resources/configs/fusion.yaml",
+        "kind": "file",
+        "size_bytes": 937
+      },
+      {
+        "role": "core_runtime_config_moderation_policy",
+        "path": "components/core-runtime/_internal/resources/configs/moderation_policy.yaml",
+        "kind": "file",
+        "size_bytes": 927
+      },
+      {
+        "role": "core_runtime_config_ocr",
+        "path": "components/core-runtime/_internal/resources/configs/ocr.yaml",
+        "kind": "file",
+        "size_bytes": 370
+      },
+      {
+        "role": "core_runtime_config_pipeline",
+        "path": "components/core-runtime/_internal/resources/configs/pipeline.yaml",
+        "kind": "file",
+        "size_bytes": 379
+      },
+      {
+        "role": "core_runtime_config_pipeline_cascaded",
+        "path": "components/core-runtime/_internal/resources/configs/pipeline_cascaded.yaml",
+        "kind": "file",
+        "size_bytes": 383
+      },
+      {
+        "role": "core_runtime_config_routing",
+        "path": "components/core-runtime/_internal/resources/configs/routing.yaml",
+        "kind": "file",
+        "size_bytes": 401
+      },
+      {
+        "role": "core_runtime_config_vlm",
+        "path": "components/core-runtime/_internal/resources/configs/vlm.yaml",
+        "kind": "file",
+        "size_bytes": 500
+      },
+      {
+        "role": "core_models_directory",
+        "path": "components/core-models",
+        "kind": "directory"
+      },
+      {
+        "role": "core_models_manifest",
+        "path": "components/core-models/manifest.json",
+        "kind": "file",
+        "size_bytes": 7424
+      },
+      {
+        "role": "model_baseline",
+        "path": "components/core-models/baseline/char_2_4_gbdt_sample_v1",
+        "kind": "directory"
+      },
+      {
+        "role": "model_baseline_file",
+        "path": "components/core-models/baseline/char_2_4_gbdt_sample_v1/config.yaml",
+        "kind": "file",
+        "size_bytes": 670
+      },
+      {
+        "role": "model_baseline_file",
+        "path": "components/core-models/baseline/char_2_4_gbdt_sample_v1/confusion_matrix.json",
+        "kind": "file",
+        "size_bytes": 51
+      },
+      {
+        "role": "model_baseline_file",
+        "path": "components/core-models/baseline/char_2_4_gbdt_sample_v1/error_cases.jsonl",
+        "kind": "file",
+        "size_bytes": 144
+      },
+      {
+        "role": "model_baseline_file",
+        "path": "components/core-models/baseline/char_2_4_gbdt_sample_v1/feature_importance.json",
+        "kind": "file",
+        "size_bytes": 1927
+      },
+      {
+        "role": "model_baseline_file",
+        "path": "components/core-models/baseline/char_2_4_gbdt_sample_v1/gbdt.joblib",
+        "kind": "file",
+        "size_bytes": 71672
+      },
+      {
+        "role": "model_baseline_file",
+        "path": "components/core-models/baseline/char_2_4_gbdt_sample_v1/metrics.json",
+        "kind": "file",
+        "size_bytes": 873
+      },
+      {
+        "role": "model_baseline_file",
+        "path": "components/core-models/baseline/char_2_4_gbdt_sample_v1/sklearn_version.txt",
+        "kind": "file",
+        "size_bytes": 5
+      },
+      {
+        "role": "model_baseline_file",
+        "path": "components/core-models/baseline/char_2_4_gbdt_sample_v1/tfidf.joblib",
+        "kind": "file",
+        "size_bytes": 14528
+      },
+      {
+        "role": "model_baseline_file",
+        "path": "components/core-models/baseline/char_2_4_gbdt_sample_v1/threshold_metrics.csv",
+        "kind": "file",
+        "size_bytes": 600
+      },
+      {
+        "role": "model_baseline_file",
+        "path": "components/core-models/baseline/char_2_4_gbdt_sample_v1/threshold_summary.json",
+        "kind": "file",
+        "size_bytes": 140
+      },
+      {
+        "role": "model_baseline_file",
+        "path": "components/core-models/baseline/char_2_4_gbdt_sample_v1/training_summary.json",
+        "kind": "file",
+        "size_bytes": 262
+      },
+      {
+        "role": "model_detector",
+        "path": "components/core-models/detector/model.onnx",
+        "kind": "file",
+        "size_bytes": 10284574
+      },
+      {
+        "role": "model_ocr_detection",
+        "path": "components/core-models/ocr/text_detection",
+        "kind": "directory"
+      },
+      {
+        "role": "model_ocr_detection_file",
+        "path": "components/core-models/ocr/text_detection/.gitattributes",
+        "kind": "file",
+        "size_bytes": 1575
+      },
+      {
+        "role": "model_ocr_detection_file",
+        "path": "components/core-models/ocr/text_detection/inference.json",
+        "kind": "file",
+        "size_bytes": 312150
+      },
+      {
+        "role": "model_ocr_detection_file",
+        "path": "components/core-models/ocr/text_detection/inference.pdiparams",
+        "kind": "file",
+        "size_bytes": 61960476
+      },
+      {
+        "role": "model_ocr_detection_file",
+        "path": "components/core-models/ocr/text_detection/inference.yml",
+        "kind": "file",
+        "size_bytes": 886
+      },
+      {
+        "role": "model_ocr_detection_file",
+        "path": "components/core-models/ocr/text_detection/README.md",
+        "kind": "file",
+        "size_bytes": 23247
+      },
+      {
+        "role": "model_ocr_orientation",
+        "path": "components/core-models/ocr/textline_orientation",
+        "kind": "directory"
+      },
+      {
+        "role": "model_ocr_orientation_file",
+        "path": "components/core-models/ocr/textline_orientation/.gitattributes",
+        "kind": "file",
+        "size_bytes": 1575
+      },
+      {
+        "role": "model_ocr_orientation_file",
+        "path": "components/core-models/ocr/textline_orientation/config.json",
+        "kind": "file",
+        "size_bytes": 2487
+      },
+      {
+        "role": "model_ocr_orientation_file",
+        "path": "components/core-models/ocr/textline_orientation/inference.json",
+        "kind": "file",
+        "size_bytes": 104399
+      },
+      {
+        "role": "model_ocr_orientation_file",
+        "path": "components/core-models/ocr/textline_orientation/inference.pdiparams",
+        "kind": "file",
+        "size_bytes": 6743918
+      },
+      {
+        "role": "model_ocr_orientation_file",
+        "path": "components/core-models/ocr/textline_orientation/inference.yml",
+        "kind": "file",
+        "size_bytes": 735
+      },
+      {
+        "role": "model_ocr_orientation_file",
+        "path": "components/core-models/ocr/textline_orientation/README.md",
+        "kind": "file",
+        "size_bytes": 3554
+      },
+      {
+        "role": "model_ocr_recognition",
+        "path": "components/core-models/ocr/text_recognition",
+        "kind": "directory"
+      },
+      {
+        "role": "model_ocr_recognition_file",
+        "path": "components/core-models/ocr/text_recognition/.gitattributes",
+        "kind": "file",
+        "size_bytes": 1575
+      },
+      {
+        "role": "model_ocr_recognition_file",
+        "path": "components/core-models/ocr/text_recognition/inference.json",
+        "kind": "file",
+        "size_bytes": 221814
+      },
+      {
+        "role": "model_ocr_recognition_file",
+        "path": "components/core-models/ocr/text_recognition/inference.pdiparams",
+        "kind": "file",
+        "size_bytes": 76465087
+      },
+      {
+        "role": "model_ocr_recognition_file",
+        "path": "components/core-models/ocr/text_recognition/inference.yml",
+        "kind": "file",
+        "size_bytes": 150580
+      },
+      {
+        "role": "model_ocr_recognition_file",
+        "path": "components/core-models/ocr/text_recognition/README.md",
+        "kind": "file",
+        "size_bytes": 23474
+      }
+    ],
+    "missing_paths": [],
+    "layout_errors": [],
+    "install_directory": true,
+    "desktop_executable": true,
+    "core_runtime": true,
+    "core_models": true,
+    "desktop_shortcut_created": true,
+    "start_menu_created": true,
+    "forbidden_nvidia_binaries": [],
+    "live": true,
+    "ready": true,
+    "meta": true,
+    "fast_review": true,
+    "silent_uninstall_exit_code": 0,
+    "install_directory_removed": true,
+    "orphan_processes": [],
+    "desktop_shortcut_removed": true,
+    "start_menu_removed": true
+  },
+  "install": {
+    "exit_code": 0,
+    "install_directory": true,
+    "desktop_executable": true,
+    "core_runtime": true,
+    "core_models": true
+  },
+  "live": {
+    "status": "ok"
+  },
+  "ready": {
+    "status": "ready",
+    "components": {
+      "detector": true,
+      "ocr": true,
+      "baseline": true,
+      "vlm": false,
+      "routing": true,
+      "fusion": true,
+      "full_pipeline": true,
+      "cascaded_pipeline": true
+    }
+  },
+  "meta": {
+    "api_version": "v1",
+    "service_version": "0.1.0",
+    "pipeline_versions": {
+      "full": "v2",
+      "cascaded": "v2"
+    },
+    "routing_policy_version": "routing_v1",
+    "fusion_policy_version": "fusion_v1",
+    "prompt_version": "v1",
+    "model_identifiers": {
+      "detector": "model.onnx",
+      "ocr": "OCREngine",
+      "baseline": "char_2_4_gbdt_sample_v1",
+      "vlm": "optional-advanced-ai"
+    },
+    "max_concurrent_inference": 1,
+    "runtime_version": "0.1.0",
+    "model_bundle_version": "core-models-v1",
+    "capabilities": {
+      "core_ready": true,
+      "vlm_available": false,
+      "fast_review": true,
+      "deep_review": false
+    }
+  },
+  "fast_review": {
+    "request_id": "74db4f1591a8430ca79302f693a27bf4",
+    "status": "partial",
+    "risk_level": "medium",
+    "schema_valid": true,
+    "vlm_called": true,
+    "mode": "cascaded"
+  },
+  "nvidia_binary_scan": {
+    "scope": "VisionGuard install directory only",
+    "violations": [],
+    "passed": true
+  },
+  "uninstall": {
+    "exit_code": 0,
+    "install_directory_removed": true,
+    "desktop_shortcut_removed": true,
+    "start_menu_removed": true,
+    "user_data_policy": "AppData may be retained by product design"
+  },
+  "orphan_check": {
+    "processes": [],
+    "passed": true
+  },
+  "core": {
+    "live": {
+      "status": "ok"
+    },
+    "ready": {
+      "status": "ready",
+      "components": {
+        "detector": true,
+        "ocr": true,
+        "baseline": true,
+        "vlm": false,
+        "routing": true,
+        "fusion": true,
+        "full_pipeline": true,
+        "cascaded_pipeline": true
+      }
+    },
+    "meta": {
+      "api_version": "v1",
+      "service_version": "0.1.0",
+      "pipeline_versions": {
+        "full": "v2",
+        "cascaded": "v2"
+      },
+      "routing_policy_version": "routing_v1",
+      "fusion_policy_version": "fusion_v1",
+      "prompt_version": "v1",
+      "model_identifiers": {
+        "detector": "model.onnx",
+        "ocr": "OCREngine",
+        "baseline": "char_2_4_gbdt_sample_v1",
+        "vlm": "optional-advanced-ai"
+      },
+      "max_concurrent_inference": 1,
+      "runtime_version": "0.1.0",
+      "model_bundle_version": "core-models-v1",
+      "capabilities": {
+        "core_ready": true,
+        "vlm_available": false,
+        "fast_review": true,
+        "deep_review": false
+      }
+    },
+    "fast_review": {
+      "request_id": "74db4f1591a8430ca79302f693a27bf4",
+      "status": "partial",
+      "risk_level": "medium",
+      "schema_valid": true,
+      "vlm_called": true,
+      "mode": "cascaded"
+    }
+  },
+  "elapsed_seconds": 59.732
 }

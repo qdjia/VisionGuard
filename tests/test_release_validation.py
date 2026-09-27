@@ -226,6 +226,6 @@ def test_repository_blocker_evidence_fails_closed() -> None:
     _validate_release_evidence(Path.cwd(), errors)
     assert not any("detector redistribution" in error for error in errors)
     assert "nvJitLink redistribution is not cleared: UNCLEAR" in errors
-    assert "acceptance evidence not passed: clean_core=BLOCKED" in errors
+    assert not any("clean_core=" in error for error in errors)
     assert "Windows acceptance gate not passed: advanced_ai_gpu=BLOCKED_NETWORK" in errors
     assert "historical real-image regression is not passed: BLOCKED" in errors
