@@ -342,6 +342,21 @@ def parse_smoke(stdout: str) -> dict:
     raise RuntimeError("packaged Core smoke did not emit its contract result")
 
 
+def core_smoke_contract_checks(smoke: dict) -> dict[str, bool]:
+    """Evaluate the versioned public smoke payload without using legacy field paths."""
+    live = smoke.get("live")
+    ready = smoke.get("ready")
+    meta = smoke.get("meta")
+    review = smoke.get("review")
+    capabilities = meta.get("capabilities") if isinstance(meta, dict) else None
+    return {
+        "live": isinstance(live, dict) and live.get("status") == "ok",
+        "ready": isinstance(ready, dict) and ready.get("status") in {"ok", "ready"},
+        "meta": isinstance(capabilities, dict) and capabilities.get("core_ready") is True,
+        "fast_review": isinstance(review, dict) and review.get("schema_valid") is True,
+    }
+
+
 def run(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--installer", required=True, type=Path)
@@ -494,12 +509,14 @@ def run(argv: list[str] | None = None) -> int:
                     record(line)
             raise RuntimeError(f"packaged Core smoke exited with {result.returncode}")
         smoke = parse_smoke(result.stdout)
-        checks["live"] = smoke["live"].get("status") == "ok"
-        checks["ready"] = smoke["ready"].get("status") in {"ok", "ready"}
-        checks["meta"] = bool(smoke["meta"].get("core_ready"))
-        checks["fast_review"] = bool(smoke["review"].get("schema_valid"))
-        if not all(checks[key] for key in ("live", "ready", "meta", "fast_review")):
-            raise RuntimeError("Core health/meta/Fast Review contract failed")
+        contract_checks = core_smoke_contract_checks(smoke)
+        checks.update(contract_checks)
+        failed_contracts = [name for name, passed in contract_checks.items() if not passed]
+        if failed_contracts:
+            raise RuntimeError(
+                "Core health/meta/Fast Review contract failed: "
+                + ", ".join(failed_contracts)
+            )
         status, reason = "PASS", "ALL_REQUIRED_CORE_CHECKS_PASSED"
     except Exception as exc:
         reason = f"{type(exc).__name__}: {exc}"

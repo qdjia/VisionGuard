@@ -10,6 +10,7 @@ from scripts.run_windows_core_acceptance import (
     EXPECTED_MODEL_ROLES,
     PACKAGED_RUNTIME_CONFIGS,
     console_safe_text,
+    core_smoke_contract_checks,
     forbidden_core_files,
     format_install_tree,
     inspect_installed_layout,
@@ -205,10 +206,27 @@ def test_parse_core_smoke_requires_contract_payload() -> None:
     payload = {
         "live": {"status": "ok"},
         "ready": {"status": "ready"},
-        "meta": {"core_ready": True},
+        "meta": {"capabilities": {"core_ready": True}},
         "review": {"schema_valid": True},
     }
     assert parse_smoke(f"noise\n{json.dumps(payload)}\n") == payload
+    assert all(core_smoke_contract_checks(payload).values())
+
+
+def test_core_smoke_rejects_legacy_flat_meta_capability() -> None:
+    payload = {
+        "live": {"status": "ok"},
+        "ready": {"status": "ready"},
+        "meta": {"core_ready": True},
+        "review": {"schema_valid": True},
+    }
+
+    assert core_smoke_contract_checks(payload) == {
+        "live": True,
+        "ready": True,
+        "meta": False,
+        "fast_review": True,
+    }
 
 
 def test_packaged_review_requires_the_structured_contract() -> None:
