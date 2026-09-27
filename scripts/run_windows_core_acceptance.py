@@ -242,21 +242,31 @@ def format_install_tree(
                 truncated = True
                 return
             last = index == len(shown) - 1 and len(children) <= max_children
-            branch = "└── " if last else "├── "
+            branch = "`-- " if last else "|-- "
             suffix = "/" if child.is_dir() else f" ({child.stat().st_size} bytes)"
             lines.append(f"{prefix}{branch}{child.name}{suffix}")
             emitted += 1
             if child.is_dir():
-                visit(child, depth + 1, prefix + ("    " if last else "│   "))
+                visit(child, depth + 1, prefix + ("    " if last else "|   "))
         if len(children) > max_children and emitted < max_entries:
-            lines.append(f"{prefix}└── … {len(children) - max_children} entries omitted")
+            lines.append(f"{prefix}`-- ... {len(children) - max_children} entries omitted")
             emitted += 1
             truncated = True
 
     visit(root, 0, "")
     if truncated:
-        lines.append(f"… tree bounded to depth {max_depth} and {max_entries} entries")
+        lines.append(f"... tree bounded to depth {max_depth} and {max_entries} entries")
     return lines
+
+
+def console_safe_text(message: str, encoding: str | None) -> str:
+    """Make CI console output representable without changing the UTF-8 evidence log."""
+    if not encoding:
+        return message
+    try:
+        return message.encode(encoding, errors="backslashreplace").decode(encoding)
+    except LookupError:
+        return message.encode("ascii", errors="backslashreplace").decode("ascii")
 
 
 def write_evidence(path: Path, payload: dict[str, object]) -> None:
@@ -341,7 +351,7 @@ def run(argv: list[str] | None = None) -> int:
 
     def record(message: str) -> None:
         log_lines.append(message)
-        print(message, flush=True)
+        print(console_safe_text(message, sys.stdout.encoding), flush=True)
 
     try:
         if platform.system() != "Windows" or platform.machine().lower() not in {

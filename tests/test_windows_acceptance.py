@@ -8,6 +8,7 @@ from scripts.prepare_gate1_core_models import BASE_CHECKPOINT, OCR_MODELS, verif
 from scripts.run_windows_acceptance import GATE_FILES, aggregate
 from scripts.run_windows_core_acceptance import (
     EXPECTED_MODEL_ROLES,
+    console_safe_text,
     forbidden_core_files,
     format_install_tree,
     inspect_installed_layout,
@@ -185,6 +186,14 @@ def test_install_tree_is_bounded_and_does_not_expose_absolute_root(tmp_path: Pat
     assert tree.startswith("<install-root>/")
     assert str(tmp_path) not in tree
     assert "visionguard-desktop.exe (7 bytes)" in tree
+    assert tree.isascii()
+
+
+def test_console_logging_is_safe_for_legacy_windows_encoding() -> None:
+    message = "├── 模型"
+    rendered = console_safe_text(message, "cp1252")
+    rendered.encode("cp1252")
+    assert "\\u251c" in rendered
 
 
 def test_parse_core_smoke_requires_contract_payload() -> None:
