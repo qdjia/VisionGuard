@@ -7,6 +7,8 @@ on:
       - ".github/workflows/windows-release-smoke.yml"
       - "desktop/**"
       - "packaging/**"
+      - "pyproject.toml"
+      - "requirements-runtime-core.txt"
       - "scripts/build_runtime.py"
       - "scripts/build_release.py"
       - "scripts/prepare_gate1_core_models.py"
@@ -80,6 +82,8 @@ jobs:
           python -m pip install cloudpickle==3.1.2 filelock==3.32.6 matplotlib==3.11.2 requests==2.34.2 psutil==7.2.2 polars==1.44.2 nvidia-ml-py==13.610.43 ultralytics-thop==2.1.6 ultralytics-platform==0.1.40 scipy==1.17.1
           python -m pip install onnx==1.20.1 onnxslim==0.1.96 huggingface-hub==0.36.2
           python -m pip install --no-deps .
+          python -m pip check
+          python -c "import importlib.metadata as m; expected={'paddleocr':'3.7.0','paddlex':'3.7.2','paddlepaddle':'3.2.2'}; actual={name:m.version(name) for name in expected}; print(actual); assert actual == expected"
       - name: Build Core models from tracked and pinned sources
         run: python scripts/prepare_gate1_core_models.py
       - name: Build packaged Core Runtime

@@ -6,8 +6,9 @@ numpy>=1.26,<3
 # PaddleOCR/PaddleX requires the contrib build; do not mix cv2 distributions.
 opencv-contrib-python==4.10.0.84
 Pillow>=10,<13
-paddleocr>=3.7,<4
-paddlepaddle>=3.2,<4
+paddleocr==3.7.0
+paddlex==3.7.2
+paddlepaddle==3.2.2
 pydantic>=2.7,<3
 PyYAML>=6.0,<7
 torch>=2.2

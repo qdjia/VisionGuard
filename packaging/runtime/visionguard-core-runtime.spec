@@ -10,7 +10,17 @@ datas = [(str(ROOT / "configs"), "resources/configs"), (str(ROOT / "prompts"), "
 datas += collect_data_files("paddleocr")
 datas += collect_data_files("paddlex")
 datas += collect_data_files("sklearn")
-for distribution in ("imagesize", "opencv-contrib-python", "pyclipper", "pypdfium2", "python-bidi", "shapely"):
+for distribution in (
+    "imagesize",
+    "opencv-contrib-python",
+    "paddleocr",
+    "paddlepaddle",
+    "paddlex",
+    "pyclipper",
+    "pypdfium2",
+    "python-bidi",
+    "shapely",
+):
     datas += copy_metadata(distribution)
 
 paddle_spec = find_spec("paddle")

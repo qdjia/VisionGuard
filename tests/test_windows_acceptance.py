@@ -298,3 +298,20 @@ def test_gate1_model_sources_are_immutable_and_hash_checked(tmp_path: Path) -> N
     artifact = tmp_path / "artifact.bin"
     artifact.write_bytes(b"verified")
     verify_file(artifact, expected_sha256=hashlib.sha256(b"verified").hexdigest())
+
+
+def test_windows_core_ocr_stack_is_pinned_to_known_good_versions() -> None:
+    expected = {
+        "paddleocr==3.7.0",
+        "paddlex==3.7.2",
+        "paddlepaddle==3.2.2",
+    }
+    runtime_requirements = {
+        line.strip()
+        for line in Path("requirements-runtime-core.txt").read_text(encoding="utf-8").splitlines()
+        if line.strip() and not line.lstrip().startswith("#")
+    }
+    project = Path("pyproject.toml").read_text(encoding="utf-8")
+
+    assert expected <= runtime_requirements
+    assert all(project.count(f'"{requirement}"') == 2 for requirement in expected)

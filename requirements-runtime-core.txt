@@ -8,7 +8,10 @@ joblib>=1.4,<2
 numpy>=1.26,<3
 opencv-contrib-python==4.10.0.84
 Pillow>=10,<13
-paddleocr>=3.7,<4
-paddlepaddle>=3.2,<4
+# Keep the Windows CPU OCR stack reproducible. PaddlePaddle 3.3.x triggers
+# a PIR/oneDNN ArrayAttribute<DoubleAttribute> inference failure on PP-OCR.
+paddleocr==3.7.0
+paddlex==3.7.2
+paddlepaddle==3.2.2
 pydantic>=2.7,<3
 PyYAML>=6.0,<7
