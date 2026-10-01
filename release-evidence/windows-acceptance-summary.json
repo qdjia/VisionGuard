@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-09-27T15:08:48.216350+00:00",
+  "generated_at": "2026-10-01T14:24:21.425107+00:00",
   "acceptance_model": "split-windows-acceptance",
   "gates": {
     "clean_core": {
@@ -9,9 +9,9 @@
       "reason": "ALL_REQUIRED_CORE_CHECKS_PASSED"
     },
     "fresh_user_gui": {
-      "status": "BLOCKED",
+      "status": "PASS",
       "evidence": "fresh-user-gui.json",
-      "reason": "MANUAL_FRESH_USER_ACCEPTANCE_NOT_EXECUTED"
+      "reason": "ALL_REQUIRED_FRESH_USER_GUI_CHECKS_PASSED"
     },
     "advanced_ai_gpu": {
       "status": "BLOCKED_NETWORK",

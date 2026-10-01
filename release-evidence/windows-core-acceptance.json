@@ -3,11 +3,11 @@
   "gate": "clean_core",
   "status": "PASS",
   "reason": "ALL_REQUIRED_CORE_CHECKS_PASSED",
-  "executed_at": "2026-09-27T14:29:24.161053+00:00",
-  "git_sha": "9626426caf35a8ef8447f2b9f0ebd77756284da5",
-  "workflow_run_id": "36324494006",
-  "installer_name": "VisionGuard-gate1-9626426caf35.exe",
-  "installer_sha256": "d7c2d80dd012b4995136f28545e4842761fab0085bc3618ad1f32a829be92fc5",
+  "executed_at": "2026-10-01T11:12:02.664325+00:00",
+  "git_sha": "001f4043bb938bd4ac592b1768399fde4ff8ca3f",
+  "workflow_run_id": "36851156254",
+  "installer_name": "VisionGuard-gate1-001f4043bb93.exe",
+  "installer_sha256": "151f31ded1317c7209866aec0c255c9415d607aefb80f6a69595112993dfaafb",
   "runner": {
     "provider": "GitHub-hosted Windows runner",
     "os": "Windows",
@@ -15,19 +15,19 @@
     "powershell_version": "7.6.6"
   },
   "candidate": {
-    "installer_name": "VisionGuard-gate1-9626426caf35.exe",
-    "sha256": "d7c2d80dd012b4995136f28545e4842761fab0085bc3618ad1f32a829be92fc5",
-    "size_bytes": 527799759,
+    "installer_name": "VisionGuard-gate1-001f4043bb93.exe",
+    "sha256": "151f31ded1317c7209866aec0c255c9415d607aefb80f6a69595112993dfaafb",
+    "size_bytes": 528015785,
     "build_metadata": {
       "schema_version": 1,
-      "git_sha": "9626426caf35a8ef8447f2b9f0ebd77756284da5",
+      "git_sha": "001f4043bb938bd4ac592b1768399fde4ff8ca3f",
       "git_ref": "refs/heads/main",
-      "workflow_run_id": "36324494006",
-      "installer_name": "VisionGuard-gate1-9626426caf35.exe",
-      "installer_size": 527799759,
-      "sha256": "d7c2d80dd012b4995136f28545e4842761fab0085bc3618ad1f32a829be92fc5",
-      "build_timestamp": "2026-09-27T14:27:25.8362152Z",
-      "build_duration_seconds": 1442.716,
+      "workflow_run_id": "36851156254",
+      "installer_name": "VisionGuard-gate1-001f4043bb93.exe",
+      "installer_size": 528015785,
+      "sha256": "151f31ded1317c7209866aec0c255c9415d607aefb80f6a69595112993dfaafb",
+      "build_timestamp": "2026-10-01T11:09:50.1504693Z",
+      "build_duration_seconds": 1391.865,
       "runner_os": "Windows",
       "runner_arch": "X64"
     }
@@ -279,7 +279,7 @@
       "role": "desktop_executable",
       "path": "visionguard-desktop.exe",
       "kind": "file",
-      "size_bytes": 18256384
+      "size_bytes": 18252800
     },
     {
       "role": "core_runtime_directory",
@@ -290,13 +290,13 @@
       "role": "core_runtime_executable",
       "path": "components/core-runtime/visionguard-core-runtime.exe",
       "kind": "file",
-      "size_bytes": 46539875
+      "size_bytes": 46656772
     },
     {
       "role": "core_runtime_manifest",
       "path": "components/core-runtime/runtime-manifest.json",
       "kind": "file",
-      "size_bytes": 551249
+      "size_bytes": 552444
     },
     {
       "role": "core_runtime_config_api",
@@ -438,13 +438,13 @@
       "role": "model_baseline_file",
       "path": "components/core-models/baseline/char_2_4_gbdt_sample_v1/training_summary.json",
       "kind": "file",
-      "size_bytes": 262
+      "size_bytes": 261
     },
     {
       "role": "model_detector",
       "path": "components/core-models/detector/model.onnx",
       "kind": "file",
-      "size_bytes": 10284574
+      "size_bytes": 11172343
     },
     {
       "role": "model_ocr_detection",
@@ -812,7 +812,7 @@
         "role": "desktop_executable",
         "path": "visionguard-desktop.exe",
         "kind": "file",
-        "size_bytes": 18256384
+        "size_bytes": 18252800
       },
       {
         "role": "core_runtime_directory",
@@ -823,13 +823,13 @@
         "role": "core_runtime_executable",
         "path": "components/core-runtime/visionguard-core-runtime.exe",
         "kind": "file",
-        "size_bytes": 46539875
+        "size_bytes": 46656772
       },
       {
         "role": "core_runtime_manifest",
         "path": "components/core-runtime/runtime-manifest.json",
         "kind": "file",
-        "size_bytes": 551249
+        "size_bytes": 552444
       },
       {
         "role": "core_runtime_config_api",
@@ -971,13 +971,13 @@
         "role": "model_baseline_file",
         "path": "components/core-models/baseline/char_2_4_gbdt_sample_v1/training_summary.json",
         "kind": "file",
-        "size_bytes": 262
+        "size_bytes": 261
       },
       {
         "role": "model_detector",
         "path": "components/core-models/detector/model.onnx",
         "kind": "file",
-        "size_bytes": 10284574
+        "size_bytes": 11172343
       },
       {
         "role": "model_ocr_detection",
@@ -1160,7 +1160,7 @@
     }
   },
   "fast_review": {
-    "request_id": "74db4f1591a8430ca79302f693a27bf4",
+    "request_id": "42e4c0a293624d0ca6da9b3ce38f9a07",
     "status": "partial",
     "risk_level": "medium",
     "schema_valid": true,
@@ -1227,7 +1227,7 @@
       }
     },
     "fast_review": {
-      "request_id": "74db4f1591a8430ca79302f693a27bf4",
+      "request_id": "42e4c0a293624d0ca6da9b3ce38f9a07",
       "status": "partial",
       "risk_level": "medium",
       "schema_valid": true,
@@ -1235,5 +1235,5 @@
       "mode": "cascaded"
     }
   },
-  "elapsed_seconds": 59.732
+  "elapsed_seconds": 71.365
 }
