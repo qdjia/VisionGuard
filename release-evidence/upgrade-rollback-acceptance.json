@@ -1,18 +1,58 @@
 {
   "schema_version": 1,
   "gate": "installer_lifecycle",
-  "status": "BLOCKED",
-  "reason": "VERSIONED_BASELINE_AND_CANDIDATE_NOT_EXECUTED",
-  "executed_at": null,
-  "baseline": {},
-  "candidate": {},
+  "status": "PASS",
+  "reason": "ALL_UPGRADE_AND_ROLLBACK_CHECKS_PASSED",
+  "executed_at": "2026-10-02T14:03:51.500533+00:00",
+  "runner": {
+    "os": "Windows-10-10.0.26200-SP0",
+    "architecture": "AMD64"
+  },
+  "baseline": {
+    "app_version": "0.9.0",
+    "git_sha": "5e32fca803fc25aa93b77ce99c2057486304d204",
+    "workflow_run_id": "37009251871",
+    "installer_name": "VisionGuard-gate1-5e32fca803fc.exe",
+    "actual_sha256": "d183c0d0f307287a4ec9451a1bd4e873e92d4b9384ac7609f4acd0c74d7548be",
+    "size_bytes": 527921447
+  },
+  "candidate": {
+    "app_version": "1.0.0",
+    "git_sha": "1bb5f520cea3a726962db069642c9068fe1016f2",
+    "workflow_run_id": "37009255274",
+    "installer_name": "VisionGuard-gate1-1bb5f520cea3.exe",
+    "actual_sha256": "c400eb3a1ad461ca90a26c32466290bcff6d5d48051d81220edf1675255b0779",
+    "size_bytes": 527854359
+  },
   "upgrade": {
-    "status": "BLOCKED",
-    "checks": {}
+    "status": "PASS",
+    "checks": {
+      "candidate_provenance": true,
+      "baseline_install_exit_code": 0,
+      "baseline_ready": true,
+      "upgrade_install_exit_code": 0,
+      "candidate_ready": true,
+      "user_data_preserved_after_upgrade": true,
+      "candidate_uninstall_exit_code": 0,
+      "candidate_install_directory_removed": true,
+      "user_data_preserved_after_uninstall": true,
+      "user_data_preserved_after_rollback": true
+    }
   },
   "rollback": {
-    "status": "BLOCKED",
-    "checks": {}
+    "status": "PASS",
+    "checks": {
+      "downgrade_attempt_exit_code": 2,
+      "in_place_downgrade_rejected": true,
+      "rollback_install_exit_code": 0,
+      "rollback_payload_restored": true,
+      "rollback_ready": true
+    }
   },
-  "cleanup": {}
+  "cleanup": {
+    "uninstall_exit_code": 0,
+    "install_directory_removed": true,
+    "orphan_processes": []
+  },
+  "elapsed_seconds": 175.703
 }

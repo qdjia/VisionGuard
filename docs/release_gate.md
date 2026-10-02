@@ -1,6 +1,6 @@
 # v1.0 Release Gate
 
-截至 2026-09-26，源码已完成 AGPL 对齐，但正式 RC 仍为 **BLOCKED**，不得 Tag 或公开上传二进制。
+截至 2026-10-02，源码已完成 AGPL 对齐，但正式 RC 仍为 **BLOCKED**，不得 Tag 或公开上传二进制。
 
 | Gate | Status | Closure |
 |---|---|---|
@@ -12,11 +12,11 @@
 | Fresh-user GUI Acceptance | PASS | 当前机器的新普通用户 GUI、Fast Review、卸载与重装已验收 |
 | Advanced AI GPU Acceptance | PASS | RTX 4060 上的受管 Python/CUDA、Qwen VLM、Deep Review 与恢复流程已验收 |
 | Overall Clean-environment Acceptance | PASS | 三个 split Windows Gate 已全部 PASS |
-| Installer lifecycle | BLOCKED | Gate 4 runner 已建立；尚缺应用版本严格递增的 baseline/candidate 实跑证据 |
+| Installer lifecycle | PASS | `0.9.0` → `1.0.0` 升级、降级拒绝、显式回滚、用户数据保留与最终清理均已真实验收 |
 | Prebuilt VLM Runtime distribution | N/A | 已降级为 legacy/reference-only，不属于默认 Release |
 | nvJitLink direct redistribution | N/A | 默认 Release 不携带该 DLL；运行时依赖由官方 PyTorch 源在用户安装时获取 |
 | Historical real-image regression | BLOCKED | 测试集与签字证据不足 |
-| Final rebuilt candidate | BLOCKED | 本轮按要求不重建候选 |
+| Final rebuilt candidate | BLOCKED | Gate 4 候选已重建；仍须在其他阻断 Gate 关闭后冻结并重建最终 RC |
 
 Split Windows 验收模型见 [`windows_acceptance.md`](windows_acceptance.md)。只有三个 Windows Gate、
 历史回归、最终候选重建、严格 validator 和所有实际分发许可 gate 全部通过，才建议创建
