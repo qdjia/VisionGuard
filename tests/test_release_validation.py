@@ -176,6 +176,37 @@ def test_release_evidence_fails_closed_for_unclear_native_file(tmp_path: Path) -
         ),
         encoding="utf-8",
     )
+    (evidence / "upgrade-rollback-acceptance.json").write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "gate": "installer_lifecycle",
+                "status": "PASS",
+                "baseline": {
+                    "app_version": "0.9.0",
+                    "git_sha": "a" * 40,
+                    "workflow_run_id": "1",
+                    "installer_name": "baseline.exe",
+                    "actual_sha256": "b" * 64,
+                },
+                "candidate": {
+                    "app_version": "1.0.0",
+                    "git_sha": "c" * 40,
+                    "workflow_run_id": "2",
+                    "installer_name": "candidate.exe",
+                    "actual_sha256": "d" * 64,
+                },
+                "upgrade": {"status": "PASS", "checks": {}},
+                "rollback": {"status": "PASS", "checks": {}},
+                "cleanup": {
+                    "uninstall_exit_code": 0,
+                    "install_directory_removed": True,
+                    "orphan_processes": [],
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
     windows_gates = {
         "clean_core": "windows-core-acceptance.json",
         "fresh_user_gui": "fresh-user-gui.json",

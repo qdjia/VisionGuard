@@ -295,6 +295,13 @@ def test_gate1_workflow_self_builds_and_uses_a_separate_smoke_job() -> None:
     assert "create release" not in workflow.casefold()
 
 
+def test_gate1_metadata_records_numeric_application_version() -> None:
+    workflow = Path(".github/workflows/windows-release-smoke.yml").read_text(encoding="utf-8")
+    assert 'tauri.conf.json" | ConvertFrom-Json).version' in workflow
+    assert "app_version = $appVersion" in workflow
+    assert "Gate 4 requires a numeric application version" in workflow
+
+
 def test_gate1_summary_is_failure_safe_and_avoids_powershell_here_strings() -> None:
     workflow = Path(".github/workflows/windows-release-smoke.yml").read_text(encoding="utf-8")
     summary_section = workflow.split("- name: Write Gate 1 summary", maxsplit=1)[1].split(

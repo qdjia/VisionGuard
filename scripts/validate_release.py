@@ -92,6 +92,52 @@ def _load_json(path: Path, label: str, errors: list[str]) -> dict:
         return {}
 
 
+def _validate_installer_lifecycle(
+    evidence: Path, acceptance_gates: dict, errors: list[str]
+) -> None:
+    payload = _load_json(
+        evidence / "upgrade-rollback-acceptance.json",
+        "installer lifecycle acceptance",
+        errors,
+    )
+    if payload.get("schema_version") != 1 or payload.get("gate") != "installer_lifecycle":
+        errors.append("invalid installer lifecycle acceptance evidence")
+        return
+    overall = str(payload.get("status", "MISSING")).upper()
+    for name in ("upgrade", "rollback"):
+        recorded = str(acceptance_gates.get(name, {}).get("status", "MISSING")).upper()
+        detail = str(payload.get(name, {}).get("status", "MISSING")).upper()
+        if detail != recorded:
+            errors.append(f"installer lifecycle status mismatch: {name}={recorded}/{detail}")
+    if overall == "PASS":
+        if any(
+            str(payload.get(name, {}).get("status", "MISSING")).upper() != "PASS"
+            for name in ("upgrade", "rollback")
+        ):
+            errors.append("installer lifecycle PASS has a non-PASS sub-gate")
+        baseline = payload.get("baseline", {})
+        candidate = payload.get("candidate", {})
+        required = (
+            "app_version",
+            "git_sha",
+            "workflow_run_id",
+            "installer_name",
+            "actual_sha256",
+        )
+        for role, item in (("baseline", baseline), ("candidate", candidate)):
+            if not isinstance(item, dict) or any(not item.get(key) for key in required):
+                errors.append(f"installer lifecycle {role} provenance is incomplete")
+        cleanup = payload.get("cleanup", {})
+        if (
+            cleanup.get("uninstall_exit_code") != 0
+            or cleanup.get("install_directory_removed") is not True
+            or cleanup.get("orphan_processes") != []
+        ):
+            errors.append("installer lifecycle final cleanup did not pass")
+    elif overall not in {"BLOCKED", "FAIL"}:
+        errors.append(f"invalid installer lifecycle status: {overall}")
+
+
 def _checksums(path: Path, errors: list[str]) -> dict[str, str]:
     result: dict[str, str] = {}
     for line in path.read_text(encoding="utf-8").splitlines():
@@ -321,6 +367,7 @@ def _validate_release_evidence(
         if status != "PASS":
             errors.append(f"acceptance evidence not passed: {name}={status}")
     _validate_windows_acceptance(evidence, errors)
+    _validate_installer_lifecycle(evidence, acceptance_gates, errors)
 
     regression = _load_json(
         evidence / "historical-regression.json", "historical regression", errors

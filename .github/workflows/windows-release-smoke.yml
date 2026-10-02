@@ -112,9 +112,12 @@ jobs:
           $candidate = Join-Path $artifactRoot $candidateName
           Copy-Item -LiteralPath $installers[0].FullName -Destination $candidate
           $hash = (Get-FileHash -LiteralPath $candidate -Algorithm SHA256).Hash.ToLowerInvariant()
+          $appVersion = (Get-Content -Raw -LiteralPath "desktop/src-tauri/tauri.conf.json" | ConvertFrom-Json).version
+          if ($appVersion -notmatch '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$') { throw "Gate 4 requires a numeric application version" }
           $buildDuration = ([DateTime]::UtcNow - [DateTime]::Parse($env:GATE1_BUILD_STARTED)).TotalSeconds
           $metadata = [ordered]@{
             schema_version = 1
+            app_version = $appVersion
             git_sha = $env:GITHUB_SHA
             git_ref = $env:GITHUB_REF
             workflow_run_id = $env:GITHUB_RUN_ID

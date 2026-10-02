@@ -13,8 +13,8 @@
     "overall_clean_environment": {"status": "PASS", "evidence": "release-evidence/windows-acceptance-summary.json"},
     "local_inference": {"status": "PASS", "evidence": "release-evidence/local-inference-architecture.json"},
     "real_offline": {"status": "N/A", "evidence": "NOT_A_V1_PRODUCT_REQUIREMENT"},
-    "upgrade": {"status": "BLOCKED", "evidence": "NOT_EXECUTED"},
-    "rollback": {"status": "BLOCKED", "evidence": "NOT_EXECUTED"},
+    "upgrade": {"status": "BLOCKED", "evidence": "release-evidence/upgrade-rollback-acceptance.json"},
+    "rollback": {"status": "BLOCKED", "evidence": "release-evidence/upgrade-rollback-acceptance.json"},
     "uninstall": {"status": "PASS", "evidence": "release-evidence/fresh-user-gui.json"},
     "reinstall": {"status": "PASS", "evidence": "release-evidence/fresh-user-gui.json"}
   },

@@ -57,6 +57,10 @@ Hugging Face/Transformers offline 标志，不调用云端推理 Provider。
 
 ## Evidence model
 
+安装器升级与回滚不属于前三个 clean-environment Gate 的聚合条件，单独由
+[`upgrade_rollback_acceptance.md`](upgrade_rollback_acceptance.md) 定义为 Gate 4。它必须使用两个
+不同 commit、不同 SHA-256 且应用版本严格递增的真实 NSIS 候选。
+
 | Gate | Evidence | Allowed status |
 |---|---|---|
 | Clean Core | `release-evidence/windows-core-acceptance.json` | PASS / BLOCKED / FAIL |

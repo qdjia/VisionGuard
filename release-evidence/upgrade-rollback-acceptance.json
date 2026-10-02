@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "gate": "installer_lifecycle",
+  "status": "BLOCKED",
+  "reason": "VERSIONED_BASELINE_AND_CANDIDATE_NOT_EXECUTED",
+  "executed_at": null,
+  "baseline": {},
+  "candidate": {},
+  "upgrade": {
+    "status": "BLOCKED",
+    "checks": {}
+  },
+  "rollback": {
+    "status": "BLOCKED",
+    "checks": {}
+  },
+  "cleanup": {}
+}

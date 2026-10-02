@@ -8,10 +8,11 @@
 | Local inference architecture | PASS | 审核链只使用本地进程/loopback；无云端推理 Provider |
 | Real Offline | N/A | 不是 v1.0 产品要求，不阻断 RC |
 | Detector redistribution | ALLOWED_WITH_CONDITIONS | 最终候选须满足来源记录、Corresponding Source、构建脚本、license/notice 和 commit/tag 映射 |
-| Clean Core Acceptance | BLOCKED | GitHub-hosted Windows runner 的候选安装、Core smoke 与卸载尚未执行 |
-| Fresh-user GUI Acceptance | BLOCKED | 当前机器的新普通用户 GUI 验收尚未执行 |
-| Advanced AI GPU Acceptance | BLOCKED_NETWORK | 受管 Python/CUDA 已验证，但完整 fresh-cache 官方模型下载仍被网络超时阻塞 |
-| Overall Clean-environment Acceptance | BLOCKED | 仅当以上三个 Gate 全部 PASS 才可 PASS |
+| Clean Core Acceptance | PASS | GitHub-hosted Windows runner 已完成候选安装、Core smoke、卸载与证据归档 |
+| Fresh-user GUI Acceptance | PASS | 当前机器的新普通用户 GUI、Fast Review、卸载与重装已验收 |
+| Advanced AI GPU Acceptance | PASS | RTX 4060 上的受管 Python/CUDA、Qwen VLM、Deep Review 与恢复流程已验收 |
+| Overall Clean-environment Acceptance | PASS | 三个 split Windows Gate 已全部 PASS |
+| Installer lifecycle | BLOCKED | Gate 4 runner 已建立；尚缺应用版本严格递增的 baseline/candidate 实跑证据 |
 | Prebuilt VLM Runtime distribution | N/A | 已降级为 legacy/reference-only，不属于默认 Release |
 | nvJitLink direct redistribution | N/A | 默认 Release 不携带该 DLL；运行时依赖由官方 PyTorch 源在用户安装时获取 |
 | Historical real-image regression | BLOCKED | 测试集与签字证据不足 |
