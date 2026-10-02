@@ -302,6 +302,24 @@ def test_gate1_metadata_records_numeric_application_version() -> None:
     assert "Gate 4 requires a numeric application version" in workflow
 
 
+def test_release_nsis_template_rejects_downgrades_before_reinstall() -> None:
+    release_config = json.loads(
+        Path("desktop/src-tauri/tauri.release.conf.json").read_text(encoding="utf-8")
+    )
+    windows = release_config["bundle"]["windows"]
+    assert windows["allowDowngrades"] is False
+    assert windows["nsis"]["template"] == "nsis/installer.nsi"
+
+    template = Path("desktop/src-tauri/nsis/installer.nsi").read_text(encoding="utf-8")
+    init = template.split("Function .onInit", maxsplit=1)[1].split(
+        "FunctionEnd", maxsplit=1
+    )[0]
+    assert 'ReadRegStr $R8 SHCTX "${UNINSTKEY}" "DisplayVersion"' in init
+    assert 'nsis_tauri_utils::SemverCompare "${VERSION}" $R8' in init
+    assert "SetErrorLevel 2" in init
+    assert init.index("SemverCompare") < init.index("Quit")
+
+
 def test_gate1_summary_is_failure_safe_and_avoids_powershell_here_strings() -> None:
     workflow = Path(".github/workflows/windows-release-smoke.yml").read_text(encoding="utf-8")
     summary_section = workflow.split("- name: Write Gate 1 summary", maxsplit=1)[1].split(
