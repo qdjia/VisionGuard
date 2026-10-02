@@ -90,6 +90,29 @@ class BootstrapManager:
         return total
 
     @staticmethod
+    def _sha256(path: Path) -> str:
+        digest = hashlib.sha256()
+        with path.open("rb") as stream:
+            for chunk in iter(lambda: stream.read(4 * 1024 * 1024), b""):
+                digest.update(chunk)
+        return digest.hexdigest()
+
+    def _verified_pytorch_wheelhouse(self) -> Path | None:
+        """Return the persistent wheelhouse only when every pinned wheel is verified."""
+        wheelhouse = self.cache / "pytorch-wheelhouse"
+        specs = self.manifest["packages"]["pytorch_wheels"]
+        if not all((wheelhouse / item["filename"]).is_file() for item in specs):
+            return None
+        for item in specs:
+            wheel = wheelhouse / item["filename"]
+            if self._sha256(wheel) != item["sha256"]:
+                raise BootstrapError(
+                    "PYTORCH_CACHE_INVALID",
+                    f"cached PyTorch wheel failed SHA-256 verification: {wheel.name}",
+                )
+        return wheelhouse
+
+    @staticmethod
     def _download(url: str, target: Path) -> None:
         target.parent.mkdir(parents=True, exist_ok=True)
         partial = target.with_suffix(target.suffix + ".partial")
@@ -296,6 +319,12 @@ class BootstrapManager:
             (self.cache / "tmp").mkdir(parents=True, exist_ok=True)
             indexes = self.manifest["indexes"]
             pip_cache_args = ["--cache-dir", str(self.cache / "pip")]
+            pytorch_wheelhouse = self._verified_pytorch_wheelhouse()
+            pytorch_source_args = (
+                ["--no-index", "--find-links", str(pytorch_wheelhouse)]
+                if pytorch_wheelhouse is not None
+                else ["--index-url", indexes["pytorch"]]
+            )
             pytorch_report = stage / "pytorch-install-report.json"
             runtime_report = stage / "runtime-install-report.json"
             product_report = stage / "visionguard-install-report.json"
@@ -323,8 +352,7 @@ class BootstrapManager:
                     "install",
                     "--isolated",
                     "--no-deps",
-                    "--index-url",
-                    indexes["pytorch"],
+                    *pytorch_source_args,
                     "--report",
                     str(pytorch_report),
                     *pip_cache_args,
@@ -583,7 +611,12 @@ class BootstrapManager:
                 download = item.get("download_info", {})
                 source = str(download.get("url", ""))
                 if not source.startswith("https://"):
-                    source = "bundled://visionguard-vlm-wheel"
+                    package_name = str(item.get("metadata", {}).get("name", "")).lower()
+                    source = (
+                        "verified-cache://pytorch-official-wheel"
+                        if package_name in {"torch", "torchvision"}
+                        else "bundled://visionguard-vlm-wheel"
+                    )
                 acquisitions.append(
                     {
                         "name": item.get("metadata", {}).get("name"),

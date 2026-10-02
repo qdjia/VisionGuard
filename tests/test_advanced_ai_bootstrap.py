@@ -36,7 +36,45 @@ def test_manifest_pins_official_sources_and_immutable_versions() -> None:
         "torch==2.11.0+cu128",
         "torchvision==0.26.0+cu128",
     ]
+    assert [item["requirement"] for item in manifest["packages"]["pytorch_wheels"]] == manifest[
+        "packages"
+    ]["pytorch"]
+    assert all(len(item["sha256"]) == 64 for item in manifest["packages"]["pytorch_wheels"])
     assert len(manifest["model"]["revision"]) == 40
+
+
+def test_verified_pytorch_wheelhouse_requires_all_matching_hashes(
+    tmp_path: Path,
+) -> None:
+    payload = json.loads(SOURCE_MANIFEST.read_text(encoding="utf-8"))
+    wheel_payloads = {"torch-test.whl": b"torch", "torchvision-test.whl": b"vision"}
+    payload["packages"]["pytorch_wheels"] = [
+        {
+            "requirement": requirement,
+            "filename": filename,
+            "sha256": hashlib.sha256(wheel_payloads[filename]).hexdigest(),
+        }
+        for requirement, filename in zip(
+            payload["packages"]["pytorch"], wheel_payloads, strict=True
+        )
+    ]
+    manifest = tmp_path / "manifest.json"
+    manifest.write_text(json.dumps(payload), encoding="utf-8")
+    product = tmp_path / "visionguard.whl"
+    product.write_bytes(b"product")
+    manager = BootstrapManager(manifest, tmp_path / "data", tmp_path / "status.json", product)
+    wheelhouse = manager.cache / "pytorch-wheelhouse"
+    wheelhouse.mkdir(parents=True)
+
+    assert manager._verified_pytorch_wheelhouse() is None
+    for filename, content in wheel_payloads.items():
+        (wheelhouse / filename).write_bytes(content)
+    assert manager._verified_pytorch_wheelhouse() == wheelhouse
+
+    (wheelhouse / "torch-test.whl").write_bytes(b"tampered")
+    with pytest.raises(BootstrapError, match="SHA-256") as raised:
+        manager._verified_pytorch_wheelhouse()
+    assert raised.value.code == "PYTORCH_CACHE_INVALID"
 
 
 def test_human_readable_lock_matches_bootstrap_manifest() -> None:

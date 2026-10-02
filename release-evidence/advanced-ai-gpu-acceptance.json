@@ -1,47 +1,925 @@
 {
   "schema_version": 1,
   "gate": "advanced_ai_gpu",
-  "status": "BLOCKED_NETWORK",
-  "reason": "PREVIOUS_FRESH_MANAGED_BOOTSTRAP_REACHED_CUDA_VALIDATION_BUT_FULL_OFFICIAL_MODEL_DOWNLOAD_DID_NOT_COMPLETE",
-  "executed_at": "2026-09-26",
-  "evidence_scope": "migrated engineering observation; rerun the dedicated acceptance runner for final Gate 3 evidence",
-  "fresh_environment": true,
+  "status": "PASS",
+  "reason": "ALL_ADVANCED_AI_GPU_CHECKS_PASSED",
+  "executed_at": "2026-10-02T07:06:47.261679+00:00",
+  "fresh_environment": false,
   "independent_cache": true,
+  "data_root_scope": "dedicated VisionGuard acceptance directory",
+  "manifest": {
+    "python_version": "3.11.9",
+    "pytorch": [
+      "torch==2.11.0+cu128",
+      "torchvision==0.26.0+cu128"
+    ],
+    "transformers": "transformers==4.57.6",
+    "accelerate": "accelerate==1.15.0",
+    "model_id": "Qwen/Qwen3-VL-2B-Instruct",
+    "model_revision": "89644892e4d85e24eaac8bacfd4f463576704203"
+  },
+  "bootstrap_attempts": [
+    {
+      "attempt": 1,
+      "status": "PASS",
+      "seconds": 770.5949717999997
+    }
+  ],
+  "bootstrap": {
+    "schema_version": 1,
+    "environment_version": "vlm-v1",
+    "python_version": "3.11.9",
+    "packages": [
+      {
+        "name": "Jinja2",
+        "version": "3.1.6"
+      },
+      {
+        "name": "MarkupSafe",
+        "version": "3.0.3"
+      },
+      {
+        "name": "PyYAML",
+        "version": "6.0.3"
+      },
+      {
+        "name": "accelerate",
+        "version": "1.15.0"
+      },
+      {
+        "name": "annotated-doc",
+        "version": "0.0.5"
+      },
+      {
+        "name": "annotated-types",
+        "version": "0.8.0"
+      },
+      {
+        "name": "anyio",
+        "version": "4.15.1"
+      },
+      {
+        "name": "certifi",
+        "version": "2026.7.22"
+      },
+      {
+        "name": "charset-normalizer",
+        "version": "3.5.1"
+      },
+      {
+        "name": "click",
+        "version": "8.5.0"
+      },
+      {
+        "name": "colorama",
+        "version": "0.4.6"
+      },
+      {
+        "name": "fastapi",
+        "version": "0.141.1"
+      },
+      {
+        "name": "filelock",
+        "version": "3.32.6"
+      },
+      {
+        "name": "fsspec",
+        "version": "2026.7.0"
+      },
+      {
+        "name": "h11",
+        "version": "0.16.0"
+      },
+      {
+        "name": "huggingface_hub",
+        "version": "0.36.2"
+      },
+      {
+        "name": "idna",
+        "version": "3.19"
+      },
+      {
+        "name": "mpmath",
+        "version": "1.3.0"
+      },
+      {
+        "name": "networkx",
+        "version": "3.6.1"
+      },
+      {
+        "name": "numpy",
+        "version": "2.3.5"
+      },
+      {
+        "name": "packaging",
+        "version": "25.0"
+      },
+      {
+        "name": "pillow",
+        "version": "12.3.0"
+      },
+      {
+        "name": "pip",
+        "version": "25.2"
+      },
+      {
+        "name": "psutil",
+        "version": "7.2.2"
+      },
+      {
+        "name": "pydantic",
+        "version": "2.13.5"
+      },
+      {
+        "name": "pydantic_core",
+        "version": "2.46.5"
+      },
+      {
+        "name": "python-multipart",
+        "version": "0.0.32"
+      },
+      {
+        "name": "regex",
+        "version": "2026.9.10"
+      },
+      {
+        "name": "requests",
+        "version": "2.34.2"
+      },
+      {
+        "name": "safetensors",
+        "version": "0.7.0"
+      },
+      {
+        "name": "setuptools",
+        "version": "80.9.0"
+      },
+      {
+        "name": "starlette",
+        "version": "1.6.0"
+      },
+      {
+        "name": "sympy",
+        "version": "1.14.0"
+      },
+      {
+        "name": "tokenizers",
+        "version": "0.22.2"
+      },
+      {
+        "name": "torch",
+        "version": "2.11.0+cu128"
+      },
+      {
+        "name": "torchvision",
+        "version": "0.26.0+cu128"
+      },
+      {
+        "name": "tqdm",
+        "version": "4.70.1"
+      },
+      {
+        "name": "transformers",
+        "version": "4.57.6"
+      },
+      {
+        "name": "typing-inspection",
+        "version": "0.4.4"
+      },
+      {
+        "name": "typing_extensions",
+        "version": "4.16.0"
+      },
+      {
+        "name": "urllib3",
+        "version": "2.7.0"
+      },
+      {
+        "name": "uvicorn",
+        "version": "0.53.0"
+      },
+      {
+        "name": "visionguard-moderation",
+        "version": "0.1.0"
+      },
+      {
+        "name": "wheel",
+        "version": "0.45.1"
+      }
+    ],
+    "model": {
+      "id": "Qwen/Qwen3-VL-2B-Instruct",
+      "revision": "89644892e4d85e24eaac8bacfd4f463576704203",
+      "source": "https://huggingface.co/Qwen/Qwen3-VL-2B-Instruct",
+      "bundle_version": "vlm-models-v1"
+    },
+    "installed_at": "2026-10-02T07:19:37.472557+00:00",
+    "sources": {
+      "pypi": "https://pypi.org/simple",
+      "pytorch": "https://download.pytorch.org/whl/cu128"
+    },
+    "hardware_validation": {
+      "gpu_name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "gpu_memory_mib": 8188,
+      "gpu_driver_version": "580.97"
+    },
+    "acquisitions": [
+      {
+        "name": "torch",
+        "version": "2.11.0+cu128",
+        "source": "verified-cache://pytorch-official-wheel",
+        "hash": "sha256=90ef0c2454e5296a9fb021ddd42252e4ce1abe2c0a4988a173ef90a6cded0bf5"
+      },
+      {
+        "name": "torchvision",
+        "version": "0.26.0+cu128",
+        "source": "verified-cache://pytorch-official-wheel",
+        "hash": "sha256=d26091b15cd6e3c74c148d9b68c9a901ad6fb9b0f66fa3ea3ab09f04132a07d3"
+      },
+      {
+        "name": "accelerate",
+        "version": "1.15.0",
+        "source": "https://files.pythonhosted.org/packages/8a/4c/34f0450479d01195027260da68d8a3880683f1640c3ca5adf64acb3185f1/accelerate-1.15.0-py3-none-any.whl",
+        "hash": "sha256=97eacca0b73e45cb867dbf8c5d5d4dc32219544300e0c8992c7334dc2ef33cec"
+      },
+      {
+        "name": "annotated-doc",
+        "version": "0.0.5",
+        "source": "https://files.pythonhosted.org/packages/3e/30/e900b21425a860e195f32e37657aa1f7c7f2b1bfb26f03ca209b90933c06/annotated_doc-0.0.5-py3-none-any.whl",
+        "hash": "sha256=117bac03a25ede5df5440e855b32d556049ca169ead221505badf432fed4b101"
+      },
+      {
+        "name": "annotated-types",
+        "version": "0.8.0",
+        "source": "https://files.pythonhosted.org/packages/99/91/8acff4f5e50511b911bbccb72b8628a49c68ce14148cd9f6431094859a90/annotated_types-0.8.0-py3-none-any.whl",
+        "hash": "sha256=f072f4d804ea359e4eaf198b1af7a8b0943881a87f31bb764f8bf219bb9419e0"
+      },
+      {
+        "name": "anyio",
+        "version": "4.15.1",
+        "source": "https://files.pythonhosted.org/packages/12/b8/4bd346e22b28902df4d651910f5242c28d84e4a5c2435ca5c3f797ed7e2e/anyio-4.15.1-py3-none-any.whl",
+        "hash": "sha256=6152fdbbf9a77fdec97731721bebf7c4c44f7c29b424b0065826173efc7ed101"
+      },
+      {
+        "name": "certifi",
+        "version": "2026.7.22",
+        "source": "https://files.pythonhosted.org/packages/0b/a7/71ac2cff56fec219ed242bb11b8efb69fcc4bec75db06fb7bfe35de520e6/certifi-2026.7.22-py3-none-any.whl",
+        "hash": "sha256=62f22742b58a1a33014a2b6b706588a8d7e2a88ae7bd1a6ebe8c992928483775"
+      },
+      {
+        "name": "charset-normalizer",
+        "version": "3.5.1",
+        "source": "https://files.pythonhosted.org/packages/e3/57/32f0ccea59e8612057c61d6fd22ef2cb63cca93c9fe594094919696ac170/charset_normalizer-3.5.1-cp311-cp311-win_amd64.whl",
+        "hash": "sha256=f9b1e28d0e8dbfa858abdba91d6b547beaf2df1a59bec6da6faae7b96a4991a9"
+      },
+      {
+        "name": "click",
+        "version": "8.5.0",
+        "source": "https://files.pythonhosted.org/packages/58/50/6c0d534c5f134586a8e1ba4e330569e32f057e33372ae556463212fb4cd3/click-8.5.0-py3-none-any.whl",
+        "hash": "sha256=255bc9599cf7748b4b1a446ccc735421bd08a2ae529a8b88597d3de5664ee360"
+      },
+      {
+        "name": "fastapi",
+        "version": "0.141.1",
+        "source": "https://files.pythonhosted.org/packages/cb/03/10388a42375ee7e4ac9b94eb2c5c569c8b5795e377e701c9ac3ad63de890/fastapi-0.141.1-py3-none-any.whl",
+        "hash": "sha256=bfb91aa2d334c61cb35ba9a116fc123b3d3df31640b801cf57a7a78ec3f603b3"
+      },
+      {
+        "name": "filelock",
+        "version": "3.32.6",
+        "source": "https://files.pythonhosted.org/packages/cc/06/4f138f618dbea66803291274f228f01daf29f306fe8b96bc30dab765df75/filelock-3.32.6-py3-none-any.whl",
+        "hash": "sha256=3f16ecd0117feae0dfc147e8c62eb5daeccd8bd800378c3ddf416de9b4feb6b1"
+      },
+      {
+        "name": "fsspec",
+        "version": "2026.7.0",
+        "source": "https://files.pythonhosted.org/packages/fd/3c/6a2bf344106328fd04963664a60b9bb6496fc25df8e962fcdc1367285fb9/fsspec-2026.7.0-py3-none-any.whl",
+        "hash": "sha256=b57ddbafedfaef7018c1ecab32aa200a9d7ca26b77965f64e48b70061249d279"
+      },
+      {
+        "name": "h11",
+        "version": "0.16.0",
+        "source": "https://files.pythonhosted.org/packages/04/4b/29cac41a4d98d144bf5f6d33995617b185d14b22401f75ca86f384e87ff1/h11-0.16.0-py3-none-any.whl",
+        "hash": "sha256=63cf8bbe7522de3bf65932fda1d9c2772064ffb3dae62d55932da54b31cb6c86"
+      },
+      {
+        "name": "huggingface_hub",
+        "version": "0.36.2",
+        "source": "https://files.pythonhosted.org/packages/a8/af/48ac8483240de756d2438c380746e7130d1c6f75802ef22f3c6d49982787/huggingface_hub-0.36.2-py3-none-any.whl",
+        "hash": "sha256=48f0c8eac16145dfce371e9d2d7772854a4f591bcb56c9cf548accf531d54270"
+      },
+      {
+        "name": "idna",
+        "version": "3.19",
+        "source": "https://files.pythonhosted.org/packages/57/b0/0e52c878c53f245edd3a11020f20979b3f490f245af532c7cae3027754b5/idna-3.19-py3-none-any.whl",
+        "hash": "sha256=815e7be7a7806d54abb586dc943addc79e8b2ee16915059658cbeff4b1b43bf4"
+      },
+      {
+        "name": "Jinja2",
+        "version": "3.1.6",
+        "source": "https://files.pythonhosted.org/packages/62/a1/3d680cbfd5f4b8f15abc1d571870c5fc3e594bb582bc3b64ea099db13e56/jinja2-3.1.6-py3-none-any.whl",
+        "hash": "sha256=85ece4451f492d0c13c5dd7c13a64681a86afae63a5f347908daf103ce6d2f67"
+      },
+      {
+        "name": "MarkupSafe",
+        "version": "3.0.3",
+        "source": "https://files.pythonhosted.org/packages/83/8a/4414c03d3f891739326e1783338e48fb49781cc915b2e0ee052aa490d586/markupsafe-3.0.3-cp311-cp311-win_amd64.whl",
+        "hash": "sha256=de8a88e63464af587c950061a5e6a67d3632e36df62b986892331d4620a35c01"
+      },
+      {
+        "name": "mpmath",
+        "version": "1.3.0",
+        "source": "https://files.pythonhosted.org/packages/43/e3/7d92a15f894aa0c9c4b49b8ee9ac9850d6e63b03c9c32c0367a13ae62209/mpmath-1.3.0-py3-none-any.whl",
+        "hash": "sha256=a0b2b9fe80bbcd81a6647ff13108738cfb482d481d826cc0e02f5b35e5c88d2c"
+      },
+      {
+        "name": "networkx",
+        "version": "3.6.1",
+        "source": "https://files.pythonhosted.org/packages/9e/c9/b2622292ea83fbb4ec318f5b9ab867d0a28ab43c5717bb85b0a5f6b3b0a4/networkx-3.6.1-py3-none-any.whl",
+        "hash": "sha256=d47fbf302e7d9cbbb9e2555a0d267983d2aa476bac30e90dfbe5669bd57f3762"
+      },
+      {
+        "name": "numpy",
+        "version": "2.3.5",
+        "source": "https://files.pythonhosted.org/packages/aa/44/9fe81ae1dcc29c531843852e2874080dc441338574ccc4306b39e2ff6e59/numpy-2.3.5-cp311-cp311-win_amd64.whl",
+        "hash": "sha256=a414504bef8945eae5f2d7cb7be2d4af77c5d1cb5e20b296c2c25b61dff2900c"
+      },
+      {
+        "name": "pillow",
+        "version": "12.3.0",
+        "source": "https://files.pythonhosted.org/packages/63/c6/4bad1b18d132a50b27e1365e1ab163616f7a5bb56d330f66f9d1d9d4f9d4/pillow-12.3.0-cp311-cp311-win_amd64.whl",
+        "hash": "sha256=8e95e1385e4998ae9694eeaa4730ba5457ff61185b3a55e2e7bea0880aef452a"
+      },
+      {
+        "name": "psutil",
+        "version": "7.2.2",
+        "source": "https://files.pythonhosted.org/packages/b4/90/e2159492b5426be0c1fef7acba807a03511f97c5f86b3caeda6ad92351a7/psutil-7.2.2-cp37-abi3-win_amd64.whl",
+        "hash": "sha256=eb7e81434c8d223ec4a219b5fc1c47d0417b12be7ea866e24fb5ad6e84b3d988"
+      },
+      {
+        "name": "pydantic",
+        "version": "2.13.5",
+        "source": "https://files.pythonhosted.org/packages/eb/47/c95ffc2009878c7aac0c5e08528022dcb885933252a88b5f170058014464/pydantic-2.13.5-py3-none-any.whl",
+        "hash": "sha256=346a034f080da3755d8e9cb5e00e8b07de1d39e4f6e2c87d8ab7cafa0b269a73"
+      },
+      {
+        "name": "pydantic_core",
+        "version": "2.46.5",
+        "source": "https://files.pythonhosted.org/packages/9e/c2/718b9deb4b72453b5d8c7447a3b14cb77bef36917ef5f514e0948a4096a0/pydantic_core-2.46.5-cp311-cp311-win_amd64.whl",
+        "hash": "sha256=40375c2d05acec10323e45dfe2077ac44bc74659008614af5069034e2cfc781c"
+      },
+      {
+        "name": "python-multipart",
+        "version": "0.0.32",
+        "source": "https://files.pythonhosted.org/packages/e1/04/e8135ebd1ad02c56ec633277529b2602ff99ff634be76cdba5744cf554fd/python_multipart-0.0.32-py3-none-any.whl",
+        "hash": "sha256=ff6d3f776f16878c894e52e107296ffc890e913c611b1a4ec6c44e2821fe2e23"
+      },
+      {
+        "name": "PyYAML",
+        "version": "6.0.3",
+        "source": "https://files.pythonhosted.org/packages/da/e3/ea007450a105ae919a72393cb06f122f288ef60bba2dc64b26e2646fa315/pyyaml-6.0.3-cp311-cp311-win_amd64.whl",
+        "hash": "sha256=9f3bfb4965eb874431221a3ff3fdcddc7e74e3b07799e0e84ca4a0f867d449bf"
+      },
+      {
+        "name": "regex",
+        "version": "2026.9.10",
+        "source": "https://files.pythonhosted.org/packages/0c/7f/2d39cd798871b683409cd14ab4458f60e53db86591028a8244c3155f2e92/regex-2026.9.10-cp311-cp311-win_amd64.whl",
+        "hash": "sha256=ce7c118cb102975f974585688357a717ffbf9dddd64ab0bb1bc93eb5b367cf95"
+      },
+      {
+        "name": "requests",
+        "version": "2.34.2",
+        "source": "https://files.pythonhosted.org/packages/a0/f4/c67b0b3f1b9245e8d266f0f112c500d50e5b4e83cb6f3b71b6528104182a/requests-2.34.2-py3-none-any.whl",
+        "hash": "sha256=2a0d60c172f83ac6ab31e4554906c0f3b3588d37b5cb939b1c061f4907e278e0"
+      },
+      {
+        "name": "safetensors",
+        "version": "0.7.0",
+        "source": "https://files.pythonhosted.org/packages/5d/e6/ec8471c8072382cb91233ba7267fd931219753bb43814cbc71757bfd4dab/safetensors-0.7.0-cp38-abi3-win_amd64.whl",
+        "hash": "sha256=d1239932053f56f3456f32eb9625590cc7582e905021f94636202a864d470755"
+      },
+      {
+        "name": "starlette",
+        "version": "1.6.0",
+        "source": "https://files.pythonhosted.org/packages/c8/cb/6a6a47d5b464bd08695d254f3da6e7986cc70c9fa5d778eda57538edfe56/starlette-1.6.0-py3-none-any.whl",
+        "hash": "sha256=a86dd39d14bb45f85a3d18525215a9ef0cfd1f192ac793220e72598c90335f0c"
+      },
+      {
+        "name": "sympy",
+        "version": "1.14.0",
+        "source": "https://files.pythonhosted.org/packages/a2/09/77d55d46fd61b4a135c444fc97158ef34a095e5681d0a6c10b75bf356191/sympy-1.14.0-py3-none-any.whl",
+        "hash": "sha256=e091cc3e99d2141a0ba2847328f5479b05d94a6635cb96148ccb3f34671bd8f5"
+      },
+      {
+        "name": "tokenizers",
+        "version": "0.22.2",
+        "source": "https://files.pythonhosted.org/packages/65/71/0670843133a43d43070abeb1949abfdef12a86d490bea9cd9e18e37c5ff7/tokenizers-0.22.2-cp39-abi3-win_amd64.whl",
+        "hash": "sha256=c9ea31edff2968b44a88f97d784c2f16dc0729b8b143ed004699ebca91f05c48"
+      },
+      {
+        "name": "tqdm",
+        "version": "4.70.1",
+        "source": "https://files.pythonhosted.org/packages/a7/03/921a3d3c75785aca9ebfbfcabfbc3a1be12e2ab5265deb026d55a5a3f83e/tqdm-4.70.1-py3-none-any.whl",
+        "hash": "sha256=c293e525e6fef9c20e8728fd4612df02a0aa31bb5fe91ecd93e123b1b7bffa73"
+      },
+      {
+        "name": "transformers",
+        "version": "4.57.6",
+        "source": "https://files.pythonhosted.org/packages/03/b8/e484ef633af3887baeeb4b6ad12743363af7cce68ae51e938e00aaa0529d/transformers-4.57.6-py3-none-any.whl",
+        "hash": "sha256=4c9e9de11333ddfe5114bc872c9f370509198acf0b87a832a0ab9458e2bd0550"
+      },
+      {
+        "name": "typing_extensions",
+        "version": "4.16.0",
+        "source": "https://files.pythonhosted.org/packages/49/d3/b8441a820a491ddfc024b0b0cf0393375b75ea13866d9c66727e54c2fc80/typing_extensions-4.16.0-py3-none-any.whl",
+        "hash": "sha256=481caa481374e813c1b176ada14e97f1f67a4539ce9cfeb3f350d78d6370c2e8"
+      },
+      {
+        "name": "typing-inspection",
+        "version": "0.4.4",
+        "source": "https://files.pythonhosted.org/packages/67/81/4add07e5172b7ac40d8ed5ff580409a7801a4fe26d529bdd915401dabfbe/typing_inspection-0.4.4-py3-none-any.whl",
+        "hash": "sha256=65b8397ba37ccbce054456aaccddfc91e6e3083c92824df348d96ca832f3f147"
+      },
+      {
+        "name": "urllib3",
+        "version": "2.7.0",
+        "source": "https://files.pythonhosted.org/packages/7f/3e/5db95bcf282c52709639744ca2a8b149baccf648e39c8cc87553df9eae0c/urllib3-2.7.0-py3-none-any.whl",
+        "hash": "sha256=9fb4c81ebbb1ce9531cce37674bbc6f1360472bc18ca9a553ede278ef7276897"
+      },
+      {
+        "name": "uvicorn",
+        "version": "0.53.0",
+        "source": "https://files.pythonhosted.org/packages/76/18/0eea75741ee812e9f598b687619ce2454f6c3a1c5cd21ea990ec6bd26f45/uvicorn-0.53.0-py3-none-any.whl",
+        "hash": "sha256=e8dca71ec86dce5f04e333f0d56cdedf942446e6643b9cea1af0d6d3a02cb03e"
+      },
+      {
+        "name": "colorama",
+        "version": "0.4.6",
+        "source": "https://files.pythonhosted.org/packages/d1/d6/3965ed04c63042e047cb6a3e6ed1a63a35087b6a609aa3a15ed8ac56c221/colorama-0.4.6-py2.py3-none-any.whl",
+        "hash": "sha256=4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6"
+      },
+      {
+        "name": "visionguard-moderation",
+        "version": "0.1.0",
+        "source": "bundled://visionguard-vlm-wheel",
+        "hash": "sha256=9611997d8a1294c443066963e45cbf83ab6836ff30a6ae474b5fea8cfa75962d"
+      }
+    ],
+    "timings": {
+      "python_acquire_seconds": 0.022945500000332686,
+      "environment_create_seconds": 0.09391200000027311,
+      "dependency_install_seconds": 157.92884309999954,
+      "model_download_seconds": 581.7789561,
+      "validation_seconds": 7.139983499999289,
+      "total_install_seconds": 748.9305321999996
+    },
+    "measurements": {
+      "downloaded_artifact_bytes": 7200992454,
+      "managed_python_bytes": 21665566,
+      "dependency_bytes": 4803120173,
+      "model_bytes": 4266650570,
+      "installed_bytes": 9091436309,
+      "observed_peak_bytes": 12111987473
+    },
+    "bom": {
+      "bomFormat": "CycloneDX",
+      "specVersion": "1.6",
+      "version": 1,
+      "components": [
+        {
+          "type": "library",
+          "name": "Jinja2",
+          "version": "3.1.6"
+        },
+        {
+          "type": "library",
+          "name": "MarkupSafe",
+          "version": "3.0.3"
+        },
+        {
+          "type": "library",
+          "name": "PyYAML",
+          "version": "6.0.3"
+        },
+        {
+          "type": "library",
+          "name": "accelerate",
+          "version": "1.15.0"
+        },
+        {
+          "type": "library",
+          "name": "annotated-doc",
+          "version": "0.0.5"
+        },
+        {
+          "type": "library",
+          "name": "annotated-types",
+          "version": "0.8.0"
+        },
+        {
+          "type": "library",
+          "name": "anyio",
+          "version": "4.15.1"
+        },
+        {
+          "type": "library",
+          "name": "certifi",
+          "version": "2026.7.22"
+        },
+        {
+          "type": "library",
+          "name": "charset-normalizer",
+          "version": "3.5.1"
+        },
+        {
+          "type": "library",
+          "name": "click",
+          "version": "8.5.0"
+        },
+        {
+          "type": "library",
+          "name": "colorama",
+          "version": "0.4.6"
+        },
+        {
+          "type": "library",
+          "name": "fastapi",
+          "version": "0.141.1"
+        },
+        {
+          "type": "library",
+          "name": "filelock",
+          "version": "3.32.6"
+        },
+        {
+          "type": "library",
+          "name": "fsspec",
+          "version": "2026.7.0"
+        },
+        {
+          "type": "library",
+          "name": "h11",
+          "version": "0.16.0"
+        },
+        {
+          "type": "library",
+          "name": "huggingface_hub",
+          "version": "0.36.2"
+        },
+        {
+          "type": "library",
+          "name": "idna",
+          "version": "3.19"
+        },
+        {
+          "type": "library",
+          "name": "mpmath",
+          "version": "1.3.0"
+        },
+        {
+          "type": "library",
+          "name": "networkx",
+          "version": "3.6.1"
+        },
+        {
+          "type": "library",
+          "name": "numpy",
+          "version": "2.3.5"
+        },
+        {
+          "type": "library",
+          "name": "packaging",
+          "version": "25.0"
+        },
+        {
+          "type": "library",
+          "name": "pillow",
+          "version": "12.3.0"
+        },
+        {
+          "type": "library",
+          "name": "pip",
+          "version": "25.2"
+        },
+        {
+          "type": "library",
+          "name": "psutil",
+          "version": "7.2.2"
+        },
+        {
+          "type": "library",
+          "name": "pydantic",
+          "version": "2.13.5"
+        },
+        {
+          "type": "library",
+          "name": "pydantic_core",
+          "version": "2.46.5"
+        },
+        {
+          "type": "library",
+          "name": "python-multipart",
+          "version": "0.0.32"
+        },
+        {
+          "type": "library",
+          "name": "regex",
+          "version": "2026.9.10"
+        },
+        {
+          "type": "library",
+          "name": "requests",
+          "version": "2.34.2"
+        },
+        {
+          "type": "library",
+          "name": "safetensors",
+          "version": "0.7.0"
+        },
+        {
+          "type": "library",
+          "name": "setuptools",
+          "version": "80.9.0"
+        },
+        {
+          "type": "library",
+          "name": "starlette",
+          "version": "1.6.0"
+        },
+        {
+          "type": "library",
+          "name": "sympy",
+          "version": "1.14.0"
+        },
+        {
+          "type": "library",
+          "name": "tokenizers",
+          "version": "0.22.2"
+        },
+        {
+          "type": "library",
+          "name": "torch",
+          "version": "2.11.0+cu128"
+        },
+        {
+          "type": "library",
+          "name": "torchvision",
+          "version": "0.26.0+cu128"
+        },
+        {
+          "type": "library",
+          "name": "tqdm",
+          "version": "4.70.1"
+        },
+        {
+          "type": "library",
+          "name": "transformers",
+          "version": "4.57.6"
+        },
+        {
+          "type": "library",
+          "name": "typing-inspection",
+          "version": "0.4.4"
+        },
+        {
+          "type": "library",
+          "name": "typing_extensions",
+          "version": "4.16.0"
+        },
+        {
+          "type": "library",
+          "name": "urllib3",
+          "version": "2.7.0"
+        },
+        {
+          "type": "library",
+          "name": "uvicorn",
+          "version": "0.53.0"
+        },
+        {
+          "type": "library",
+          "name": "visionguard-moderation",
+          "version": "0.1.0"
+        },
+        {
+          "type": "library",
+          "name": "wheel",
+          "version": "0.45.1"
+        },
+        {
+          "type": "machine-learning-model",
+          "name": "Qwen/Qwen3-VL-2B-Instruct",
+          "version": "89644892e4d85e24eaac8bacfd4f463576704203"
+        }
+      ]
+    }
+  },
   "gpu": {
-    "name": "NVIDIA GeForce RTX 4060 Laptop GPU",
-    "memory_mib": 8188,
-    "driver": "580.97",
-    "torch_cuda_available": true,
-    "torch_cuda_version": "12.8"
+    "torch_version": "2.11.0+cu128",
+    "cuda_available": true,
+    "torch_cuda_version": "12.8",
+    "device_name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+    "device_memory_bytes": 8585216000
   },
-  "versions": {
-    "python": "3.11.9",
-    "torch": "2.11.0+cu128",
-    "torchvision": "0.26.0+cu128",
-    "transformers": "4.57.6",
-    "accelerate": "1.15.0"
+  "restart_rediscovery": {
+    "registry_reloaded": true,
+    "python_executable_exists": true,
+    "model_directory_exists": true,
+    "scope": "managed component registry; Desktop GUI restart remains a manual check"
   },
-  "model": {
-    "id": "Qwen/Qwen3-VL-2B-Instruct",
-    "revision": "89644892e4d85e24eaac8bacfd4f463576704203"
+  "vlm_three_request_smoke": {
+    "offline": true,
+    "runtime_mode": "managed_python",
+    "process_start_ms": 606.8841000005705,
+    "first_review_ms": 17854.387100000167,
+    "subsequent_review_ms": [
+      6090.310600000521,
+      5764.04889999958
+    ],
+    "pid_stable": true,
+    "model_init_count": 1,
+    "model_load_ms": 11819.960699999683,
+    "gpu_memory_idle_mib": 1530,
+    "gpu_memory_loaded_mib": 6133,
+    "structured_results": [
+      {
+        "risk_level": "low",
+        "categories": [],
+        "reason": "The image is completely blank and contains no discernible content, symbols, text, or other elements that would constitute a violation of the policy categories. There is no visual, OCR, or baseline evidence to support any of the high-risk categories.",
+        "evidence": [],
+        "confidence_score": 0.0,
+        "requires_manual_review": false,
+        "metadata": {
+          "bbox_format_normalized": 0,
+          "detections_truncated": false,
+          "ocr_truncated": false,
+          "input_chars": 3362,
+          "input_tokens": 1157,
+          "output_tokens": 97,
+          "device": "cuda:0",
+          "dtype": "torch.bfloat16",
+          "model_revision": "89644892e4d85e24eaac8bacfd4f463576704203",
+          "provider": "local",
+          "model": "D:\\VisionGuard-Acceptance\\advanced-ai-fresh-gate3-20261001\\advanced-ai\\models\\vlm-models-v1\\vlm",
+          "prompt_version": "v1",
+          "policy_version": "v1",
+          "retry_count": 0,
+          "parse_retry_count": 0,
+          "attempt_usage": [
+            {
+              "input_tokens": 1157,
+              "output_tokens": 97,
+              "device": "cuda:0",
+              "dtype": "torch.bfloat16",
+              "model_revision": "89644892e4d85e24eaac8bacfd4f463576704203"
+            }
+          ],
+          "adjusted_evidence_bbox_count": 0,
+          "timing": {
+            "image_prepare_ms": 0.11170000016136328,
+            "prompt_build_ms": 2.6922999995804275,
+            "inference_ms": 5981.00709999926,
+            "parse_ms": 0.10259999999107094,
+            "total_ms": 5983.9185000000725
+          },
+          "original_image_size": [
+            224,
+            224
+          ]
+        }
+      },
+      {
+        "risk_level": "low",
+        "categories": [],
+        "reason": "The image is completely blank and contains no discernible content, symbols, text, or other elements that would constitute a violation of the policy categories. There is no visual, OCR, or baseline evidence to support any of the high-risk categories.",
+        "evidence": [],
+        "confidence_score": 0.0,
+        "requires_manual_review": false,
+        "metadata": {
+          "bbox_format_normalized": 0,
+          "detections_truncated": false,
+          "ocr_truncated": false,
+          "input_chars": 3362,
+          "input_tokens": 1157,
+          "output_tokens": 97,
+          "device": "cuda:0",
+          "dtype": "torch.bfloat16",
+          "model_revision": "89644892e4d85e24eaac8bacfd4f463576704203",
+          "provider": "local",
+          "model": "D:\\VisionGuard-Acceptance\\advanced-ai-fresh-gate3-20261001\\advanced-ai\\models\\vlm-models-v1\\vlm",
+          "prompt_version": "v1",
+          "policy_version": "v1",
+          "retry_count": 0,
+          "parse_retry_count": 0,
+          "attempt_usage": [
+            {
+              "input_tokens": 1157,
+              "output_tokens": 97,
+              "device": "cuda:0",
+              "dtype": "torch.bfloat16",
+              "model_revision": "89644892e4d85e24eaac8bacfd4f463576704203"
+            }
+          ],
+          "adjusted_evidence_bbox_count": 0,
+          "timing": {
+            "image_prepare_ms": 0.014999999621068127,
+            "prompt_build_ms": 1.5394000001833774,
+            "inference_ms": 6023.279299999558,
+            "parse_ms": 0.05419999979494605,
+            "total_ms": 6024.8922000000675
+          },
+          "original_image_size": [
+            224,
+            224
+          ]
+        }
+      },
+      {
+        "risk_level": "low",
+        "categories": [],
+        "reason": "The image is completely blank and contains no discernible content, symbols, text, or other elements that would constitute a violation of the policy categories. There is no visual, OCR, or baseline evidence to support any of the high-risk categories.",
+        "evidence": [],
+        "confidence_score": 0.0,
+        "requires_manual_review": false,
+        "metadata": {
+          "bbox_format_normalized": 0,
+          "detections_truncated": false,
+          "ocr_truncated": false,
+          "input_chars": 3362,
+          "input_tokens": 1157,
+          "output_tokens": 97,
+          "device": "cuda:0",
+          "dtype": "torch.bfloat16",
+          "model_revision": "89644892e4d85e24eaac8bacfd4f463576704203",
+          "provider": "local",
+          "model": "D:\\VisionGuard-Acceptance\\advanced-ai-fresh-gate3-20261001\\advanced-ai\\models\\vlm-models-v1\\vlm",
+          "prompt_version": "v1",
+          "policy_version": "v1",
+          "retry_count": 0,
+          "parse_retry_count": 0,
+          "attempt_usage": [
+            {
+              "input_tokens": 1157,
+              "output_tokens": 97,
+              "device": "cuda:0",
+              "dtype": "torch.bfloat16",
+              "model_revision": "89644892e4d85e24eaac8bacfd4f463576704203"
+            }
+          ],
+          "adjusted_evidence_bbox_count": 0,
+          "timing": {
+            "image_prepare_ms": 0.05380000038712751,
+            "prompt_build_ms": 2.0629000000553788,
+            "inference_ms": 5689.3301000000065,
+            "parse_ms": 0.06070000017643906,
+            "total_ms": 5691.51200000033
+          },
+          "original_image_size": [
+            224,
+            224
+          ]
+        }
+      }
+    ],
+    "before": {
+      "api_version": 1,
+      "runtime_version": "0.1.0",
+      "model_bundle_version": "vlm-models-v1",
+      "model_identifier": "vlm",
+      "prompt_version": "v1",
+      "model_loaded": false,
+      "model_init_count": 0,
+      "pid": 12420
+    },
+    "after": {
+      "api_version": 1,
+      "runtime_version": "0.1.0",
+      "model_bundle_version": "vlm-models-v1",
+      "model_identifier": "vlm",
+      "prompt_version": "v1",
+      "model_loaded": true,
+      "model_init_count": 1,
+      "pid": 12420
+    }
   },
-  "measurements": {
-    "download_bytes": null,
-    "install_duration_seconds": null,
-    "installed_size_bytes": null
-  },
-  "checks": {
-    "complete_fresh_bootstrap": "BLOCKED_NETWORK",
-    "retry": "PARTIAL_RANGE_RESUME_OBSERVED",
-    "atomicity": "PASS",
-    "managed_cuda": "PASS",
-    "dynamic_port": "PASS_ON_EXISTING_EXACT_MODEL_SMOKE",
-    "session_token": "PASS_ON_EXISTING_EXACT_MODEL_SMOKE",
-    "model_init_count": "PASS_ON_EXISTING_EXACT_MODEL_SMOKE",
-    "deep_review_safe": "PASS_ON_EXISTING_EXACT_MODEL_SMOKE",
-    "deep_review_risky": "NOT_EXECUTED_IN_FRESH_BOOTSTRAP",
-    "routing_triggered_vlm": "AUTOMATED_CONTRACT_ONLY",
-    "crash_restart": "AUTOMATED_CONTRACT_ONLY",
-    "local_inference_boundary": "PASS"
+  "integration": {
+    "dynamic_loopback_port": true,
+    "session_token_rejected_when_missing": true,
+    "safe": {
+      "status": "completed",
+      "risk_level": "low"
+    },
+    "risky": {
+      "status": "completed",
+      "risk_level": "high"
+    },
+    "routing_triggered_vlm": true,
+    "cascaded_attempts": 3,
+    "crash_fail_safe": true,
+    "restart_without_core_restart": true,
+    "local_inference_boundary": {
+      "hf_offline_after_install": true,
+      "cloud_inference_provider": false
+    }
   }
 }

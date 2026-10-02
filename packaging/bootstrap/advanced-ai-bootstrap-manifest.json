@@ -33,6 +33,18 @@
       "torch==2.11.0+cu128",
       "torchvision==0.26.0+cu128"
     ],
+    "pytorch_wheels": [
+      {
+        "requirement": "torch==2.11.0+cu128",
+        "filename": "torch-2.11.0+cu128-cp311-cp311-win_amd64.whl",
+        "sha256": "90ef0c2454e5296a9fb021ddd42252e4ce1abe2c0a4988a173ef90a6cded0bf5"
+      },
+      {
+        "requirement": "torchvision==0.26.0+cu128",
+        "filename": "torchvision-0.26.0+cu128-cp311-cp311-win_amd64.whl",
+        "sha256": "d26091b15cd6e3c74c148d9b68c9a901ad6fb9b0f66fa3ea3ab09f04132a07d3"
+      }
+    ],
     "runtime": [
       "accelerate==1.15.0",
       "annotated-doc==0.0.5",

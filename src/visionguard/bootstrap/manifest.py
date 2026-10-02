@@ -82,4 +82,17 @@ def load_manifest(path: Path) -> dict:
     )
     if not packages or not all(PACKAGE.fullmatch(item) for item in packages):
         raise ManifestError("all bootstrap packages must use exact versions")
+    wheel_specs = payload["packages"].get("pytorch_wheels")
+    if (
+        not isinstance(wheel_specs, list)
+        or [item.get("requirement") for item in wheel_specs] != payload["packages"]["pytorch"]
+        or any(
+            not isinstance(item.get("filename"), str)
+            or Path(item["filename"]).name != item["filename"]
+            or not item["filename"].endswith(".whl")
+            or not re.fullmatch(r"[0-9a-f]{64}", item.get("sha256", ""))
+            for item in wheel_specs
+        )
+    ):
+        raise ManifestError("PyTorch wheel cache metadata is invalid")
     return payload

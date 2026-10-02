@@ -10,6 +10,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -97,19 +98,21 @@ def assert_online_bootstrap_hygiene(*roots: Path) -> None:
 
 def build_bootstrap_wheel() -> Path:
     target = ROOT / "bootstrap-dist"
-    build_root = ROOT / ".build-tmp" / "bootstrap-wheel"
     target.mkdir(exist_ok=True)
     for existing in target.glob("*.whl"):
         existing.unlink()
     bootstrap_project = ROOT / "packaging" / "bootstrap" / "pyproject.toml"
-    if build_root.exists():
-        shutil.rmtree(build_root)
-    build_root.mkdir(parents=True)
-    build_temp = build_root / "tmp"
-    build_temp.mkdir()
-    build_env = os.environ.copy()
-    build_env.update({"TEMP": str(build_temp), "TMP": str(build_temp), "TMPDIR": str(build_temp)})
-    try:
+    # Keep pip's deeply nested ephemeral wheel paths out of the repository.
+    # A long checkout path can otherwise exceed Windows path limits and make
+    # setuptools report a misleading missing-file error for the final wheel.
+    with tempfile.TemporaryDirectory(prefix="vg-wheel-") as temporary:
+        build_root = Path(temporary)
+        build_temp = build_root / "tmp"
+        build_temp.mkdir()
+        build_env = os.environ.copy()
+        build_env.update(
+            {"TEMP": str(build_temp), "TMP": str(build_temp), "TMPDIR": str(build_temp)}
+        )
         shutil.copy2(bootstrap_project, build_root / "pyproject.toml")
         shutil.copytree(ROOT / "src" / "visionguard", build_root / "src" / "visionguard")
         run(
@@ -128,8 +131,6 @@ def build_bootstrap_wheel() -> Path:
             cwd=build_root,
             env=build_env,
         )
-    finally:
-        shutil.rmtree(build_root, ignore_errors=True)
     wheels = list(target.glob("visionguard_moderation-*.whl"))
     if len(wheels) != 1:
         raise RuntimeError("expected exactly one VisionGuard bootstrap wheel")

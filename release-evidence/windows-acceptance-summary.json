@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-01T14:24:21.425107+00:00",
+  "generated_at": "2026-10-02T07:22:19.801242+00:00",
   "acceptance_model": "split-windows-acceptance",
   "gates": {
     "clean_core": {
@@ -14,11 +14,11 @@
       "reason": "ALL_REQUIRED_FRESH_USER_GUI_CHECKS_PASSED"
     },
     "advanced_ai_gpu": {
-      "status": "BLOCKED_NETWORK",
+      "status": "PASS",
       "evidence": "advanced-ai-gpu-acceptance.json",
-      "reason": "PREVIOUS_FRESH_MANAGED_BOOTSTRAP_REACHED_CUDA_VALIDATION_BUT_FULL_OFFICIAL_MODEL_DOWNLOAD_DID_NOT_COMPLETE"
+      "reason": "ALL_ADVANCED_AI_GPU_CHECKS_PASSED"
     }
   },
-  "overall_clean_environment": "BLOCKED",
+  "overall_clean_environment": "PASS",
   "pass_rule": "clean_core=PASS AND fresh_user_gui=PASS AND advanced_ai_gpu=PASS"
 }
