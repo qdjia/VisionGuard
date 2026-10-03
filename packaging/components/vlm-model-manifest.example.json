@@ -4,7 +4,7 @@
   "model_id": "Qwen3-VL-2B-Instruct",
   "compatible_vlm_runtime": {"min_inclusive": "0.1.0", "max_exclusive": "0.2.0"},
   "compatible_api_major": 1,
-  "compatible_prompt_versions": ["v1"],
+  "compatible_prompt_versions": ["v1", "v2"],
   "quantization": "none-bf16-reference",
   "files": []
 }

@@ -57,6 +57,12 @@ class ModerationResult(LegacyModerationResult):
             raise ValueError("high risk requires evidence")
         if len({c.name for c in self.categories}) != len(self.categories):
             raise ValueError("duplicate category")
+        if self.risk_level == "low" and self.categories:
+            raise ValueError("low risk must not contain moderation categories")
+        if self.risk_level == "low" and self.requires_manual_review:
+            raise ValueError("low risk must not require manual review")
+        if self.risk_level in {"medium", "high"} and not self.requires_manual_review:
+            raise ValueError("medium/high risk requires manual review")
         self.confidence = self.confidence_score
         return self
 

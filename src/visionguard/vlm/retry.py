@@ -93,7 +93,10 @@ class StructuredProvider(VLMProvider):
                     ) from exc
                 parse_retries += 1
                 LOGGER.warning(
-                    "VLM format validation failed attempt=%d type=%s", attempt, type(exc).__name__
+                    "VLM format validation failed attempt=%d type=%s cause=%s",
+                    attempt,
+                    type(exc).__name__,
+                    str(exc.__cause__ or exc)[:400].replace("\n", " "),
                 )
                 prompt += (
                     "\nPrevious untrusted response:\n"

@@ -1,10 +1,14 @@
 policy:
-  version: v1
+  version: v2
   categories:
+    visual_sensitive_region:
+      description: 可见创伤、畸形、医疗创口或其他需要人工判断出版适宜性的敏感视觉区域；教育、历史或医疗语境仍至少需要复核。
     violence:
       description: 暴力、伤害、血腥内容，需要结合教育或新闻语境判断。
     weapon:
       description: 危险器具，展示不等于鼓励使用，应根据语境判断。
+    blood:
+      description: 可见血液、血液采集、输血或相关医疗场景；非血腥医疗语境通常为中风险并需要人工复核。
     prohibited_symbol:
       description: 特殊符号，需要人工结合出版规则复核。
     sensitive_text:
@@ -13,6 +17,8 @@ policy:
       description: 外部跳转元素，通常需要人工复核，不能仅据此判高风险。
     watermark:
       description: 水印或版权标识，需要版权复核，不能仅据此判高风险。
+    other_risky_visual_element:
+      description: 不属于其他明确类别、但可能影响出版安全或合规性的视觉元素，需要人工复核。
   risk_levels:
     low:
       description: 无明显风险。

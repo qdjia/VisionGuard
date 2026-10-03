@@ -30,7 +30,7 @@ class APISettings(StrictConfigModel):
     )
     max_image_dimension: int = Field(default=12000, ge=64)
     max_image_pixels: int = Field(default=40_000_000, ge=4096)
-    request_timeout_seconds: float = Field(default=90, gt=0)
+    request_timeout_seconds: float = Field(default=240, gt=0)
     shutdown_grace_seconds: float = Field(default=120, gt=0)
     max_concurrent_inference: int = Field(default=1, ge=1, le=8)
     save_artifacts: bool = True

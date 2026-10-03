@@ -5,7 +5,7 @@ model_bundle_version: vlm-models-v1
 cache_root: C:/VisionGuard/cache/vlm
 log_root: C:/VisionGuard/logs/vlm
 prompts_dir: C:/VisionGuard/prompts/vlm
-prompt_version: v1
+prompt_version: v2
 device: auto
 dtype: auto
 timeout_seconds: 120

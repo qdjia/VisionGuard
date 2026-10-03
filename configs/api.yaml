@@ -11,7 +11,9 @@ api:
   allowed_image_types: [image/jpeg, image/png, image/webp]
   max_image_dimension: 12000
   max_image_pixels: 40000000
-  request_timeout_seconds: 90
+  # Must exceed the configured remote VLM timeout so the outer API request
+  # does not abort a valid local-model inference first.
+  request_timeout_seconds: 240
   shutdown_grace_seconds: 120
   max_concurrent_inference: 1
   save_artifacts: true

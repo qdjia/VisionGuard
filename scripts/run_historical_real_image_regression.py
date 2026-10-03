@@ -97,6 +97,9 @@ def compact_result(record: HistoricalImageRecord, response: dict) -> dict[str, o
             "vlm_called": (response.get("routing") or {}).get("call_vlm"),
             "vlm_status": (response.get("modules") or {}).get("vlm"),
             "vlm_risk_level": details.get("vlm_risk_level"),
+            "vlm_categories": details.get("vlm_categories", []),
+            "vlm_reason": details.get("vlm_reason"),
+            "vlm_evidence": details.get("vlm_evidence", []),
             "fusion_scores": details.get("fusion_scores"),
             "ocr_block_count": details.get("ocr_block_count"),
             "ocr_text_length": details.get("ocr_text_length"),
@@ -106,6 +109,10 @@ def compact_result(record: HistoricalImageRecord, response: dict) -> dict[str, o
             "timing": response.get("timing"),
             "routing_policy_version": (response.get("metadata") or {}).get(
                 "routing_policy_version"
+            ),
+            "prompt_version": (response.get("metadata") or {}).get("prompt_version"),
+            "moderation_policy_version": (response.get("metadata") or {}).get(
+                "policy_version"
             ),
         },
         "classification": classification,
@@ -148,6 +155,20 @@ def main() -> int:
     )
     parser.add_argument("--advanced-ai-data-dir", type=Path, required=True)
     parser.add_argument(
+        "--vlm-models",
+        type=Path,
+        help="Optional compatible VLM model-bundle root; defaults to the managed registry path.",
+    )
+    parser.add_argument("--prompt-version", default="v2")
+    parser.add_argument(
+        "--case-id",
+        action="append",
+        dest="case_ids",
+        help=(
+            "Replay only selected verified case IDs after validating the complete locked manifest."
+        ),
+    )
+    parser.add_argument(
         "--core-runtime",
         type=Path,
         default=ROOT / "runtime-dist-core/visionguard-core-runtime/visionguard-core-runtime.exe",
@@ -173,10 +194,21 @@ def main() -> int:
         errors.append("all annotations must be verified before replay")
     if errors:
         raise SystemExit("\n".join(errors))
+    if args.case_ids:
+        selected = set(args.case_ids)
+        known = {record.case_id for record in records}
+        unknown = sorted(selected - known)
+        if unknown:
+            raise SystemExit(f"unknown case IDs: {', '.join(unknown)}")
+        records = [record for record in records if record.case_id in selected]
     registry_path = args.advanced_ai_data_dir / "components/components.json"
     registry = json.loads(registry_path.read_text(encoding="utf-8"))
     managed_python = args.advanced_ai_data_dir / registry["python_executable"]
-    managed_models = args.advanced_ai_data_dir / registry["vlm_models_directory"]
+    managed_models = (
+        args.vlm_models.resolve()
+        if args.vlm_models
+        else args.advanced_ai_data_dir / registry["vlm_models_directory"]
+    )
     model_revision = registry.get("model_revision") or registry.get("revision")
     if not model_revision:
         bootstrap = json.loads(
@@ -209,7 +241,11 @@ def main() -> int:
             args.core_runtime.resolve(), args.core_models.resolve(), work / "core"
         )
         vlm, vlm_endpoint, vlm_token, _ = start_vlm(
-            managed_python, managed_models, work / "vlm", str(model_revision)
+            managed_python,
+            managed_models,
+            work / "vlm",
+            str(model_revision),
+            args.prompt_version,
         )
         register_vlm(core_endpoint, core_token, vlm_endpoint, vlm_token)
         for index, record in enumerate(records, start=1):

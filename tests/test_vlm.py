@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 from pydantic import ValidationError
 
+from visionguard.api.config import load_api_config
 from visionguard.moderation.policy import load_policy
 from visionguard.moderation.schemas import ModerationResult
 from visionguard.vlm import build_context, create_provider, load_vlm_config
@@ -34,6 +35,26 @@ def payload():
     }
 
 
+def test_policy_covers_all_visual_review_categories(policy):
+    assert {
+        "visual_sensitive_region",
+        "weapon",
+        "violence",
+        "blood",
+        "prohibited_symbol",
+        "qr_code",
+        "watermark",
+        "other_risky_visual_element",
+    }.issubset(policy.categories)
+
+
+def test_api_request_budget_exceeds_remote_vlm_budget():
+    api_config = load_api_config("configs/api.yaml")
+    vlm_config = load_vlm_config("configs/vlm.yaml")
+
+    assert api_config.api.request_timeout_seconds > vlm_config.timeout_seconds
+
+
 @pytest.mark.parametrize("wrapper", ["{}", "```json\n{}\n```", "Explanation {} done"])
 def test_json_extraction(wrapper, policy):
     result = parse_result(wrapper.format(json.dumps(payload())), policy)
@@ -57,10 +78,80 @@ def test_schema_invalid(changes):
         ModerationResult.model_validate({**payload(), **changes})
 
 
+@pytest.mark.parametrize(
+    "changes",
+    [
+        {"categories": [{"name": "weapon", "score": 0.8}]},
+        {"requires_manual_review": True},
+        {"risk_level": "medium", "requires_manual_review": False},
+        {
+            "risk_level": "high",
+            "requires_manual_review": False,
+            "evidence": [{"type": "visual", "description": "weapon"}],
+        },
+    ],
+)
+def test_schema_rejects_internally_inconsistent_risk(changes):
+    with pytest.raises(ValidationError):
+        ModerationResult.model_validate({**payload(), **changes})
+
+
 def test_invalid_policy_category(policy):
     raw = {**payload(), "categories": [{"name": "unknown", "score": 0.8}]}
     with pytest.raises(VLMParseError):
         parse_result(json.dumps(raw), policy)
+
+
+def test_category_string_normalization_is_bounded_by_policy(policy):
+    raw = {
+        **payload(),
+        "risk_level": "medium",
+        "categories": ["weapon"],
+        "reason": "A kitchen knife is visible.",
+        "evidence": [{"type": "visual", "description": "Kitchen knife"}],
+        "requires_manual_review": True,
+    }
+    result = parse_result(json.dumps(raw), policy)
+    assert result.categories[0].name == "weapon"
+    assert result.categories[0].score == result.confidence_score
+    assert result.metadata["category_string_normalized"] == 1
+
+    raw["categories"] = ["unknown"]
+    with pytest.raises(VLMParseError):
+        parse_result(json.dumps(raw), policy)
+
+
+def test_conservative_risk_and_evidence_type_normalization(policy):
+    raw = {
+        **payload(),
+        "risk_level": "medium",
+        "categories": [{"name": "watermark", "score": 0.8}],
+        "reason": "An overlaid ownership mark is visible.",
+        "evidence": [{"type": "watermark", "description": "Overlaid studio mark"}],
+        "requires_manual_review": False,
+    }
+    result = parse_result(json.dumps(raw), policy)
+    assert result.risk_level == "medium"
+    assert result.requires_manual_review
+    assert result.evidence[0].type == "visual"
+    assert result.metadata["conservative_risk_normalized"] == 1
+    assert result.metadata["evidence_type_normalized"] == 1
+
+    raw["evidence"][0]["type"] = "unknown"
+    with pytest.raises(VLMParseError):
+        parse_result(json.dumps(raw), policy)
+
+
+def test_low_risk_with_category_is_normalized_upward(policy):
+    raw = {
+        **payload(),
+        "categories": [{"name": "weapon", "score": 0.8}],
+        "reason": "A knife is visible.",
+        "evidence": [{"type": "visual", "description": "Kitchen knife"}],
+    }
+    result = parse_result(json.dumps(raw), policy)
+    assert result.risk_level == "medium"
+    assert result.requires_manual_review
 
 
 def test_bbox_array_normalization(policy):
@@ -191,7 +282,7 @@ def test_deadline_wrapper_and_transient_error(config, policy):
     provider.generate = slow_generate
     with pytest.raises(VLMTimeoutError) as caught:
         provider.analyze(np.zeros((10, 10, 3), dtype=np.uint8), VLMContext(), policy)
-    assert caught.value.prompt_version == "v1"
+    assert caught.value.prompt_version == "v2"
     provider = create_provider(config)
     original = provider.generate
     attempts = []

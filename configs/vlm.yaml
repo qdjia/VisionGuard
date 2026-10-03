@@ -5,11 +5,11 @@ vlm:
   dtype: auto
   max_new_tokens: 512
   temperature: 0.0
-  timeout_seconds: 60
+  timeout_seconds: 210
   max_retries: 2
   image_max_side: 1008
   structured_output: true
-  prompt_version: v1
+  prompt_version: v2
   max_detections: 20
   max_ocr_blocks: 50
   max_ocr_chars: 4000

@@ -175,7 +175,7 @@ def main() -> None:
         manifest.update(
             {
                 "compatible_api_major": 1,
-                "compatible_prompt_versions": ["v1"],
+                "compatible_prompt_versions": ["v1", "v2"],
                 "quantization": "none-bf16-reference",
             }
         )

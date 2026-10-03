@@ -128,7 +128,7 @@ def run(argv: list[str] | None = None) -> int:
         "bundle_type": "vlm",
         "bundle_version": spec["bundle_version"],
         "compatible_api_major": 1,
-        "compatible_prompt_versions": ["v1"],
+        "compatible_prompt_versions": ["v1", "v2"],
         "model_id": spec["id"],
         "revision": spec["revision"],
         "files": [

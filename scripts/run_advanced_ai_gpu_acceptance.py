@@ -72,7 +72,11 @@ def shutdown(endpoint: str | None, token: str, process: subprocess.Popen | None)
 
 
 def start_vlm(
-    python: Path, models: Path, work: Path, revision: str
+    python: Path,
+    models: Path,
+    work: Path,
+    revision: str,
+    prompt_version: str = "v2",
 ) -> tuple[subprocess.Popen, str, str, Path]:
     work.mkdir(parents=True, exist_ok=True)
     status = work / "status.json"
@@ -89,7 +93,7 @@ def start_vlm(
                 "cache_root": str(work / "cache"),
                 "log_root": str(work / "logs"),
                 "prompts_dir": str(ROOT / "prompts/vlm"),
-                "prompt_version": "v1",
+                "prompt_version": prompt_version,
                 "device": "auto",
                 "dtype": "auto",
                 "timeout_seconds": 180,

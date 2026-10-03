@@ -512,7 +512,7 @@ class BootstrapManager:
                     "cache_root": str((self.root / "cache/vlm").resolve()),
                     "log_root": str((self.root / "logs/vlm").resolve()),
                     "prompts_dir": str(self.prompts_path),
-                    "prompt_version": "v1",
+                    "prompt_version": "v2",
                     "model_bundle_version": self.manifest["model"]["bundle_version"],
                     "model_revision": self.manifest["model"]["revision"],
                     "device": "auto",

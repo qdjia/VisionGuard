@@ -68,7 +68,7 @@ def main() -> None:
                 "cache_root": str(work / "cache/vlm"),
                 "log_root": str(work / "logs/vlm"),
                 "prompts_dir": str((ROOT / "prompts/vlm").resolve()),
-                "prompt_version": "v1",
+                "prompt_version": "v2",
                 "device": "auto",
                 "dtype": "auto",
                 "timeout_seconds": 180,

@@ -68,7 +68,7 @@ def main() -> None:
                 "cache_root": str(work / "cache"),
                 "log_root": str(work / "logs"),
                 "prompts_dir": str(ROOT / "prompts/vlm"),
-                "prompt_version": "v1",
+                "prompt_version": "v2",
                 "device": "auto",
                 "dtype": "auto",
                 "timeout_seconds": 180,
@@ -132,7 +132,7 @@ def main() -> None:
                     data={
                         "context_json": VLMContext().model_dump_json(),
                         "policy_json": policy.model_dump_json(),
-                        "prompt_version": "v1",
+                        "prompt_version": "v2",
                         "request_metadata_json": json.dumps({"smoke": True}),
                     },
                     timeout=360,
