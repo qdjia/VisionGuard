@@ -1,7 +1,7 @@
 import hashlib
 from pathlib import Path
 
-from scripts.run_historical_real_image_regression import classify
+from scripts.run_historical_real_image_regression import classify, summarize_results
 from visionguard.evaluation.historical import (
     HistoricalImageRecord,
     HistoricalImageSource,
@@ -139,3 +139,29 @@ def test_real_image_classification_blocks_unsafe_downgrade() -> None:
     )
     assert classification == "CONFIRMED_REGRESSION"
     assert "required manual review was lost" in reasons
+
+
+def test_result_summary_counts_unsafe_fast_paths_and_vlm_usage() -> None:
+    results = [
+        {
+            "classification": "CONFIRMED_REGRESSION",
+            "actual": {"route": "fast_path", "vlm_called": False},
+        },
+        {
+            "classification": "CONFIRMED_REGRESSION",
+            "actual": {"route": "vlm_path", "vlm_called": True},
+        },
+        {
+            "classification": "EQUIVALENT",
+            "actual": {"route": "vlm_path", "vlm_called": True},
+        },
+    ]
+
+    assert summarize_results(results) == {
+        "classification_counts": {"CONFIRMED_REGRESSION": 2, "EQUIVALENT": 1},
+        "confirmed_regression_count": 2,
+        "potential_regression_count": 0,
+        "unsafe_fast_path_count": 1,
+        "vlm_called_count": 2,
+        "vlm_call_rate": 0.666667,
+    }

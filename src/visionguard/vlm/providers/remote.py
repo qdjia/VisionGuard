@@ -14,6 +14,12 @@ from visionguard.vlm.base import VLMProvider
 from visionguard.vlm.exceptions import VLMInferenceError, VLMTimeoutError
 
 
+def _loopback_request(method: str, url: str, **kwargs) -> httpx.Response:
+    """Keep local inference traffic independent from user/system proxy settings."""
+    with httpx.Client(trust_env=False) as client:
+        return client.request(method, url, **kwargs)
+
+
 class RemoteVLMProvider(VLMProvider):
     """Thread-safe endpoint registry plus stable VLMProvider transport."""
 
@@ -34,7 +40,9 @@ class RemoteVLMProvider(VLMProvider):
             raise ValueError("VLM endpoint must use IPv4 loopback")
         headers = {"X-VisionGuard-Session": token}
         try:
-            response = httpx.get(f"{endpoint}/v1/meta", headers=headers, timeout=5)
+            response = _loopback_request(
+                "GET", f"{endpoint}/v1/meta", headers=headers, timeout=5
+            )
             response.raise_for_status()
             meta = response.json()
         except Exception as exc:
@@ -54,7 +62,8 @@ class RemoteVLMProvider(VLMProvider):
 
     def health(self) -> dict:
         endpoint, token = self._connection()
-        response = httpx.get(
+        response = _loopback_request(
+            "GET",
             f"{endpoint}/health/ready",
             headers={"X-VisionGuard-Session": token},
             timeout=3,
@@ -78,7 +87,8 @@ class RemoteVLMProvider(VLMProvider):
             "request_metadata_json": json.dumps({"transport": "loopback-multipart"}),
         }
         try:
-            response = httpx.post(
+            response = _loopback_request(
+                "POST",
                 f"{endpoint}/v1/analyze",
                 headers={"X-VisionGuard-Session": token},
                 data=data,

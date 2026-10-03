@@ -42,8 +42,8 @@ def wait_endpoint(status_path: Path, process: subprocess.Popen, timeout: float) 
 
 
 def review(endpoint: str, image: Path, mode: str) -> dict:
-    with image.open("rb") as stream:
-        response = httpx.post(
+    with image.open("rb") as stream, httpx.Client(trust_env=False) as client:
+        response = client.post(
             f"{endpoint}/v1/review?pipeline_mode={mode}&include_details=true",
             files={"file": (image.name, stream, "image/png")},
             timeout=360,
@@ -55,11 +55,12 @@ def review(endpoint: str, image: Path, mode: str) -> dict:
 def shutdown(endpoint: str | None, token: str, process: subprocess.Popen | None) -> None:
     if endpoint:
         try:
-            httpx.post(
-                f"{endpoint}/_runtime/shutdown",
-                headers={"X-VisionGuard-Control": token},
-                timeout=5,
-            )
+            with httpx.Client(trust_env=False) as client:
+                client.post(
+                    f"{endpoint}/_runtime/shutdown",
+                    headers={"X-VisionGuard-Control": token},
+                    timeout=5,
+                )
         except httpx.HTTPError:
             pass
     if process and process.poll() is None:
@@ -120,7 +121,8 @@ def start_vlm(
         env=environment,
     )
     endpoint = wait_endpoint(status, process, 90)
-    unauthorized = httpx.get(f"{endpoint}/v1/meta", timeout=5)
+    with httpx.Client(trust_env=False) as client:
+        unauthorized = client.get(f"{endpoint}/v1/meta", timeout=5)
     if unauthorized.status_code != 404:
         process.kill()
         raise RuntimeError("VLM endpoint accepted a request without its session token")
@@ -159,23 +161,25 @@ def start_core(runtime: Path, models: Path, work: Path) -> tuple[subprocess.Pope
     )
     endpoint = wait_endpoint(status, process, 240)
     deadline = time.monotonic() + 240
-    while time.monotonic() < deadline:
-        try:
-            if httpx.get(f"{endpoint}/health/ready", timeout=5).status_code == 200:
-                return process, endpoint, token, status
-        except httpx.HTTPError:
-            pass
-        time.sleep(0.5)
+    with httpx.Client(trust_env=False) as client:
+        while time.monotonic() < deadline:
+            try:
+                if client.get(f"{endpoint}/health/ready", timeout=5).status_code == 200:
+                    return process, endpoint, token, status
+            except httpx.HTTPError:
+                pass
+            time.sleep(0.5)
     raise TimeoutError("Core Runtime did not become ready")
 
 
 def register_vlm(core: str, core_token: str, vlm: str, vlm_token: str) -> None:
-    response = httpx.put(
-        f"{core}/_runtime/vlm",
-        headers={"X-VisionGuard-Control": core_token},
-        json={"endpoint": vlm, "session_token": vlm_token},
-        timeout=10,
-    )
+    with httpx.Client(trust_env=False) as client:
+        response = client.put(
+            f"{core}/_runtime/vlm",
+            headers={"X-VisionGuard-Control": core_token},
+            json={"endpoint": vlm, "session_token": vlm_token},
+            timeout=10,
+        )
     response.raise_for_status()
 
 

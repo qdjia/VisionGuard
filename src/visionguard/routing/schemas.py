@@ -26,6 +26,8 @@ class RoutingReasonCode(StrEnum):
     BASELINE_HIGH_RISK = "baseline_high_risk"
     BASELINE_UNCERTAIN = "baseline_uncertain"
     OCR_LOW_CONFIDENCE = "ocr_low_confidence"
+    LOW_TEXT_COVERAGE = "low_text_coverage"
+    SPARSE_TEXT_CONTEXT = "sparse_text_context"
     EVIDENCE_CONFLICT = "evidence_conflict"
     MODULE_FAILURE = "module_failure"
     INSUFFICIENT_EVIDENCE = "insufficient_evidence"
@@ -45,6 +47,7 @@ class RoutingSignals(SchemaModel):
     ocr_block_count: int = Field(default=0, ge=0)
     mean_ocr_confidence: float | None = Field(default=None, ge=0, le=1)
     ocr_text_length: int = Field(default=0, ge=0)
+    ocr_text_area_ratio: float = Field(default=0, ge=0, le=1)
     baseline_probability: float | None = Field(default=None, ge=0, le=1)
     # ``unknown`` keeps Phase 7 artifact JSON readable after adding Stage 1 status
     # signals. New Phase 8 runs always populate all three values explicitly.

@@ -74,6 +74,12 @@ def compact_result(record: HistoricalImageRecord, response: dict) -> dict[str, o
     classification, reasons = classify(record, response)
     result = response.get("result") or {}
     details = response.get("details") or {}
+    image_area = details.get("image_width", 0) * details.get("image_height", 0)
+    text_area = sum(
+        max(0, block["bbox"]["x2"] - block["bbox"]["x1"])
+        * max(0, block["bbox"]["y2"] - block["bbox"]["y1"])
+        for block in details.get("ocr_blocks", [])
+    )
     return {
         "case_id": record.case_id,
         "scenario": record.scenario,
@@ -87,15 +93,48 @@ def compact_result(record: HistoricalImageRecord, response: dict) -> dict[str, o
             "requires_manual_review": result.get("requires_manual_review"),
             "decision_source": result.get("decision_source"),
             "route": (response.get("routing") or {}).get("route"),
+            "routing_reason_codes": (response.get("routing") or {}).get("reason_codes", []),
             "vlm_called": (response.get("routing") or {}).get("call_vlm"),
             "vlm_status": (response.get("modules") or {}).get("vlm"),
             "vlm_risk_level": details.get("vlm_risk_level"),
             "fusion_scores": details.get("fusion_scores"),
+            "ocr_block_count": details.get("ocr_block_count"),
+            "ocr_text_length": details.get("ocr_text_length"),
+            "mean_ocr_confidence": details.get("mean_ocr_confidence"),
+            "ocr_text_area_ratio": round(text_area / image_area, 6) if image_area else 0.0,
             "modules": response.get("modules"),
             "timing": response.get("timing"),
+            "routing_policy_version": (response.get("metadata") or {}).get(
+                "routing_policy_version"
+            ),
         },
         "classification": classification,
         "classification_reasons": reasons,
+    }
+
+
+def summarize_results(results: list[dict[str, object]]) -> dict[str, object]:
+    """Return release-gate counters, including unsafe fast-path exposure."""
+    counts = Counter(str(item["classification"]) for item in results)
+    unsafe_fast_paths = 0
+    vlm_calls = 0
+    for item in results:
+        actual = item.get("actual")
+        if not isinstance(actual, dict):
+            continue
+        if (
+            item.get("classification") == "CONFIRMED_REGRESSION"
+            and actual.get("route") == "fast_path"
+        ):
+            unsafe_fast_paths += 1
+        vlm_calls += bool(actual.get("vlm_called"))
+    return {
+        "classification_counts": dict(sorted(counts.items())),
+        "confirmed_regression_count": counts.get("CONFIRMED_REGRESSION", 0),
+        "potential_regression_count": counts.get("POTENTIAL_REGRESSION", 0),
+        "unsafe_fast_path_count": unsafe_fast_paths,
+        "vlm_called_count": vlm_calls,
+        "vlm_call_rate": round(vlm_calls / len(results), 6) if results else 0.0,
     }
 
 
@@ -186,9 +225,10 @@ def main() -> int:
     finally:
         shutdown(vlm_endpoint, vlm_token, vlm)
         shutdown(core_endpoint, core_token, core)
-    counts = Counter(str(item["classification"]) for item in results)
-    confirmed = counts.get("CONFIRMED_REGRESSION", 0)
-    potential = counts.get("POTENTIAL_REGRESSION", 0)
+    summary = summarize_results(results)
+    counts = summary["classification_counts"]
+    confirmed = int(summary["confirmed_regression_count"])
+    potential = int(summary["potential_regression_count"])
     clean = args.environment_claim == "clean_acceptance_machine"
     gate_status = "PASS" if clean and not confirmed and not potential else "BLOCKED"
     blockers = []
@@ -207,9 +247,7 @@ def main() -> int:
         "packaged_core_runtime": True,
         "managed_local_vlm_runtime": True,
         "dataset": coverage(records),
-        "classification_counts": dict(sorted(counts.items())),
-        "confirmed_regression_count": confirmed,
-        "potential_regression_count": potential,
+        **summary,
         "elapsed_seconds": round(time.perf_counter() - started, 3),
         "results": results,
         "blocker": None if gate_status == "PASS" else "; ".join(blockers) + ".",
@@ -217,7 +255,7 @@ def main() -> int:
     report_path.write_text(
         json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )
-    print(json.dumps({"gate_status": gate_status, **dict(counts)}, ensure_ascii=False))
+    print(json.dumps({"gate_status": gate_status, **counts}, ensure_ascii=False))
     return 1 if confirmed else 0
 
 

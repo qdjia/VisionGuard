@@ -35,6 +35,9 @@ class DetectorRoutingConfig(StrictConfigModel):
 class OCRRoutingConfig(StrictConfigModel):
     min_mean_confidence: float = Field(ge=0, le=1)
     min_text_length: int = Field(ge=1)
+    min_fast_path_text_area_ratio: float = Field(gt=0, le=1)
+    min_fast_path_block_count: int = Field(ge=1)
+    min_fast_path_text_length: int = Field(ge=1)
 
 
 class FailureRoutingConfig(StrictConfigModel):

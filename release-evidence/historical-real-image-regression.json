@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-03T08:30:41.483278+00:00",
+  "generated_at": "2026-10-03T09:35:52.870083+00:00",
   "gate": "historical_real_image_regression",
   "gate_status": "BLOCKED",
   "environment_claim": "development_acceptance_machine",
@@ -31,13 +31,16 @@
     "all_required_scenarios_present": true
   },
   "classification_counts": {
-    "CONFIRMED_REGRESSION": 17,
-    "EQUIVALENT": 9,
+    "CONFIRMED_REGRESSION": 15,
+    "EQUIVALENT": 11,
     "EXPECTED_DIFFERENCE": 1
   },
-  "confirmed_regression_count": 17,
+  "confirmed_regression_count": 15,
   "potential_regression_count": 0,
-  "elapsed_seconds": 434.905,
+  "unsafe_fast_path_count": 0,
+  "vlm_called_count": 25,
+  "vlm_call_rate": 0.925926,
+  "elapsed_seconds": 634.281,
   "results": [
     {
       "case_id": "real-001",
@@ -58,6 +61,10 @@
         "requires_manual_review": false,
         "decision_source": "fusion",
         "route": "fast_path",
+        "routing_reason_codes": [
+          "no_detection",
+          "safe_consensus"
+        ],
         "vlm_called": false,
         "vlm_status": "skipped",
         "vlm_risk_level": null,
@@ -66,6 +73,10 @@
           "text": 0.00292808694761849,
           "vlm": null
         },
+        "ocr_block_count": 24,
+        "ocr_text_length": 241,
+        "mean_ocr_confidence": 0.8844979554414749,
+        "ocr_text_area_ratio": 0.304516,
         "modules": {
           "detector": "success",
           "ocr": "success",
@@ -73,18 +84,19 @@
           "vlm": "skipped"
         },
         "timing": {
-          "request_total_ms": 19431.464100000085,
-          "queue_wait_ms": 0.06990000110818073,
-          "inference_ms": 19412.389999999505,
-          "response_serialization_ms": 0.33569999868632294,
-          "pipeline_total_ms": 19411.317099998996,
-          "detector_ms": 30.720599999767728,
-          "ocr_ms": 19354.692900000373,
-          "baseline_ms": 17.065800000636955,
-          "routing_ms": 0.10959999963233713,
+          "request_total_ms": 18815.434600001026,
+          "queue_wait_ms": 0.061100001403247006,
+          "inference_ms": 18799.137100000735,
+          "response_serialization_ms": 0.313599999572034,
+          "pipeline_total_ms": 18798.282200001267,
+          "detector_ms": 29.992399999173358,
+          "ocr_ms": 18749.13099999867,
+          "baseline_ms": 9.894500000882545,
+          "routing_ms": 0.1019000010273885,
           "vlm_ms": 0.0,
-          "fusion_ms": 0.28730000121868216
-        }
+          "fusion_ms": 0.22020000142219942
+        },
+        "routing_policy_version": "routing_v3"
       },
       "classification": "EQUIVALENT",
       "classification_reasons": [
@@ -105,38 +117,47 @@
       "actual": {
         "status": "completed",
         "risk_level": "low",
-        "risk_score": 0.0014331426559254098,
+        "risk_score": 0.08314491419516644,
         "categories": [],
         "requires_manual_review": false,
         "decision_source": "fusion",
-        "route": "fast_path",
-        "vlm_called": false,
-        "vlm_status": "skipped",
-        "vlm_risk_level": null,
+        "route": "vlm_path",
+        "routing_reason_codes": [
+          "low_text_coverage",
+          "no_detection"
+        ],
+        "vlm_called": true,
+        "vlm_status": "success",
+        "vlm_risk_level": "low",
         "fusion_scores": {
           "visual": 0.0,
           "text": 0.003224570975832172,
-          "vlm": null
+          "vlm": 0.15
         },
+        "ocr_block_count": 11,
+        "ocr_text_length": 79,
+        "mean_ocr_confidence": 0.9740579724311829,
+        "ocr_text_area_ratio": 0.028353,
         "modules": {
           "detector": "success",
           "ocr": "success",
           "baseline": "success",
-          "vlm": "skipped"
+          "vlm": "success"
         },
         "timing": {
-          "request_total_ms": 11636.26849999855,
-          "queue_wait_ms": 0.08170000000973232,
-          "inference_ms": 11608.638199999405,
-          "response_serialization_ms": 0.24420000045211054,
-          "pipeline_total_ms": 11607.606900000974,
-          "detector_ms": 18.863700001020334,
-          "ocr_ms": 11576.944800001002,
-          "baseline_ms": 2.3806999997759704,
-          "routing_ms": 0.09099999988393392,
-          "vlm_ms": 0.0,
-          "fusion_ms": 0.2413000001979526
-        }
+          "request_total_ms": 36450.17670000016,
+          "queue_wait_ms": 0.06260000009206124,
+          "inference_ms": 36419.69909999898,
+          "response_serialization_ms": 0.1567999988765223,
+          "pipeline_total_ms": 36419.10319999988,
+          "detector_ms": 116.4533000010124,
+          "ocr_ms": 11373.632099999668,
+          "baseline_ms": 2.4003000016818987,
+          "routing_ms": 0.10730000030889641,
+          "vlm_ms": 24916.294300001027,
+          "fusion_ms": 0.2051999999821419
+        },
+        "routing_policy_version": "routing_v3"
       },
       "classification": "EQUIVALENT",
       "classification_reasons": [
@@ -162,6 +183,12 @@
         "requires_manual_review": true,
         "decision_source": "fusion",
         "route": "vlm_path",
+        "routing_reason_codes": [
+          "ocr_low_confidence",
+          "low_text_coverage",
+          "sparse_text_context",
+          "no_detection"
+        ],
         "vlm_called": true,
         "vlm_status": "success",
         "vlm_risk_level": "low",
@@ -170,6 +197,10 @@
           "text": 0.0018662489076323792,
           "vlm": 0.15
         },
+        "ocr_block_count": 7,
+        "ocr_text_length": 28,
+        "mean_ocr_confidence": 0.5637446471623012,
+        "ocr_text_area_ratio": 0.083218,
         "modules": {
           "detector": "success",
           "ocr": "success",
@@ -177,18 +208,19 @@
           "vlm": "success"
         },
         "timing": {
-          "request_total_ms": 31791.80289999931,
-          "queue_wait_ms": 0.06360000043059699,
-          "inference_ms": 31788.952599999902,
-          "response_serialization_ms": 0.1438999988749856,
-          "pipeline_total_ms": 31788.371799999368,
-          "detector_ms": 19.56419999987702,
-          "ocr_ms": 9120.087999999669,
-          "baseline_ms": 2.442700000756304,
-          "routing_ms": 0.09510000018053688,
-          "vlm_ms": 22640.976599999703,
-          "fusion_ms": 0.10819999988598283
-        }
+          "request_total_ms": 16949.77519999884,
+          "queue_wait_ms": 0.03619999915827066,
+          "inference_ms": 16947.783000001436,
+          "response_serialization_ms": 0.15019999955256935,
+          "pipeline_total_ms": 16947.24380000116,
+          "detector_ms": 21.783599999253056,
+          "ocr_ms": 8733.845400000064,
+          "baseline_ms": 1.836500001445529,
+          "routing_ms": 0.09829999908106402,
+          "vlm_ms": 8185.931799998798,
+          "fusion_ms": 0.10769999971671496
+        },
+        "routing_policy_version": "routing_v3"
       },
       "classification": "EXPECTED_DIFFERENCE",
       "classification_reasons": [
@@ -214,6 +246,10 @@
         "requires_manual_review": false,
         "decision_source": "fusion",
         "route": "fast_path",
+        "routing_reason_codes": [
+          "no_detection",
+          "safe_consensus"
+        ],
         "vlm_called": false,
         "vlm_status": "skipped",
         "vlm_risk_level": null,
@@ -222,6 +258,10 @@
           "text": 0.002601020795147978,
           "vlm": null
         },
+        "ocr_block_count": 33,
+        "ocr_text_length": 376,
+        "mean_ocr_confidence": 0.7856998840967814,
+        "ocr_text_area_ratio": 0.182466,
         "modules": {
           "detector": "success",
           "ocr": "success",
@@ -229,18 +269,19 @@
           "vlm": "skipped"
         },
         "timing": {
-          "request_total_ms": 51729.954200000066,
-          "queue_wait_ms": 0.06719999873894267,
-          "inference_ms": 51716.286000000764,
-          "response_serialization_ms": 0.414699999964796,
-          "pipeline_total_ms": 51715.27009999954,
-          "detector_ms": 27.684500000759726,
-          "ocr_ms": 51677.84320000101,
-          "baseline_ms": 2.8542000000015832,
-          "routing_ms": 0.09509999836154748,
+          "request_total_ms": 52514.79660000041,
+          "queue_wait_ms": 0.04290000106266234,
+          "inference_ms": 52502.63509999968,
+          "response_serialization_ms": 0.3504999986034818,
+          "pipeline_total_ms": 52501.64009999935,
+          "detector_ms": 25.805000001128064,
+          "ocr_ms": 52466.80000000015,
+          "baseline_ms": 2.6830999995581806,
+          "routing_ms": 0.1114999995479593,
           "vlm_ms": 0.0,
-          "fusion_ms": 0.23780000083206687
-        }
+          "fusion_ms": 0.2404000006208662
+        },
+        "routing_policy_version": "routing_v3"
       },
       "classification": "EQUIVALENT",
       "classification_reasons": [
@@ -261,38 +302,47 @@
       "actual": {
         "status": "completed",
         "risk_level": "low",
-        "risk_score": 0.0009130893269606592,
+        "risk_score": 0.0829108901971323,
         "categories": [],
         "requires_manual_review": false,
         "decision_source": "fusion",
-        "route": "fast_path",
-        "vlm_called": false,
-        "vlm_status": "skipped",
-        "vlm_risk_level": null,
+        "route": "vlm_path",
+        "routing_reason_codes": [
+          "low_text_coverage",
+          "no_detection"
+        ],
+        "vlm_called": true,
+        "vlm_status": "success",
+        "vlm_risk_level": "low",
         "fusion_scores": {
           "visual": 0.0,
           "text": 0.002054450985661483,
-          "vlm": null
+          "vlm": 0.15
         },
+        "ocr_block_count": 5,
+        "ocr_text_length": 33,
+        "mean_ocr_confidence": 0.6205955386161804,
+        "ocr_text_area_ratio": 0.007901,
         "modules": {
           "detector": "success",
           "ocr": "success",
           "baseline": "success",
-          "vlm": "skipped"
+          "vlm": "success"
         },
         "timing": {
-          "request_total_ms": 10821.216399999685,
-          "queue_wait_ms": 0.044099999286117963,
-          "inference_ms": 10762.007100000119,
-          "response_serialization_ms": 0.2120000008289935,
-          "pipeline_total_ms": 10760.991600000125,
-          "detector_ms": 23.70820000032836,
-          "ocr_ms": 10719.45919999962,
-          "baseline_ms": 2.224500000011176,
-          "routing_ms": 0.0897999998414889,
-          "vlm_ms": 0.0,
-          "fusion_ms": 0.25830000049609225
-        }
+          "request_total_ms": 16216.713899999377,
+          "queue_wait_ms": 0.03529999958118424,
+          "inference_ms": 16150.186700000631,
+          "response_serialization_ms": 0.14179999925545417,
+          "pipeline_total_ms": 16149.620399999549,
+          "detector_ms": 28.09999999954016,
+          "ocr_ms": 10578.562299999248,
+          "baseline_ms": 1.7955999992409488,
+          "routing_ms": 0.09090000094147399,
+          "vlm_ms": 5526.665700001104,
+          "fusion_ms": 0.1038999998854706
+        },
+        "routing_policy_version": "routing_v3"
       },
       "classification": "EQUIVALENT",
       "classification_reasons": [
@@ -325,6 +375,11 @@
         "requires_manual_review": true,
         "decision_source": "fusion",
         "route": "vlm_path",
+        "routing_reason_codes": [
+          "no_text",
+          "insufficient_evidence",
+          "no_detection"
+        ],
         "vlm_called": true,
         "vlm_status": "success",
         "vlm_risk_level": "medium",
@@ -333,6 +388,10 @@
           "text": null,
           "vlm": 0.6
         },
+        "ocr_block_count": 0,
+        "ocr_text_length": 0,
+        "mean_ocr_confidence": null,
+        "ocr_text_area_ratio": 0.0,
         "modules": {
           "detector": "success",
           "ocr": "success",
@@ -340,18 +399,19 @@
           "vlm": "success"
         },
         "timing": {
-          "request_total_ms": 20207.465100000263,
-          "queue_wait_ms": 0.08499999967170879,
-          "inference_ms": 20159.717600001386,
-          "response_serialization_ms": 0.11660000018309802,
-          "pipeline_total_ms": 20159.126299999116,
-          "detector_ms": 22.57110000027751,
-          "ocr_ms": 9640.538800000286,
+          "request_total_ms": 18578.418600000077,
+          "queue_wait_ms": 0.14009999904374126,
+          "inference_ms": 18547.297299999627,
+          "response_serialization_ms": 0.12479999895731453,
+          "pipeline_total_ms": 18546.570900000006,
+          "detector_ms": 23.329999999987194,
+          "ocr_ms": 9147.637899999609,
           "baseline_ms": 0.0,
-          "routing_ms": 0.0942999995459104,
-          "vlm_ms": 10482.3112999984,
-          "fusion_ms": 0.11509999967529438
-        }
+          "routing_ms": 0.09920000047713984,
+          "vlm_ms": 9361.795099999654,
+          "fusion_ms": 0.1264000002265675
+        },
+        "routing_policy_version": "routing_v3"
       },
       "classification": "EQUIVALENT",
       "classification_reasons": [
@@ -379,6 +439,11 @@
         "requires_manual_review": false,
         "decision_source": "fusion",
         "route": "vlm_path",
+        "routing_reason_codes": [
+          "no_text",
+          "insufficient_evidence",
+          "no_detection"
+        ],
         "vlm_called": true,
         "vlm_status": "success",
         "vlm_risk_level": "low",
@@ -387,6 +452,10 @@
           "text": null,
           "vlm": 0.15
         },
+        "ocr_block_count": 0,
+        "ocr_text_length": 0,
+        "mean_ocr_confidence": null,
+        "ocr_text_area_ratio": 0.0,
         "modules": {
           "detector": "success",
           "ocr": "success",
@@ -394,18 +463,19 @@
           "vlm": "success"
         },
         "timing": {
-          "request_total_ms": 15499.227000000246,
-          "queue_wait_ms": 0.07720000030531082,
-          "inference_ms": 15472.037599998657,
-          "response_serialization_ms": 0.10750000001280569,
-          "pipeline_total_ms": 15471.273099999962,
-          "detector_ms": 22.098200000982615,
-          "ocr_ms": 9258.266599999843,
+          "request_total_ms": 14141.100100001495,
+          "queue_wait_ms": 0.056799999583745375,
+          "inference_ms": 14114.942600001086,
+          "response_serialization_ms": 0.10029999975813553,
+          "pipeline_total_ms": 14114.322299999913,
+          "detector_ms": 23.746099999698345,
+          "ocr_ms": 8679.460600000311,
           "baseline_ms": 0.0,
-          "routing_ms": 0.0932000002649147,
-          "vlm_ms": 6178.544000000329,
-          "fusion_ms": 0.09369999861519318
-        }
+          "routing_ms": 0.09750000026542693,
+          "vlm_ms": 5399.676499999259,
+          "fusion_ms": 0.0866999998834217
+        },
+        "routing_policy_version": "routing_v3"
       },
       "classification": "CONFIRMED_REGRESSION",
       "classification_reasons": [
@@ -427,14 +497,18 @@
         "requires_manual_review": true
       },
       "actual": {
-        "status": "completed",
-        "risk_level": "low",
-        "risk_score": 0.0013018844286392332,
+        "status": "partial",
+        "risk_level": "medium",
+        "risk_score": 0.30000099999999996,
         "categories": [],
-        "requires_manual_review": false,
+        "requires_manual_review": true,
         "decision_source": "fusion",
-        "route": "fast_path",
-        "vlm_called": false,
+        "route": "vlm_path",
+        "routing_reason_codes": [
+          "low_text_coverage",
+          "no_detection"
+        ],
+        "vlm_called": true,
         "vlm_status": "skipped",
         "vlm_risk_level": null,
         "fusion_scores": {
@@ -442,6 +516,10 @@
           "text": 0.002929239964438274,
           "vlm": null
         },
+        "ocr_block_count": 16,
+        "ocr_text_length": 835,
+        "mean_ocr_confidence": 0.8848462514579296,
+        "ocr_text_area_ratio": 0.101341,
         "modules": {
           "detector": "success",
           "ocr": "success",
@@ -449,23 +527,23 @@
           "vlm": "skipped"
         },
         "timing": {
-          "request_total_ms": 12608.245900000838,
-          "queue_wait_ms": 0.04270000135875307,
-          "inference_ms": 12604.016699999192,
-          "response_serialization_ms": 0.28810000003431924,
-          "pipeline_total_ms": 12602.920400000585,
-          "detector_ms": 22.74529999885999,
-          "ocr_ms": 12571.614099999351,
-          "baseline_ms": 3.4283000004506903,
-          "routing_ms": 0.1007999999274034,
+          "request_total_ms": 72638.24410000052,
+          "queue_wait_ms": 0.036299999919719994,
+          "inference_ms": 72634.6125,
+          "response_serialization_ms": 0.189200000022538,
+          "pipeline_total_ms": 72633.7108000007,
+          "detector_ms": 22.423299998990842,
+          "ocr_ms": 12575.26820000021,
+          "baseline_ms": 2.886600001147599,
+          "routing_ms": 0.10759999895526562,
           "vlm_ms": 0.0,
-          "fusion_ms": 0.22839999837742653
-        }
+          "fusion_ms": 0.12509999942267314
+        },
+        "routing_policy_version": "routing_v3"
       },
       "classification": "CONFIRMED_REGRESSION",
       "classification_reasons": [
-        "required manual review was lost",
-        "non-low ground truth was downgraded to low"
+        "review status is 'partial'"
       ]
     },
     {
@@ -482,14 +560,18 @@
         "requires_manual_review": true
       },
       "actual": {
-        "status": "completed",
-        "risk_level": "low",
-        "risk_score": 0.0014710329326780554,
+        "status": "partial",
+        "risk_level": "medium",
+        "risk_score": 0.30000099999999996,
         "categories": [],
-        "requires_manual_review": false,
+        "requires_manual_review": true,
         "decision_source": "fusion",
-        "route": "fast_path",
-        "vlm_called": false,
+        "route": "vlm_path",
+        "routing_reason_codes": [
+          "low_text_coverage",
+          "no_detection"
+        ],
+        "vlm_called": true,
         "vlm_status": "skipped",
         "vlm_risk_level": null,
         "fusion_scores": {
@@ -497,6 +579,10 @@
           "text": 0.0033098240985256246,
           "vlm": null
         },
+        "ocr_block_count": 4,
+        "ocr_text_length": 75,
+        "mean_ocr_confidence": 0.9998106956481934,
+        "ocr_text_area_ratio": 0.046046,
         "modules": {
           "detector": "success",
           "ocr": "success",
@@ -504,23 +590,23 @@
           "vlm": "skipped"
         },
         "timing": {
-          "request_total_ms": 6558.885599999485,
-          "queue_wait_ms": 0.08379999962926377,
-          "inference_ms": 6539.592699999048,
-          "response_serialization_ms": 0.22280000121099874,
-          "pipeline_total_ms": 6538.424800000939,
-          "detector_ms": 21.27179999843065,
-          "ocr_ms": 6507.520299999669,
-          "baseline_ms": 2.4022999987209914,
-          "routing_ms": 0.0855999987834366,
+          "request_total_ms": 66555.46219999997,
+          "queue_wait_ms": 0.06159999975352548,
+          "inference_ms": 66540.07669999919,
+          "response_serialization_ms": 0.13419999959296547,
+          "pipeline_total_ms": 66539.40110000076,
+          "detector_ms": 25.081800000407384,
+          "ocr_ms": 6449.312299999292,
+          "baseline_ms": 1.8379000011918833,
+          "routing_ms": 0.09259999933419749,
           "vlm_ms": 0.0,
-          "fusion_ms": 0.2229999990959186
-        }
+          "fusion_ms": 0.10449999899719842
+        },
+        "routing_policy_version": "routing_v3"
       },
       "classification": "CONFIRMED_REGRESSION",
       "classification_reasons": [
-        "required manual review was lost",
-        "non-low ground truth was downgraded to low"
+        "review status is 'partial'"
       ]
     },
     {
@@ -539,38 +625,48 @@
       "actual": {
         "status": "completed",
         "risk_level": "low",
-        "risk_score": 0.0014407533520981585,
+        "risk_score": 0.08314833900844418,
         "categories": [],
         "requires_manual_review": false,
         "decision_source": "fusion",
-        "route": "fast_path",
-        "vlm_called": false,
-        "vlm_status": "skipped",
-        "vlm_risk_level": null,
+        "route": "vlm_path",
+        "routing_reason_codes": [
+          "low_text_coverage",
+          "sparse_text_context",
+          "no_detection"
+        ],
+        "vlm_called": true,
+        "vlm_status": "success",
+        "vlm_risk_level": "low",
         "fusion_scores": {
           "visual": 0.0,
           "text": 0.0032416950422208563,
-          "vlm": null
+          "vlm": 0.15
         },
+        "ocr_block_count": 2,
+        "ocr_text_length": 33,
+        "mean_ocr_confidence": 0.9792307019233704,
+        "ocr_text_area_ratio": 0.018293,
         "modules": {
           "detector": "success",
           "ocr": "success",
           "baseline": "success",
-          "vlm": "skipped"
+          "vlm": "success"
         },
         "timing": {
-          "request_total_ms": 3368.9454999985173,
-          "queue_wait_ms": 0.06810000013501849,
-          "inference_ms": 3359.485400000267,
-          "response_serialization_ms": 0.1770999988366384,
-          "pipeline_total_ms": 3358.360399999583,
-          "detector_ms": 22.790400000303634,
-          "ocr_ms": 3327.5001000001794,
-          "baseline_ms": 2.4307999992743134,
-          "routing_ms": 0.08479999996779952,
-          "vlm_ms": 0.0,
-          "fusion_ms": 0.22220000028028153
-        }
+          "request_total_ms": 18399.943999998868,
+          "queue_wait_ms": 0.03499999911582563,
+          "inference_ms": 18394.315400000778,
+          "response_serialization_ms": 0.1320000010309741,
+          "pipeline_total_ms": 18393.77240000067,
+          "detector_ms": 21.812599999975646,
+          "ocr_ms": 3345.560600000681,
+          "baseline_ms": 1.8648000004759524,
+          "routing_ms": 0.08859999979904387,
+          "vlm_ms": 15020.134500000495,
+          "fusion_ms": 0.09719999980006833
+        },
+        "routing_policy_version": "routing_v3"
       },
       "classification": "CONFIRMED_REGRESSION",
       "classification_reasons": [
@@ -599,6 +695,11 @@
         "requires_manual_review": false,
         "decision_source": "fusion",
         "route": "vlm_path",
+        "routing_reason_codes": [
+          "no_text",
+          "insufficient_evidence",
+          "no_detection"
+        ],
         "vlm_called": true,
         "vlm_status": "success",
         "vlm_risk_level": "low",
@@ -607,6 +708,10 @@
           "text": null,
           "vlm": 0.15
         },
+        "ocr_block_count": 0,
+        "ocr_text_length": 0,
+        "mean_ocr_confidence": null,
+        "ocr_text_area_ratio": 0.0,
         "modules": {
           "detector": "success",
           "ocr": "success",
@@ -614,18 +719,19 @@
           "vlm": "success"
         },
         "timing": {
-          "request_total_ms": 14022.706199999448,
-          "queue_wait_ms": 0.09760000102687627,
-          "inference_ms": 13963.91549999862,
-          "response_serialization_ms": 0.09649999992689118,
-          "pipeline_total_ms": 13963.269500000024,
-          "detector_ms": 20.311000000219792,
-          "ocr_ms": 8094.605899999806,
+          "request_total_ms": 13527.806899999632,
+          "queue_wait_ms": 0.06450000000768341,
+          "inference_ms": 13494.64479999915,
+          "response_serialization_ms": 0.0962999984039925,
+          "pipeline_total_ms": 13493.24499999966,
+          "detector_ms": 21.479400000316673,
+          "ocr_ms": 7906.39530000044,
           "baseline_ms": 0.0,
-          "routing_ms": 0.09370000043418258,
-          "vlm_ms": 5832.486999999674,
-          "fusion_ms": 0.09399999908055179
-        }
+          "routing_ms": 0.10110000039276201,
+          "vlm_ms": 5551.645599998665,
+          "fusion_ms": 0.1142999990406679
+        },
+        "routing_policy_version": "routing_v3"
       },
       "classification": "CONFIRMED_REGRESSION",
       "classification_reasons": [
@@ -649,38 +755,47 @@
       "actual": {
         "status": "completed",
         "risk_level": "low",
-        "risk_score": 0.0012317534636583042,
+        "risk_score": 0.08305428905864624,
         "categories": [],
         "requires_manual_review": false,
         "decision_source": "fusion",
-        "route": "fast_path",
-        "vlm_called": false,
-        "vlm_status": "skipped",
-        "vlm_risk_level": null,
+        "route": "vlm_path",
+        "routing_reason_codes": [
+          "low_text_coverage",
+          "no_detection"
+        ],
+        "vlm_called": true,
+        "vlm_status": "success",
+        "vlm_risk_level": "low",
         "fusion_scores": {
           "visual": 0.0,
           "text": 0.002771445293231184,
-          "vlm": null
+          "vlm": 0.15
         },
+        "ocr_block_count": 8,
+        "ocr_text_length": 80,
+        "mean_ocr_confidence": 0.8371806368231773,
+        "ocr_text_area_ratio": 0.046253,
         "modules": {
           "detector": "success",
           "ocr": "success",
           "baseline": "success",
-          "vlm": "skipped"
+          "vlm": "success"
         },
         "timing": {
-          "request_total_ms": 11053.66690000119,
-          "queue_wait_ms": 0.0822000001790002,
-          "inference_ms": 11035.358600000109,
-          "response_serialization_ms": 0.2196000004914822,
-          "pipeline_total_ms": 11034.234599999763,
-          "detector_ms": 19.405799999731244,
-          "ocr_ms": 11002.837099998942,
-          "baseline_ms": 2.418000000034226,
-          "routing_ms": 0.08770000022195745,
-          "vlm_ms": 0.0,
-          "fusion_ms": 0.2306000005773967
-        }
+          "request_total_ms": 23071.91469999998,
+          "queue_wait_ms": 0.06440000106522348,
+          "inference_ms": 23055.30110000109,
+          "response_serialization_ms": 0.1778999994712649,
+          "pipeline_total_ms": 23054.664699999194,
+          "detector_ms": 20.665500000177417,
+          "ocr_ms": 11266.58260000113,
+          "baseline_ms": 2.340899998671375,
+          "routing_ms": 0.09820000013860408,
+          "vlm_ms": 11756.001300000207,
+          "fusion_ms": 0.13189999845053535
+        },
+        "routing_policy_version": "routing_v3"
       },
       "classification": "CONFIRMED_REGRESSION",
       "classification_reasons": [
@@ -709,6 +824,11 @@
         "requires_manual_review": false,
         "decision_source": "fusion",
         "route": "vlm_path",
+        "routing_reason_codes": [
+          "no_text",
+          "insufficient_evidence",
+          "no_detection"
+        ],
         "vlm_called": true,
         "vlm_status": "success",
         "vlm_risk_level": "low",
@@ -717,6 +837,10 @@
           "text": null,
           "vlm": 0.15
         },
+        "ocr_block_count": 0,
+        "ocr_text_length": 0,
+        "mean_ocr_confidence": null,
+        "ocr_text_area_ratio": 0.0,
         "modules": {
           "detector": "success",
           "ocr": "success",
@@ -724,18 +848,19 @@
           "vlm": "success"
         },
         "timing": {
-          "request_total_ms": 13052.67029999959,
-          "queue_wait_ms": 0.08779999916441739,
-          "inference_ms": 13022.246399999858,
-          "response_serialization_ms": 0.09479999971517827,
-          "pipeline_total_ms": 13021.636899999066,
-          "detector_ms": 18.78759999999602,
-          "ocr_ms": 7077.471000000514,
+          "request_total_ms": 12706.421699998828,
+          "queue_wait_ms": 0.04189999890513718,
+          "inference_ms": 12687.341699998797,
+          "response_serialization_ms": 0.09979999958886765,
+          "pipeline_total_ms": 12686.793700000635,
+          "detector_ms": 19.720300000699353,
+          "ocr_ms": 7152.084600000308,
           "baseline_ms": 0.0,
-          "routing_ms": 0.08820000039122533,
-          "vlm_ms": 5916.870900000504,
-          "fusion_ms": 0.09099999988393392
-        }
+          "routing_ms": 0.09339999996882398,
+          "vlm_ms": 5507.694500000071,
+          "fusion_ms": 0.08260000140580814
+        },
+        "routing_policy_version": "routing_v3"
       },
       "classification": "CONFIRMED_REGRESSION",
       "classification_reasons": [
@@ -769,6 +894,11 @@
         "requires_manual_review": true,
         "decision_source": "fusion",
         "route": "vlm_path",
+        "routing_reason_codes": [
+          "sparse_text_context",
+          "insufficient_evidence",
+          "no_detection"
+        ],
         "vlm_called": true,
         "vlm_status": "success",
         "vlm_risk_level": "medium",
@@ -777,6 +907,10 @@
           "text": 0.00214147496065734,
           "vlm": 0.6
         },
+        "ocr_block_count": 1,
+        "ocr_text_length": 1,
+        "mean_ocr_confidence": 0.6468831896781921,
+        "ocr_text_area_ratio": 0.993333,
         "modules": {
           "detector": "success",
           "ocr": "success",
@@ -784,18 +918,19 @@
           "vlm": "success"
         },
         "timing": {
-          "request_total_ms": 9587.74689999882,
-          "queue_wait_ms": 0.049700000090524554,
-          "inference_ms": 9583.905399998912,
-          "response_serialization_ms": 0.1269999993382953,
-          "pipeline_total_ms": 9583.350700000665,
-          "detector_ms": 19.883800001480267,
-          "ocr_ms": 2315.4672000000573,
-          "baseline_ms": 1.6644999996060506,
-          "routing_ms": 0.08650000017951243,
-          "vlm_ms": 7242.023500000869,
-          "fusion_ms": 0.10789999942062423
-        }
+          "request_total_ms": 9209.23109999967,
+          "queue_wait_ms": 0.0304000004689442,
+          "inference_ms": 9205.60900000055,
+          "response_serialization_ms": 0.3865999988192925,
+          "pipeline_total_ms": 9203.935000001366,
+          "detector_ms": 22.500299999592244,
+          "ocr_ms": 2291.1371999998664,
+          "baseline_ms": 2.169399998820154,
+          "routing_ms": 0.09399999908055179,
+          "vlm_ms": 6881.977700000789,
+          "fusion_ms": 0.2925000007962808
+        },
+        "routing_policy_version": "routing_v3"
       },
       "classification": "EQUIVALENT",
       "classification_reasons": [
@@ -818,38 +953,52 @@
       "actual": {
         "status": "completed",
         "risk_level": "low",
-        "risk_score": 0.001401108346135975,
-        "categories": [],
+        "risk_score": 0.08313049875576119,
+        "categories": [
+          {
+            "name": "violence",
+            "score": 0.15
+          }
+        ],
         "requires_manual_review": false,
         "decision_source": "fusion",
-        "route": "fast_path",
-        "vlm_called": false,
-        "vlm_status": "skipped",
-        "vlm_risk_level": null,
+        "route": "vlm_path",
+        "routing_reason_codes": [
+          "low_text_coverage",
+          "no_detection"
+        ],
+        "vlm_called": true,
+        "vlm_status": "success",
+        "vlm_risk_level": "low",
         "fusion_scores": {
           "visual": 0.0,
           "text": 0.0031524937788059435,
-          "vlm": null
+          "vlm": 0.15
         },
+        "ocr_block_count": 5,
+        "ocr_text_length": 99,
+        "mean_ocr_confidence": 0.9522853493690491,
+        "ocr_text_area_ratio": 0.064996,
         "modules": {
           "detector": "success",
           "ocr": "success",
           "baseline": "success",
-          "vlm": "skipped"
+          "vlm": "success"
         },
         "timing": {
-          "request_total_ms": 7607.651599999372,
-          "queue_wait_ms": 0.0548999996681232,
-          "inference_ms": 7594.107700000677,
-          "response_serialization_ms": 0.22480000006908085,
-          "pipeline_total_ms": 7592.923000000155,
-          "detector_ms": 20.332699999926263,
-          "ocr_ms": 7562.8460999996605,
-          "baseline_ms": 2.4504999983037123,
-          "routing_ms": 0.08760000127949752,
-          "vlm_ms": 0.0,
-          "fusion_ms": 0.22960000023886096
-        }
+          "request_total_ms": 26112.374199999977,
+          "queue_wait_ms": 0.06029999894963112,
+          "inference_ms": 26086.84069999981,
+          "response_serialization_ms": 0.14869999904476572,
+          "pipeline_total_ms": 26086.20399999927,
+          "detector_ms": 23.86610000030487,
+          "ocr_ms": 7854.092900000978,
+          "baseline_ms": 1.9023000004381174,
+          "routing_ms": 0.08919999891077168,
+          "vlm_ms": 18200.07479999913,
+          "fusion_ms": 0.10370000018156134
+        },
+        "routing_policy_version": "routing_v3"
       },
       "classification": "CONFIRMED_REGRESSION",
       "classification_reasons": [
@@ -878,6 +1027,11 @@
         "requires_manual_review": false,
         "decision_source": "fusion",
         "route": "vlm_path",
+        "routing_reason_codes": [
+          "no_text",
+          "insufficient_evidence",
+          "no_detection"
+        ],
         "vlm_called": true,
         "vlm_status": "success",
         "vlm_risk_level": "low",
@@ -886,6 +1040,10 @@
           "text": null,
           "vlm": 0.15
         },
+        "ocr_block_count": 0,
+        "ocr_text_length": 0,
+        "mean_ocr_confidence": null,
+        "ocr_text_area_ratio": 0.0,
         "modules": {
           "detector": "success",
           "ocr": "success",
@@ -893,18 +1051,19 @@
           "vlm": "success"
         },
         "timing": {
-          "request_total_ms": 12452.599899999768,
-          "queue_wait_ms": 0.10640000073181,
-          "inference_ms": 12405.70740000112,
-          "response_serialization_ms": 0.10029999975813553,
-          "pipeline_total_ms": 12404.720300000918,
-          "detector_ms": 16.992699998809258,
-          "ocr_ms": 7368.652900000598,
+          "request_total_ms": 12449.824699999226,
+          "queue_wait_ms": 0.06860000030428637,
+          "inference_ms": 12433.273100001315,
+          "response_serialization_ms": 0.0976999999693362,
+          "pipeline_total_ms": 12432.616500000222,
+          "detector_ms": 24.874199998521362,
+          "ocr_ms": 7339.607300000353,
           "baseline_ms": 0.0,
-          "routing_ms": 0.08340000022144523,
-          "vlm_ms": 5009.787500001039,
-          "fusion_ms": 0.08560000060242601
-        }
+          "routing_ms": 0.08870000056049321,
+          "vlm_ms": 5060.652500000288,
+          "fusion_ms": 0.09759999920788687
+        },
+        "routing_policy_version": "routing_v3"
       },
       "classification": "CONFIRMED_REGRESSION",
       "classification_reasons": [
@@ -933,6 +1092,13 @@
         "requires_manual_review": true,
         "decision_source": "fusion",
         "route": "vlm_path",
+        "routing_reason_codes": [
+          "ocr_low_confidence",
+          "low_text_coverage",
+          "sparse_text_context",
+          "insufficient_evidence",
+          "no_detection"
+        ],
         "vlm_called": true,
         "vlm_status": "success",
         "vlm_risk_level": "low",
@@ -941,6 +1107,10 @@
           "text": 0.0019096171459715495,
           "vlm": 0.15
         },
+        "ocr_block_count": 1,
+        "ocr_text_length": 1,
+        "mean_ocr_confidence": 0.5768450498580933,
+        "ocr_text_area_ratio": 0.000469,
         "modules": {
           "detector": "success",
           "ocr": "success",
@@ -948,18 +1118,19 @@
           "vlm": "success"
         },
         "timing": {
-          "request_total_ms": 16647.91569999943,
-          "queue_wait_ms": 0.07089999962772708,
-          "inference_ms": 16603.355799999918,
-          "response_serialization_ms": 0.17489999845565762,
-          "pipeline_total_ms": 16602.768499999,
-          "detector_ms": 21.60079999885056,
-          "ocr_ms": 7641.920599999139,
-          "baseline_ms": 2.3053000004438218,
-          "routing_ms": 0.09180000051856041,
-          "vlm_ms": 8928.442399999767,
-          "fusion_ms": 0.09490000047662761
-        }
+          "request_total_ms": 16038.789799998995,
+          "queue_wait_ms": 0.04809999882127158,
+          "inference_ms": 16019.034200000533,
+          "response_serialization_ms": 0.12939999942318536,
+          "pipeline_total_ms": 16018.504300000131,
+          "detector_ms": 21.210500000961474,
+          "ocr_ms": 7906.568200000038,
+          "baseline_ms": 1.7597000005480368,
+          "routing_ms": 0.08879999950295314,
+          "vlm_ms": 8080.89149999978,
+          "fusion_ms": 0.0957000011112541
+        },
+        "routing_policy_version": "routing_v3"
       },
       "classification": "CONFIRMED_REGRESSION",
       "classification_reasons": [
@@ -987,6 +1158,11 @@
         "requires_manual_review": false,
         "decision_source": "fusion",
         "route": "vlm_path",
+        "routing_reason_codes": [
+          "no_text",
+          "insufficient_evidence",
+          "no_detection"
+        ],
         "vlm_called": true,
         "vlm_status": "success",
         "vlm_risk_level": "low",
@@ -995,6 +1171,10 @@
           "text": null,
           "vlm": 0.15
         },
+        "ocr_block_count": 0,
+        "ocr_text_length": 0,
+        "mean_ocr_confidence": null,
+        "ocr_text_area_ratio": 0.0,
         "modules": {
           "detector": "success",
           "ocr": "success",
@@ -1002,18 +1182,19 @@
           "vlm": "success"
         },
         "timing": {
-          "request_total_ms": 9640.59300000008,
-          "queue_wait_ms": 0.05229999987932388,
-          "inference_ms": 9633.947599999374,
-          "response_serialization_ms": 0.10149999980058055,
-          "pipeline_total_ms": 9633.333699999639,
-          "detector_ms": 19.722299999557436,
-          "ocr_ms": 3603.287800000544,
+          "request_total_ms": 9085.134000000835,
+          "queue_wait_ms": 0.08960000013757963,
+          "inference_ms": 9077.88150000124,
+          "response_serialization_ms": 0.10100000145030208,
+          "pipeline_total_ms": 9077.179800000522,
+          "detector_ms": 19.952799999373383,
+          "ocr_ms": 3676.7158000002382,
           "baseline_ms": 0.0,
-          "routing_ms": 0.09400000089954119,
-          "vlm_ms": 6005.210300001636,
-          "fusion_ms": 0.09049999971466605
-        }
+          "routing_ms": 0.07509999886678997,
+          "vlm_ms": 5376.210500000525,
+          "fusion_ms": 0.1049999991664663
+        },
+        "routing_policy_version": "routing_v3"
       },
       "classification": "CONFIRMED_REGRESSION",
       "classification_reasons": [
@@ -1035,38 +1216,48 @@
       "actual": {
         "status": "completed",
         "risk_level": "low",
-        "risk_score": 0.0012747426740111647,
+        "risk_score": 0.08307363420330503,
         "categories": [],
         "requires_manual_review": false,
         "decision_source": "fusion",
-        "route": "fast_path",
-        "vlm_called": false,
-        "vlm_status": "skipped",
-        "vlm_risk_level": null,
+        "route": "vlm_path",
+        "routing_reason_codes": [
+          "low_text_coverage",
+          "sparse_text_context",
+          "no_detection"
+        ],
+        "vlm_called": true,
+        "vlm_status": "success",
+        "vlm_risk_level": "low",
         "fusion_scores": {
           "visual": 0.0,
           "text": 0.0028681710165251203,
-          "vlm": null
+          "vlm": 0.15
         },
+        "ocr_block_count": 2,
+        "ocr_text_length": 23,
+        "mean_ocr_confidence": 0.8663989305496216,
+        "ocr_text_area_ratio": 0.000675,
         "modules": {
           "detector": "success",
           "ocr": "success",
           "baseline": "success",
-          "vlm": "skipped"
+          "vlm": "success"
         },
         "timing": {
-          "request_total_ms": 8799.430399998528,
-          "queue_wait_ms": 0.07969999933266081,
-          "inference_ms": 8782.191699998293,
-          "response_serialization_ms": 0.18509999972593505,
-          "pipeline_total_ms": 8781.000999999378,
-          "detector_ms": 21.711200000936515,
-          "ocr_ms": 8746.950500000821,
-          "baseline_ms": 2.3034000005281996,
-          "routing_ms": 0.09339999996882398,
-          "vlm_ms": 0.0,
-          "fusion_ms": 0.23459999829356093
-        }
+          "request_total_ms": 25362.465100000918,
+          "queue_wait_ms": 0.07270000060088933,
+          "inference_ms": 25346.217600001182,
+          "response_serialization_ms": 0.12880000031145755,
+          "pipeline_total_ms": 25345.629199999166,
+          "detector_ms": 22.349200000462588,
+          "ocr_ms": 8620.929299999261,
+          "baseline_ms": 1.7736999998305691,
+          "routing_ms": 0.08650000017951243,
+          "vlm_ms": 16692.871400000513,
+          "fusion_ms": 0.09759999920788687
+        },
+        "routing_policy_version": "routing_v3"
       },
       "classification": "EQUIVALENT",
       "classification_reasons": [
@@ -1094,6 +1285,12 @@
         "requires_manual_review": false,
         "decision_source": "fusion",
         "route": "vlm_path",
+        "routing_reason_codes": [
+          "low_text_coverage",
+          "sparse_text_context",
+          "insufficient_evidence",
+          "no_detection"
+        ],
         "vlm_called": true,
         "vlm_status": "success",
         "vlm_risk_level": "low",
@@ -1102,6 +1299,10 @@
           "text": 0.0025879317552803616,
           "vlm": 0.15
         },
+        "ocr_block_count": 1,
+        "ocr_text_length": 1,
+        "mean_ocr_confidence": 0.7817460298538208,
+        "ocr_text_area_ratio": 0.056247,
         "modules": {
           "detector": "success",
           "ocr": "success",
@@ -1109,18 +1310,19 @@
           "vlm": "success"
         },
         "timing": {
-          "request_total_ms": 28118.18900000071,
-          "queue_wait_ms": 0.1112000009015901,
-          "inference_ms": 28082.663799999864,
-          "response_serialization_ms": 0.13519999993150122,
-          "pipeline_total_ms": 28081.964200000584,
-          "detector_ms": 24.319499998455285,
-          "ocr_ms": 10668.356299998777,
-          "baseline_ms": 2.342200001294259,
-          "routing_ms": 0.08969999908003956,
-          "vlm_ms": 17374.850900001547,
-          "fusion_ms": 0.09710000085760839
-        }
+          "request_total_ms": 25053.055200000017,
+          "queue_wait_ms": 0.07059999916236848,
+          "inference_ms": 25034.86900000098,
+          "response_serialization_ms": 0.12059999971825164,
+          "pipeline_total_ms": 25034.17350000018,
+          "detector_ms": 24.01350000036473,
+          "ocr_ms": 10098.006300000634,
+          "baseline_ms": 2.1948000012343982,
+          "routing_ms": 0.09580000005371403,
+          "vlm_ms": 14899.42019999944,
+          "fusion_ms": 0.10069999916595407
+        },
+        "routing_policy_version": "routing_v3"
       },
       "classification": "CONFIRMED_REGRESSION",
       "classification_reasons": [
@@ -1150,6 +1352,13 @@
         "requires_manual_review": true,
         "decision_source": "fusion",
         "route": "vlm_path",
+        "routing_reason_codes": [
+          "ocr_low_confidence",
+          "low_text_coverage",
+          "sparse_text_context",
+          "insufficient_evidence",
+          "no_detection"
+        ],
         "vlm_called": true,
         "vlm_status": "success",
         "vlm_risk_level": "low",
@@ -1158,6 +1367,10 @@
           "text": 0.001728536615949578,
           "vlm": 0.15
         },
+        "ocr_block_count": 1,
+        "ocr_text_length": 1,
+        "mean_ocr_confidence": 0.5221453905105591,
+        "ocr_text_area_ratio": 0.012691,
         "modules": {
           "detector": "success",
           "ocr": "success",
@@ -1165,18 +1378,19 @@
           "vlm": "success"
         },
         "timing": {
-          "request_total_ms": 16573.10900000084,
-          "queue_wait_ms": 0.08460000026389025,
-          "inference_ms": 16535.980099999506,
-          "response_serialization_ms": 0.11780000022554304,
-          "pipeline_total_ms": 16535.359000001336,
-          "detector_ms": 20.516099999440485,
-          "ocr_ms": 9641.451600000437,
-          "baseline_ms": 1.981399998840061,
-          "routing_ms": 0.08539999907952733,
-          "vlm_ms": 6856.586200001402,
-          "fusion_ms": 0.139899999339832
-        }
+          "request_total_ms": 15152.06500000022,
+          "queue_wait_ms": 0.05580000106419902,
+          "inference_ms": 15114.690499998687,
+          "response_serialization_ms": 0.11379999887140002,
+          "pipeline_total_ms": 15113.016100000095,
+          "detector_ms": 18.938799999887124,
+          "ocr_ms": 8885.478899999725,
+          "baseline_ms": 1.7290000014327234,
+          "routing_ms": 0.0884000000951346,
+          "vlm_ms": 6193.204400000468,
+          "fusion_ms": 0.19719999909284525
+        },
+        "routing_policy_version": "routing_v3"
       },
       "classification": "CONFIRMED_REGRESSION",
       "classification_reasons": [
@@ -1198,44 +1412,57 @@
       },
       "actual": {
         "status": "completed",
-        "risk_level": "low",
-        "risk_score": 0.0014104207499139791,
-        "categories": [],
-        "requires_manual_review": false,
+        "risk_level": "medium",
+        "risk_score": 0.49563468933746135,
+        "categories": [
+          {
+            "name": "prohibited_symbol",
+            "score": 0.9
+          }
+        ],
+        "requires_manual_review": true,
         "decision_source": "fusion",
-        "route": "fast_path",
-        "vlm_called": false,
-        "vlm_status": "skipped",
-        "vlm_risk_level": null,
+        "route": "vlm_path",
+        "routing_reason_codes": [
+          "low_text_coverage",
+          "no_detection"
+        ],
+        "vlm_called": true,
+        "vlm_status": "success",
+        "vlm_risk_level": "high",
         "fusion_scores": {
           "visual": 0.0,
           "text": 0.003173446687306453,
-          "vlm": null
+          "vlm": 0.9
         },
+        "ocr_block_count": 5,
+        "ocr_text_length": 67,
+        "mean_ocr_confidence": 0.9586146712303162,
+        "ocr_text_area_ratio": 0.026153,
         "modules": {
           "detector": "success",
           "ocr": "success",
           "baseline": "success",
-          "vlm": "skipped"
+          "vlm": "success"
         },
         "timing": {
-          "request_total_ms": 7765.352999998868,
-          "queue_wait_ms": 0.08010000055946875,
-          "inference_ms": 7750.270500000624,
-          "response_serialization_ms": 0.2037999984167982,
-          "pipeline_total_ms": 7749.128999999812,
-          "detector_ms": 28.44340000046941,
-          "ocr_ms": 7710.208700000294,
-          "baseline_ms": 2.425099999527447,
-          "routing_ms": 0.08859999979904387,
-          "vlm_ms": 0.0,
-          "fusion_ms": 0.22930000159249175
-        }
+          "request_total_ms": 17162.353599998823,
+          "queue_wait_ms": 0.05129999954078812,
+          "inference_ms": 17147.477299999082,
+          "response_serialization_ms": 0.16230000073846895,
+          "pipeline_total_ms": 17146.92119999927,
+          "detector_ms": 26.1809000003268,
+          "ocr_ms": 7626.615400000446,
+          "baseline_ms": 1.8395999995846068,
+          "routing_ms": 0.08750000051804818,
+          "vlm_ms": 9486.212400001023,
+          "fusion_ms": 0.11070000073232222
+        },
+        "routing_policy_version": "routing_v3"
       },
-      "classification": "CONFIRMED_REGRESSION",
+      "classification": "EQUIVALENT",
       "classification_reasons": [
-        "required manual review was lost",
-        "non-low ground truth was downgraded to low"
+        "risk, required categories, and manual-review behavior match"
       ]
     },
     {
@@ -1264,6 +1491,11 @@
         "requires_manual_review": true,
         "decision_source": "fusion",
         "route": "vlm_path",
+        "routing_reason_codes": [
+          "sparse_text_context",
+          "insufficient_evidence",
+          "no_detection"
+        ],
         "vlm_called": true,
         "vlm_status": "success",
         "vlm_risk_level": "high",
@@ -1272,6 +1504,10 @@
           "text": 0.0028269157183071756,
           "vlm": 0.9
         },
+        "ocr_block_count": 1,
+        "ocr_text_length": 2,
+        "mean_ocr_confidence": 0.8539367914199829,
+        "ocr_text_area_ratio": 0.194238,
         "modules": {
           "detector": "success",
           "ocr": "success",
@@ -1279,18 +1515,19 @@
           "vlm": "success"
         },
         "timing": {
-          "request_total_ms": 19543.896699999095,
-          "queue_wait_ms": 0.0455999997939216,
-          "inference_ms": 19403.540699999212,
-          "response_serialization_ms": 0.1526000014564488,
-          "pipeline_total_ms": 19402.79350000128,
-          "detector_ms": 20.381000000270433,
-          "ocr_ms": 8732.296100000895,
-          "baseline_ms": 2.3118999997677747,
-          "routing_ms": 0.11470000026747584,
-          "vlm_ms": 10632.294199998796,
-          "fusion_ms": 0.12629999946511816
-        }
+          "request_total_ms": 17588.2617999996,
+          "queue_wait_ms": 0.03440000000409782,
+          "inference_ms": 17483.0707000001,
+          "response_serialization_ms": 0.11900000026798807,
+          "pipeline_total_ms": 17482.472199999393,
+          "detector_ms": 19.884100000126637,
+          "ocr_ms": 8189.277800000127,
+          "baseline_ms": 2.2023999990778975,
+          "routing_ms": 0.09470000077271834,
+          "vlm_ms": 9255.82150000082,
+          "fusion_ms": 0.10549999933573417
+        },
+        "routing_policy_version": "routing_v3"
       },
       "classification": "EQUIVALENT",
       "classification_reasons": [
@@ -1312,44 +1549,57 @@
       },
       "actual": {
         "status": "completed",
-        "risk_level": "low",
-        "risk_score": 0.0011541736272150447,
-        "categories": [],
-        "requires_manual_review": false,
+        "risk_level": "medium",
+        "risk_score": 0.49551937813224683,
+        "categories": [
+          {
+            "name": "prohibited_symbol",
+            "score": 0.9
+          }
+        ],
+        "requires_manual_review": true,
         "decision_source": "fusion",
-        "route": "fast_path",
-        "vlm_called": false,
-        "vlm_status": "skipped",
-        "vlm_risk_level": null,
+        "route": "vlm_path",
+        "routing_reason_codes": [
+          "sparse_text_context",
+          "no_detection"
+        ],
+        "vlm_called": true,
+        "vlm_status": "success",
+        "vlm_risk_level": "high",
         "fusion_scores": {
           "visual": 0.0,
           "text": 0.0025968906612338504,
-          "vlm": null
+          "vlm": 0.9
         },
+        "ocr_block_count": 3,
+        "ocr_text_length": 8,
+        "mean_ocr_confidence": 0.7844522794087728,
+        "ocr_text_area_ratio": 0.182265,
         "modules": {
           "detector": "success",
           "ocr": "success",
           "baseline": "success",
-          "vlm": "skipped"
+          "vlm": "success"
         },
         "timing": {
-          "request_total_ms": 9507.35429999986,
-          "queue_wait_ms": 0.06709999979648273,
-          "inference_ms": 9485.21620000065,
-          "response_serialization_ms": 0.18799999998009298,
-          "pipeline_total_ms": 9484.10530000001,
-          "detector_ms": 17.68360000096436,
-          "ocr_ms": 9455.46480000121,
-          "baseline_ms": 2.3859000011725584,
-          "routing_ms": 0.08990000060293823,
-          "vlm_ms": 0.0,
-          "fusion_ms": 0.24019999909796752
-        }
+          "request_total_ms": 18083.385399999315,
+          "queue_wait_ms": 0.06979999852774199,
+          "inference_ms": 18063.68610000027,
+          "response_serialization_ms": 0.1498000001447508,
+          "pipeline_total_ms": 18062.845700000253,
+          "detector_ms": 22.871799999848008,
+          "ocr_ms": 9215.491099999781,
+          "baseline_ms": 2.4623000008432427,
+          "routing_ms": 0.11249999988649506,
+          "vlm_ms": 8812.462300000334,
+          "fusion_ms": 0.11440000162110664
+        },
+        "routing_policy_version": "routing_v3"
       },
-      "classification": "CONFIRMED_REGRESSION",
+      "classification": "EQUIVALENT",
       "classification_reasons": [
-        "required manual review was lost",
-        "non-low ground truth was downgraded to low"
+        "risk, required categories, and manual-review behavior match"
       ]
     },
     {
@@ -1378,6 +1628,11 @@
         "requires_manual_review": true,
         "decision_source": "fusion",
         "route": "vlm_path",
+        "routing_reason_codes": [
+          "no_text",
+          "insufficient_evidence",
+          "no_detection"
+        ],
         "vlm_called": true,
         "vlm_status": "success",
         "vlm_risk_level": "high",
@@ -1386,6 +1641,10 @@
           "text": null,
           "vlm": 0.9
         },
+        "ocr_block_count": 0,
+        "ocr_text_length": 0,
+        "mean_ocr_confidence": null,
+        "ocr_text_area_ratio": 0.0,
         "modules": {
           "detector": "success",
           "ocr": "success",
@@ -1393,18 +1652,19 @@
           "vlm": "success"
         },
         "timing": {
-          "request_total_ms": 16974.478900001486,
-          "queue_wait_ms": 0.09250000039173756,
-          "inference_ms": 16954.658500000733,
-          "response_serialization_ms": 0.11959999937971588,
-          "pipeline_total_ms": 16954.041599999982,
-          "detector_ms": 21.622499998557032,
-          "ocr_ms": 7685.502100001031,
+          "request_total_ms": 16033.465500000602,
+          "queue_wait_ms": 0.05740000051446259,
+          "inference_ms": 16020.860900000116,
+          "response_serialization_ms": 0.11219999942113645,
+          "pipeline_total_ms": 16020.155299998805,
+          "detector_ms": 21.372299999711686,
+          "ocr_ms": 7623.250399999961,
           "baseline_ms": 0.0,
-          "routing_ms": 0.08829999933368526,
-          "vlm_ms": 9237.937000001693,
-          "fusion_ms": 0.10239999937766697
-        }
+          "routing_ms": 0.08689999958733097,
+          "vlm_ms": 8367.769899999985,
+          "fusion_ms": 0.10160000056202989
+        },
+        "routing_policy_version": "routing_v3"
       },
       "classification": "EQUIVALENT",
       "classification_reasons": [
@@ -1432,6 +1692,12 @@
         "requires_manual_review": false,
         "decision_source": "fusion",
         "route": "vlm_path",
+        "routing_reason_codes": [
+          "low_text_coverage",
+          "sparse_text_context",
+          "insufficient_evidence",
+          "no_detection"
+        ],
         "vlm_called": true,
         "vlm_status": "success",
         "vlm_risk_level": "low",
@@ -1440,6 +1706,10 @@
           "text": 0.0033038491048134684,
           "vlm": 0.15
         },
+        "ocr_block_count": 1,
+        "ocr_text_length": 1,
+        "mean_ocr_confidence": 0.9980058073997498,
+        "ocr_text_area_ratio": 0.012594,
         "modules": {
           "detector": "success",
           "ocr": "success",
@@ -1447,18 +1717,19 @@
           "vlm": "success"
         },
         "timing": {
-          "request_total_ms": 15506.469399999332,
-          "queue_wait_ms": 0.039200000173877925,
-          "inference_ms": 15502.76599999961,
-          "response_serialization_ms": 0.1289000010729069,
-          "pipeline_total_ms": 15502.075300000797,
-          "detector_ms": 16.51529999980994,
-          "ocr_ms": 3981.0747999999876,
-          "baseline_ms": 2.3344999990513315,
-          "routing_ms": 0.08960000013757963,
-          "vlm_ms": 11495.58789999901,
-          "fusion_ms": 0.1171000003523659
-        }
+          "request_total_ms": 14294.752300000255,
+          "queue_wait_ms": 0.043399999412940815,
+          "inference_ms": 14290.577899999334,
+          "response_serialization_ms": 0.12289999904169235,
+          "pipeline_total_ms": 14289.994599999773,
+          "detector_ms": 21.424099999421742,
+          "ocr_ms": 3862.819699999818,
+          "baseline_ms": 1.7699999989417847,
+          "routing_ms": 0.0897999998414889,
+          "vlm_ms": 10397.36400000038,
+          "fusion_ms": 0.10520000068936497
+        },
+        "routing_policy_version": "routing_v3"
       },
       "classification": "CONFIRMED_REGRESSION",
       "classification_reasons": [
@@ -1487,6 +1758,12 @@
         "requires_manual_review": true,
         "decision_source": "fusion",
         "route": "vlm_path",
+        "routing_reason_codes": [
+          "ocr_low_confidence",
+          "low_text_coverage",
+          "sparse_text_context",
+          "no_detection"
+        ],
         "vlm_called": true,
         "vlm_status": "success",
         "vlm_risk_level": "low",
@@ -1495,6 +1772,10 @@
           "text": 0.0017201357917596553,
           "vlm": 0.15
         },
+        "ocr_block_count": 1,
+        "ocr_text_length": 19,
+        "mean_ocr_confidence": 0.5196077227592468,
+        "ocr_text_area_ratio": 0.020522,
         "modules": {
           "detector": "success",
           "ocr": "success",
@@ -1502,18 +1783,19 @@
           "vlm": "success"
         },
         "timing": {
-          "request_total_ms": 11426.467599998432,
-          "queue_wait_ms": 0.08519999937561806,
-          "inference_ms": 11410.546399998566,
-          "response_serialization_ms": 0.19439999960013665,
-          "pipeline_total_ms": 11409.880900000644,
-          "detector_ms": 22.34889999999723,
-          "ocr_ms": 4542.633099999875,
-          "baseline_ms": 1.959399998668232,
-          "routing_ms": 0.08139999954437371,
-          "vlm_ms": 6836.992300000929,
-          "fusion_ms": 0.09469999895372894
-        }
+          "request_total_ms": 10886.98210000075,
+          "queue_wait_ms": 0.04579999949783087,
+          "inference_ms": 10874.49739999829,
+          "response_serialization_ms": 0.14759999976377003,
+          "pipeline_total_ms": 10873.934500001269,
+          "detector_ms": 20.538400000077672,
+          "ocr_ms": 4713.617400000658,
+          "baseline_ms": 1.7324999989796197,
+          "routing_ms": 0.08689999958733097,
+          "vlm_ms": 6132.902699999249,
+          "fusion_ms": 0.11500000073283445
+        },
+        "routing_policy_version": "routing_v3"
       },
       "classification": "CONFIRMED_REGRESSION",
       "classification_reasons": [
@@ -1521,5 +1803,5 @@
       ]
     }
   ],
-  "blocker": "17 confirmed regressions require remediation; clean-machine replay is still required."
+  "blocker": "15 confirmed regressions require remediation; clean-machine replay is still required."
 }

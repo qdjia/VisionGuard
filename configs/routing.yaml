@@ -1,5 +1,5 @@
 routing:
-  version: routing_v1
+  version: routing_v3
   conservative_mode: true
   baseline:
     safe_threshold: 0.10
@@ -10,6 +10,9 @@ routing:
   ocr:
     min_mean_confidence: 0.60
     min_text_length: 3
+    min_fast_path_text_area_ratio: 0.12
+    min_fast_path_block_count: 4
+    min_fast_path_text_length: 32
   high_risk_classes:
     - weapon
     - violence

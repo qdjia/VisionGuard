@@ -56,7 +56,13 @@ class Detector:
 
 
 class OCR:
-    def __init__(self, *, text="safe text", confidence=0.9, error=False):
+    def __init__(
+        self,
+        *,
+        text="This is a sufficiently detailed and clearly readable safe document page.",
+        confidence=0.9,
+        error=False,
+    ):
         self.text = text
         self.confidence = confidence
         self.error = error
@@ -66,14 +72,20 @@ class OCR:
             raise RuntimeError("ocr failed")
         blocks = []
         if self.text:
-            blocks.append(
-                OCRTextBlock(
-                    text=self.text,
-                    confidence=self.confidence,
-                    polygon=[(1, 1), (10, 1), (10, 10), (1, 10)],
-                    bbox=BoundingBox(x1=1, y1=1, x2=10, y2=10),
+            fragments = [fragment for fragment in self.text.split() if fragment]
+            while len(fragments) < 5:
+                fragments.append(self.text)
+            for index, fragment in enumerate(fragments[:5]):
+                y1 = 1 + index * 3
+                y2 = y1 + 2
+                blocks.append(
+                    OCRTextBlock(
+                        text=fragment,
+                        confidence=self.confidence,
+                        polygon=[(1, y1), (18, y1), (18, y2), (1, y2)],
+                        bbox=BoundingBox(x1=1, y1=y1, x2=18, y2=y2),
+                    )
                 )
-            )
         return OCRResult(
             image_width=20,
             image_height=20,

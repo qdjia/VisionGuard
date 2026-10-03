@@ -19,9 +19,10 @@ def policy():
 def signals(**changes):
     values = {
         "detection_count": 0,
-        "ocr_block_count": 1,
+        "ocr_block_count": 5,
         "mean_ocr_confidence": 0.9,
-        "ocr_text_length": 10,
+        "ocr_text_length": 64,
+        "ocr_text_area_ratio": 0.20,
         "baseline_probability": 0.05,
         "detector_status": "success",
         "ocr_status": "success",
@@ -40,7 +41,7 @@ def test_safe_consensus_fast_path_and_no_detection_is_not_failure(policy):
     assert not decision.call_vlm
     assert RoutingReasonCode.SAFE_CONSENSUS in reasons(decision)
     assert RoutingReasonCode.NO_DETECTION in reasons(decision)
-    assert decision.policy_version == "routing_v1"
+    assert decision.policy_version == "routing_v3"
 
 
 @pytest.mark.parametrize(
@@ -50,6 +51,9 @@ def test_safe_consensus_fast_path_and_no_detection_is_not_failure(policy):
         ({"baseline_probability": 0.8}, RoutingReasonCode.BASELINE_HIGH_RISK),
         ({"baseline_probability": 0.2}, RoutingReasonCode.BASELINE_UNCERTAIN),
         ({"mean_ocr_confidence": 0.59}, RoutingReasonCode.OCR_LOW_CONFIDENCE),
+        ({"ocr_text_area_ratio": 0.11}, RoutingReasonCode.LOW_TEXT_COVERAGE),
+        ({"ocr_block_count": 3}, RoutingReasonCode.SPARSE_TEXT_CONTEXT),
+        ({"ocr_text_length": 31}, RoutingReasonCode.SPARSE_TEXT_CONTEXT),
         ({"evidence_conflict": True}, RoutingReasonCode.EVIDENCE_CONFLICT),
         ({"detector_status": "failed"}, RoutingReasonCode.MODULE_FAILURE),
         (

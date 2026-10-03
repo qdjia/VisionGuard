@@ -2,7 +2,6 @@ import json
 from pathlib import Path
 
 import cv2
-import httpx
 import numpy as np
 from fastapi.testclient import TestClient
 
@@ -143,7 +142,10 @@ def test_remote_provider_registration_and_timeout_mapping(monkeypatch, tmp_path)
         def json(self):
             return {"api_version": 1, "prompt_version": "v1"}
 
-    monkeypatch.setattr(httpx, "get", lambda *args, **kwargs: Response())
+    monkeypatch.setattr(
+        "visionguard.vlm.providers.remote._loopback_request",
+        lambda *args, **kwargs: Response(),
+    )
     provider.configure("http://127.0.0.1:43125", TOKEN)
     assert provider.available
     assert provider.meta()["api_version"] == 1

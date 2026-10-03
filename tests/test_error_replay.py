@@ -6,9 +6,10 @@ from visionguard.routing import RoutingPolicy, load_routing_config
 def test_replay_uses_stored_signals_without_model_objects() -> None:
     routing_signals = {
         "detection_count": 0,
-        "ocr_block_count": 1,
+        "ocr_block_count": 5,
         "mean_ocr_confidence": 0.99,
-        "ocr_text_length": 20,
+        "ocr_text_length": 64,
+        "ocr_text_area_ratio": 0.2,
         "baseline_probability": 0.01,
         "detector_status": "success",
         "ocr_status": "success",
@@ -16,9 +17,9 @@ def test_replay_uses_stored_signals_without_model_objects() -> None:
     }
     fusion_signals = {
         "detector_status": "success",
-        "ocr_block_count": 1,
+        "ocr_block_count": 5,
         "mean_ocr_confidence": 0.99,
-        "ocr_text_length": 20,
+        "ocr_text_length": 64,
         "ocr_status": "success",
         "baseline_label": "safe",
         "baseline_probability": 0.01,

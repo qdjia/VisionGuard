@@ -35,6 +35,16 @@ class RoutingPolicy:
         ]
         ocr_confidences = [item.confidence for item in ocr.blocks] if ocr else []
         text_length = len(ocr.full_text.strip()) if ocr else 0
+        image_area = (ocr.image_width * ocr.image_height) if ocr else 0
+        text_area = (
+            sum(
+                (item.bbox.x2 - item.bbox.x1) * (item.bbox.y2 - item.bbox.y1)
+                for item in ocr.blocks
+            )
+            if ocr
+            else 0
+        )
+        text_area_ratio = min(1.0, text_area / image_area) if image_area else 0.0
         probability = baseline.probability if baseline else None
         mean_ocr = sum(ocr_confidences) / len(ocr_confidences) if ocr_confidences else None
         conflict = bool(
@@ -66,6 +76,7 @@ class RoutingPolicy:
             ocr_block_count=len(ocr_confidences),
             mean_ocr_confidence=mean_ocr,
             ocr_text_length=text_length,
+            ocr_text_area_ratio=text_area_ratio,
             baseline_probability=probability,
             detector_status=str(statuses["detector"].status),
             ocr_status=str(statuses["ocr"].status),
@@ -112,6 +123,17 @@ class RoutingPolicy:
             and signals.mean_ocr_confidence < self.config.ocr.min_mean_confidence
         ):
             add(RoutingReasonCode.OCR_LOW_CONFIDENCE)
+        if (
+            signals.ocr_text_length > 0
+            and signals.ocr_text_area_ratio
+            < self.config.ocr.min_fast_path_text_area_ratio
+        ):
+            add(RoutingReasonCode.LOW_TEXT_COVERAGE)
+        if signals.ocr_text_length > 0 and (
+            signals.ocr_block_count < self.config.ocr.min_fast_path_block_count
+            or signals.ocr_text_length < self.config.ocr.min_fast_path_text_length
+        ):
+            add(RoutingReasonCode.SPARSE_TEXT_CONTEXT)
         if signals.evidence_conflict:
             add(RoutingReasonCode.EVIDENCE_CONFLICT)
         if signals.insufficient_evidence and self.config.conservative_mode:
@@ -124,6 +146,8 @@ class RoutingPolicy:
             RoutingReasonCode.BASELINE_HIGH_RISK,
             RoutingReasonCode.BASELINE_UNCERTAIN,
             RoutingReasonCode.OCR_LOW_CONFIDENCE,
+            RoutingReasonCode.LOW_TEXT_COVERAGE,
+            RoutingReasonCode.SPARSE_TEXT_CONTEXT,
             RoutingReasonCode.EVIDENCE_CONFLICT,
             RoutingReasonCode.MODULE_FAILURE,
             RoutingReasonCode.INSUFFICIENT_EVIDENCE,
@@ -143,6 +167,10 @@ class RoutingPolicy:
             and signals.ocr_text_length >= self.config.ocr.min_text_length
             and signals.mean_ocr_confidence is not None
             and signals.mean_ocr_confidence >= self.config.ocr.min_mean_confidence
+            and signals.ocr_text_area_ratio
+            >= self.config.ocr.min_fast_path_text_area_ratio
+            and signals.ocr_block_count >= self.config.ocr.min_fast_path_block_count
+            and signals.ocr_text_length >= self.config.ocr.min_fast_path_text_length
             and signals.high_risk_detection_count == 0
             and not signals.evidence_conflict
         )
