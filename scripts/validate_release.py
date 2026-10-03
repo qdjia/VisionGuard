@@ -372,8 +372,23 @@ def _validate_release_evidence(
     regression = _load_json(
         evidence / "historical-regression.json", "historical regression", errors
     )
+    real_count = regression.get("historical_image_case_count")
+    if not isinstance(real_count, int) or not 20 <= real_count <= 50:
+        errors.append("historical regression requires 20-50 real-image cases")
+    if regression.get("verified_real_world_image_provenance_count") != real_count:
+        errors.append("historical regression provenance is incomplete")
+    if regression.get("ground_truth_image_case_count") != real_count:
+        errors.append("historical regression ground truth is incomplete")
+    if regression.get("packaged_core_runtime_replayed") is not True:
+        errors.append("historical regression did not replay packaged Core Runtime")
+    if regression.get("managed_local_vlm_runtime_replayed") is not True:
+        errors.append("historical regression did not replay managed local VLM Runtime")
+    if regression.get("clean_machine_replay_completed") is not True:
+        errors.append("historical regression clean-machine replay is incomplete")
     if regression.get("confirmed_regression_count") != 0:
         errors.append("historical regression has confirmed regressions or missing count")
+    if regression.get("potential_regression_count") != 0:
+        errors.append("historical regression has unresolved potential regressions")
     regression_status = str(regression.get("gate_status", "")).upper()
     if regression_status != "PASS":
         errors.append(

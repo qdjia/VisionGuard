@@ -244,7 +244,19 @@ def test_release_evidence_fails_closed_for_unclear_native_file(tmp_path: Path) -
         encoding="utf-8",
     )
     (evidence / "historical-regression.json").write_text(
-        json.dumps({"confirmed_regression_count": 0, "gate_status": "PASS"}),
+        json.dumps(
+            {
+                "historical_image_case_count": 27,
+                "verified_real_world_image_provenance_count": 27,
+                "ground_truth_image_case_count": 27,
+                "packaged_core_runtime_replayed": True,
+                "managed_local_vlm_runtime_replayed": True,
+                "clean_machine_replay_completed": True,
+                "confirmed_regression_count": 0,
+                "potential_regression_count": 0,
+                "gate_status": "PASS",
+            }
+        ),
         encoding="utf-8",
     )
     errors: list[str] = []
@@ -260,4 +272,11 @@ def test_repository_blocker_evidence_fails_closed() -> None:
     assert not any("clean_core=" in error for error in errors)
     assert not any("advanced_ai_gpu=" in error for error in errors)
     assert not any("overall clean-environment acceptance" in error for error in errors)
+    assert not any("20-50 real-image" in error for error in errors)
+    assert not any("provenance is incomplete" in error for error in errors)
+    assert not any("ground truth is incomplete" in error for error in errors)
+    assert not any("did not replay packaged Core" in error for error in errors)
+    assert not any("did not replay managed local VLM" in error for error in errors)
+    assert "historical regression clean-machine replay is incomplete" in errors
+    assert "historical regression has confirmed regressions or missing count" in errors
     assert "historical real-image regression is not passed: BLOCKED" in errors

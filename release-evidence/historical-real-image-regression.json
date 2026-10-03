@@ -1,0 +1,1525 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-10-03T08:30:41.483278+00:00",
+  "gate": "historical_real_image_regression",
+  "gate_status": "BLOCKED",
+  "environment_claim": "development_acceptance_machine",
+  "packaged_core_runtime": true,
+  "managed_local_vlm_runtime": true,
+  "dataset": {
+    "total": 27,
+    "verified_annotations": 27,
+    "scenario_counts": {
+      "blood": 3,
+      "multilingual_text": 3,
+      "prohibited_symbol": 4,
+      "qr_code": 4,
+      "safe_publishing": 2,
+      "violence": 4,
+      "watermark": 2,
+      "weapon": 5
+    },
+    "license_counts": {
+      "CC BY 2.0": 3,
+      "CC BY 4.0": 3,
+      "CC BY-SA 2.0": 3,
+      "CC BY-SA 3.0": 1,
+      "CC BY-SA 4.0": 7,
+      "CC0": 2,
+      "Public domain": 8
+    },
+    "all_required_scenarios_present": true
+  },
+  "classification_counts": {
+    "CONFIRMED_REGRESSION": 17,
+    "EQUIVALENT": 9,
+    "EXPECTED_DIFFERENCE": 1
+  },
+  "confirmed_regression_count": 17,
+  "potential_regression_count": 0,
+  "elapsed_seconds": 434.905,
+  "results": [
+    {
+      "case_id": "real-001",
+      "scenario": "multilingual_text",
+      "image_sha256": "bf41d3b24dd2f0dd0684a36c86a5f1ca2034bbebd8be4173a0a2ad6e068c6c31",
+      "expected": {
+        "risk_level": "low",
+        "categories": [],
+        "text": null,
+        "objects": null,
+        "requires_manual_review": false
+      },
+      "actual": {
+        "status": "completed",
+        "risk_level": "low",
+        "risk_score": 0.001301371976719329,
+        "categories": [],
+        "requires_manual_review": false,
+        "decision_source": "fusion",
+        "route": "fast_path",
+        "vlm_called": false,
+        "vlm_status": "skipped",
+        "vlm_risk_level": null,
+        "fusion_scores": {
+          "visual": 0.0,
+          "text": 0.00292808694761849,
+          "vlm": null
+        },
+        "modules": {
+          "detector": "success",
+          "ocr": "success",
+          "baseline": "success",
+          "vlm": "skipped"
+        },
+        "timing": {
+          "request_total_ms": 19431.464100000085,
+          "queue_wait_ms": 0.06990000110818073,
+          "inference_ms": 19412.389999999505,
+          "response_serialization_ms": 0.33569999868632294,
+          "pipeline_total_ms": 19411.317099998996,
+          "detector_ms": 30.720599999767728,
+          "ocr_ms": 19354.692900000373,
+          "baseline_ms": 17.065800000636955,
+          "routing_ms": 0.10959999963233713,
+          "vlm_ms": 0.0,
+          "fusion_ms": 0.28730000121868216
+        }
+      },
+      "classification": "EQUIVALENT",
+      "classification_reasons": [
+        "risk, required categories, and manual-review behavior match"
+      ]
+    },
+    {
+      "case_id": "real-002",
+      "scenario": "safe_publishing",
+      "image_sha256": "0303263dc3123fe7501d9d2e7d3d378a632f4685b5b19a5ba47db33639eba176",
+      "expected": {
+        "risk_level": "low",
+        "categories": [],
+        "text": null,
+        "objects": null,
+        "requires_manual_review": false
+      },
+      "actual": {
+        "status": "completed",
+        "risk_level": "low",
+        "risk_score": 0.0014331426559254098,
+        "categories": [],
+        "requires_manual_review": false,
+        "decision_source": "fusion",
+        "route": "fast_path",
+        "vlm_called": false,
+        "vlm_status": "skipped",
+        "vlm_risk_level": null,
+        "fusion_scores": {
+          "visual": 0.0,
+          "text": 0.003224570975832172,
+          "vlm": null
+        },
+        "modules": {
+          "detector": "success",
+          "ocr": "success",
+          "baseline": "success",
+          "vlm": "skipped"
+        },
+        "timing": {
+          "request_total_ms": 11636.26849999855,
+          "queue_wait_ms": 0.08170000000973232,
+          "inference_ms": 11608.638199999405,
+          "response_serialization_ms": 0.24420000045211054,
+          "pipeline_total_ms": 11607.606900000974,
+          "detector_ms": 18.863700001020334,
+          "ocr_ms": 11576.944800001002,
+          "baseline_ms": 2.3806999997759704,
+          "routing_ms": 0.09099999988393392,
+          "vlm_ms": 0.0,
+          "fusion_ms": 0.2413000001979526
+        }
+      },
+      "classification": "EQUIVALENT",
+      "classification_reasons": [
+        "risk, required categories, and manual-review behavior match"
+      ]
+    },
+    {
+      "case_id": "real-003",
+      "scenario": "multilingual_text",
+      "image_sha256": "afbe6facf66fee710ca2ae0cb48b79b14dd5ca387cd04d8027a07d00db842595",
+      "expected": {
+        "risk_level": "low",
+        "categories": [],
+        "text": null,
+        "objects": null,
+        "requires_manual_review": false
+      },
+      "actual": {
+        "status": "completed",
+        "risk_level": "low",
+        "risk_score": 0.08287324978152648,
+        "categories": [],
+        "requires_manual_review": true,
+        "decision_source": "fusion",
+        "route": "vlm_path",
+        "vlm_called": true,
+        "vlm_status": "success",
+        "vlm_risk_level": "low",
+        "fusion_scores": {
+          "visual": 0.0,
+          "text": 0.0018662489076323792,
+          "vlm": 0.15
+        },
+        "modules": {
+          "detector": "success",
+          "ocr": "success",
+          "baseline": "success",
+          "vlm": "success"
+        },
+        "timing": {
+          "request_total_ms": 31791.80289999931,
+          "queue_wait_ms": 0.06360000043059699,
+          "inference_ms": 31788.952599999902,
+          "response_serialization_ms": 0.1438999988749856,
+          "pipeline_total_ms": 31788.371799999368,
+          "detector_ms": 19.56419999987702,
+          "ocr_ms": 9120.087999999669,
+          "baseline_ms": 2.442700000756304,
+          "routing_ms": 0.09510000018053688,
+          "vlm_ms": 22640.976599999703,
+          "fusion_ms": 0.10819999988598283
+        }
+      },
+      "classification": "EXPECTED_DIFFERENCE",
+      "classification_reasons": [
+        "manual-review policy is more conservative than annotation"
+      ]
+    },
+    {
+      "case_id": "real-004",
+      "scenario": "multilingual_text",
+      "image_sha256": "4b97fcd064c255fa89c79d7e451b8bacceec9641e2ee8ea7090df4b06d17734c",
+      "expected": {
+        "risk_level": "low",
+        "categories": [],
+        "text": null,
+        "objects": null,
+        "requires_manual_review": false
+      },
+      "actual": {
+        "status": "completed",
+        "risk_level": "low",
+        "risk_score": 0.0011560092422879904,
+        "categories": [],
+        "requires_manual_review": false,
+        "decision_source": "fusion",
+        "route": "fast_path",
+        "vlm_called": false,
+        "vlm_status": "skipped",
+        "vlm_risk_level": null,
+        "fusion_scores": {
+          "visual": 0.0,
+          "text": 0.002601020795147978,
+          "vlm": null
+        },
+        "modules": {
+          "detector": "success",
+          "ocr": "success",
+          "baseline": "success",
+          "vlm": "skipped"
+        },
+        "timing": {
+          "request_total_ms": 51729.954200000066,
+          "queue_wait_ms": 0.06719999873894267,
+          "inference_ms": 51716.286000000764,
+          "response_serialization_ms": 0.414699999964796,
+          "pipeline_total_ms": 51715.27009999954,
+          "detector_ms": 27.684500000759726,
+          "ocr_ms": 51677.84320000101,
+          "baseline_ms": 2.8542000000015832,
+          "routing_ms": 0.09509999836154748,
+          "vlm_ms": 0.0,
+          "fusion_ms": 0.23780000083206687
+        }
+      },
+      "classification": "EQUIVALENT",
+      "classification_reasons": [
+        "risk, required categories, and manual-review behavior match"
+      ]
+    },
+    {
+      "case_id": "real-005",
+      "scenario": "safe_publishing",
+      "image_sha256": "81e7a7cb799c699b845ddb3d9f000740504dccec8bd668733102ed7a31e3117a",
+      "expected": {
+        "risk_level": "low",
+        "categories": [],
+        "text": null,
+        "objects": null,
+        "requires_manual_review": false
+      },
+      "actual": {
+        "status": "completed",
+        "risk_level": "low",
+        "risk_score": 0.0009130893269606592,
+        "categories": [],
+        "requires_manual_review": false,
+        "decision_source": "fusion",
+        "route": "fast_path",
+        "vlm_called": false,
+        "vlm_status": "skipped",
+        "vlm_risk_level": null,
+        "fusion_scores": {
+          "visual": 0.0,
+          "text": 0.002054450985661483,
+          "vlm": null
+        },
+        "modules": {
+          "detector": "success",
+          "ocr": "success",
+          "baseline": "success",
+          "vlm": "skipped"
+        },
+        "timing": {
+          "request_total_ms": 10821.216399999685,
+          "queue_wait_ms": 0.044099999286117963,
+          "inference_ms": 10762.007100000119,
+          "response_serialization_ms": 0.2120000008289935,
+          "pipeline_total_ms": 10760.991600000125,
+          "detector_ms": 23.70820000032836,
+          "ocr_ms": 10719.45919999962,
+          "baseline_ms": 2.224500000011176,
+          "routing_ms": 0.0897999998414889,
+          "vlm_ms": 0.0,
+          "fusion_ms": 0.25830000049609225
+        }
+      },
+      "classification": "EQUIVALENT",
+      "classification_reasons": [
+        "risk, required categories, and manual-review behavior match"
+      ]
+    },
+    {
+      "case_id": "real-006",
+      "scenario": "qr_code",
+      "image_sha256": "7171596725881746e0c3485b07b213d2d4b6680fd489de0bc3fe53d92098d5fa",
+      "expected": {
+        "risk_level": "medium",
+        "categories": [
+          "qr_code"
+        ],
+        "text": null,
+        "objects": null,
+        "requires_manual_review": true
+      },
+      "actual": {
+        "status": "completed",
+        "risk_level": "medium",
+        "risk_score": 0.4125,
+        "categories": [
+          {
+            "name": "qr_code",
+            "score": 0.6
+          }
+        ],
+        "requires_manual_review": true,
+        "decision_source": "fusion",
+        "route": "vlm_path",
+        "vlm_called": true,
+        "vlm_status": "success",
+        "vlm_risk_level": "medium",
+        "fusion_scores": {
+          "visual": 0.0,
+          "text": null,
+          "vlm": 0.6
+        },
+        "modules": {
+          "detector": "success",
+          "ocr": "success",
+          "baseline": "skipped",
+          "vlm": "success"
+        },
+        "timing": {
+          "request_total_ms": 20207.465100000263,
+          "queue_wait_ms": 0.08499999967170879,
+          "inference_ms": 20159.717600001386,
+          "response_serialization_ms": 0.11660000018309802,
+          "pipeline_total_ms": 20159.126299999116,
+          "detector_ms": 22.57110000027751,
+          "ocr_ms": 9640.538800000286,
+          "baseline_ms": 0.0,
+          "routing_ms": 0.0942999995459104,
+          "vlm_ms": 10482.3112999984,
+          "fusion_ms": 0.11509999967529438
+        }
+      },
+      "classification": "EQUIVALENT",
+      "classification_reasons": [
+        "risk, required categories, and manual-review behavior match"
+      ]
+    },
+    {
+      "case_id": "real-007",
+      "scenario": "qr_code",
+      "image_sha256": "02da4cd786c1b7635c1174cecdabeb1f5b9bd116ff8f56f5b46e9ddc6be92cc1",
+      "expected": {
+        "risk_level": "medium",
+        "categories": [
+          "qr_code"
+        ],
+        "text": null,
+        "objects": null,
+        "requires_manual_review": true
+      },
+      "actual": {
+        "status": "completed",
+        "risk_level": "low",
+        "risk_score": 0.103125,
+        "categories": [],
+        "requires_manual_review": false,
+        "decision_source": "fusion",
+        "route": "vlm_path",
+        "vlm_called": true,
+        "vlm_status": "success",
+        "vlm_risk_level": "low",
+        "fusion_scores": {
+          "visual": 0.0,
+          "text": null,
+          "vlm": 0.15
+        },
+        "modules": {
+          "detector": "success",
+          "ocr": "success",
+          "baseline": "skipped",
+          "vlm": "success"
+        },
+        "timing": {
+          "request_total_ms": 15499.227000000246,
+          "queue_wait_ms": 0.07720000030531082,
+          "inference_ms": 15472.037599998657,
+          "response_serialization_ms": 0.10750000001280569,
+          "pipeline_total_ms": 15471.273099999962,
+          "detector_ms": 22.098200000982615,
+          "ocr_ms": 9258.266599999843,
+          "baseline_ms": 0.0,
+          "routing_ms": 0.0932000002649147,
+          "vlm_ms": 6178.544000000329,
+          "fusion_ms": 0.09369999861519318
+        }
+      },
+      "classification": "CONFIRMED_REGRESSION",
+      "classification_reasons": [
+        "required manual review was lost",
+        "non-low ground truth was downgraded to low"
+      ]
+    },
+    {
+      "case_id": "real-008",
+      "scenario": "qr_code",
+      "image_sha256": "a130a08350b813342bf7e5bf9f20ebfedab8b8ede513afa5e3ddc016a6e047a8",
+      "expected": {
+        "risk_level": "medium",
+        "categories": [
+          "qr_code"
+        ],
+        "text": null,
+        "objects": null,
+        "requires_manual_review": true
+      },
+      "actual": {
+        "status": "completed",
+        "risk_level": "low",
+        "risk_score": 0.0013018844286392332,
+        "categories": [],
+        "requires_manual_review": false,
+        "decision_source": "fusion",
+        "route": "fast_path",
+        "vlm_called": false,
+        "vlm_status": "skipped",
+        "vlm_risk_level": null,
+        "fusion_scores": {
+          "visual": 0.0,
+          "text": 0.002929239964438274,
+          "vlm": null
+        },
+        "modules": {
+          "detector": "success",
+          "ocr": "success",
+          "baseline": "success",
+          "vlm": "skipped"
+        },
+        "timing": {
+          "request_total_ms": 12608.245900000838,
+          "queue_wait_ms": 0.04270000135875307,
+          "inference_ms": 12604.016699999192,
+          "response_serialization_ms": 0.28810000003431924,
+          "pipeline_total_ms": 12602.920400000585,
+          "detector_ms": 22.74529999885999,
+          "ocr_ms": 12571.614099999351,
+          "baseline_ms": 3.4283000004506903,
+          "routing_ms": 0.1007999999274034,
+          "vlm_ms": 0.0,
+          "fusion_ms": 0.22839999837742653
+        }
+      },
+      "classification": "CONFIRMED_REGRESSION",
+      "classification_reasons": [
+        "required manual review was lost",
+        "non-low ground truth was downgraded to low"
+      ]
+    },
+    {
+      "case_id": "real-009",
+      "scenario": "qr_code",
+      "image_sha256": "6b8cb0a075cffc0c04305d484523ac47c27831f9b994c71f56d5d007be04a8a3",
+      "expected": {
+        "risk_level": "medium",
+        "categories": [
+          "qr_code"
+        ],
+        "text": null,
+        "objects": null,
+        "requires_manual_review": true
+      },
+      "actual": {
+        "status": "completed",
+        "risk_level": "low",
+        "risk_score": 0.0014710329326780554,
+        "categories": [],
+        "requires_manual_review": false,
+        "decision_source": "fusion",
+        "route": "fast_path",
+        "vlm_called": false,
+        "vlm_status": "skipped",
+        "vlm_risk_level": null,
+        "fusion_scores": {
+          "visual": 0.0,
+          "text": 0.0033098240985256246,
+          "vlm": null
+        },
+        "modules": {
+          "detector": "success",
+          "ocr": "success",
+          "baseline": "success",
+          "vlm": "skipped"
+        },
+        "timing": {
+          "request_total_ms": 6558.885599999485,
+          "queue_wait_ms": 0.08379999962926377,
+          "inference_ms": 6539.592699999048,
+          "response_serialization_ms": 0.22280000121099874,
+          "pipeline_total_ms": 6538.424800000939,
+          "detector_ms": 21.27179999843065,
+          "ocr_ms": 6507.520299999669,
+          "baseline_ms": 2.4022999987209914,
+          "routing_ms": 0.0855999987834366,
+          "vlm_ms": 0.0,
+          "fusion_ms": 0.2229999990959186
+        }
+      },
+      "classification": "CONFIRMED_REGRESSION",
+      "classification_reasons": [
+        "required manual review was lost",
+        "non-low ground truth was downgraded to low"
+      ]
+    },
+    {
+      "case_id": "real-010",
+      "scenario": "weapon",
+      "image_sha256": "27ba5d1ec08dcdbf691e5bacbb7ac0fa013e5819e93d3780c3387b07d04753e4",
+      "expected": {
+        "risk_level": "medium",
+        "categories": [
+          "weapon"
+        ],
+        "text": null,
+        "objects": null,
+        "requires_manual_review": true
+      },
+      "actual": {
+        "status": "completed",
+        "risk_level": "low",
+        "risk_score": 0.0014407533520981585,
+        "categories": [],
+        "requires_manual_review": false,
+        "decision_source": "fusion",
+        "route": "fast_path",
+        "vlm_called": false,
+        "vlm_status": "skipped",
+        "vlm_risk_level": null,
+        "fusion_scores": {
+          "visual": 0.0,
+          "text": 0.0032416950422208563,
+          "vlm": null
+        },
+        "modules": {
+          "detector": "success",
+          "ocr": "success",
+          "baseline": "success",
+          "vlm": "skipped"
+        },
+        "timing": {
+          "request_total_ms": 3368.9454999985173,
+          "queue_wait_ms": 0.06810000013501849,
+          "inference_ms": 3359.485400000267,
+          "response_serialization_ms": 0.1770999988366384,
+          "pipeline_total_ms": 3358.360399999583,
+          "detector_ms": 22.790400000303634,
+          "ocr_ms": 3327.5001000001794,
+          "baseline_ms": 2.4307999992743134,
+          "routing_ms": 0.08479999996779952,
+          "vlm_ms": 0.0,
+          "fusion_ms": 0.22220000028028153
+        }
+      },
+      "classification": "CONFIRMED_REGRESSION",
+      "classification_reasons": [
+        "required manual review was lost",
+        "non-low ground truth was downgraded to low"
+      ]
+    },
+    {
+      "case_id": "real-011",
+      "scenario": "weapon",
+      "image_sha256": "f185b67d19eacad9fa43e298cf90d6a9356575d19e2db4506a0af4de2e64b22e",
+      "expected": {
+        "risk_level": "medium",
+        "categories": [
+          "weapon"
+        ],
+        "text": null,
+        "objects": null,
+        "requires_manual_review": true
+      },
+      "actual": {
+        "status": "completed",
+        "risk_level": "low",
+        "risk_score": 0.103125,
+        "categories": [],
+        "requires_manual_review": false,
+        "decision_source": "fusion",
+        "route": "vlm_path",
+        "vlm_called": true,
+        "vlm_status": "success",
+        "vlm_risk_level": "low",
+        "fusion_scores": {
+          "visual": 0.0,
+          "text": null,
+          "vlm": 0.15
+        },
+        "modules": {
+          "detector": "success",
+          "ocr": "success",
+          "baseline": "skipped",
+          "vlm": "success"
+        },
+        "timing": {
+          "request_total_ms": 14022.706199999448,
+          "queue_wait_ms": 0.09760000102687627,
+          "inference_ms": 13963.91549999862,
+          "response_serialization_ms": 0.09649999992689118,
+          "pipeline_total_ms": 13963.269500000024,
+          "detector_ms": 20.311000000219792,
+          "ocr_ms": 8094.605899999806,
+          "baseline_ms": 0.0,
+          "routing_ms": 0.09370000043418258,
+          "vlm_ms": 5832.486999999674,
+          "fusion_ms": 0.09399999908055179
+        }
+      },
+      "classification": "CONFIRMED_REGRESSION",
+      "classification_reasons": [
+        "required manual review was lost",
+        "non-low ground truth was downgraded to low"
+      ]
+    },
+    {
+      "case_id": "real-012",
+      "scenario": "weapon",
+      "image_sha256": "5439775ea732bd858f2ae6ad2fd8e5796e5dede7d43f89f5eb2908510fa720ee",
+      "expected": {
+        "risk_level": "medium",
+        "categories": [
+          "weapon"
+        ],
+        "text": null,
+        "objects": null,
+        "requires_manual_review": true
+      },
+      "actual": {
+        "status": "completed",
+        "risk_level": "low",
+        "risk_score": 0.0012317534636583042,
+        "categories": [],
+        "requires_manual_review": false,
+        "decision_source": "fusion",
+        "route": "fast_path",
+        "vlm_called": false,
+        "vlm_status": "skipped",
+        "vlm_risk_level": null,
+        "fusion_scores": {
+          "visual": 0.0,
+          "text": 0.002771445293231184,
+          "vlm": null
+        },
+        "modules": {
+          "detector": "success",
+          "ocr": "success",
+          "baseline": "success",
+          "vlm": "skipped"
+        },
+        "timing": {
+          "request_total_ms": 11053.66690000119,
+          "queue_wait_ms": 0.0822000001790002,
+          "inference_ms": 11035.358600000109,
+          "response_serialization_ms": 0.2196000004914822,
+          "pipeline_total_ms": 11034.234599999763,
+          "detector_ms": 19.405799999731244,
+          "ocr_ms": 11002.837099998942,
+          "baseline_ms": 2.418000000034226,
+          "routing_ms": 0.08770000022195745,
+          "vlm_ms": 0.0,
+          "fusion_ms": 0.2306000005773967
+        }
+      },
+      "classification": "CONFIRMED_REGRESSION",
+      "classification_reasons": [
+        "required manual review was lost",
+        "non-low ground truth was downgraded to low"
+      ]
+    },
+    {
+      "case_id": "real-013",
+      "scenario": "weapon",
+      "image_sha256": "31f3cf4ff860100ac2f5616c620adb34f2e67478867e751600444af7a5ce9bc9",
+      "expected": {
+        "risk_level": "medium",
+        "categories": [
+          "weapon"
+        ],
+        "text": null,
+        "objects": null,
+        "requires_manual_review": true
+      },
+      "actual": {
+        "status": "completed",
+        "risk_level": "low",
+        "risk_score": 0.103125,
+        "categories": [],
+        "requires_manual_review": false,
+        "decision_source": "fusion",
+        "route": "vlm_path",
+        "vlm_called": true,
+        "vlm_status": "success",
+        "vlm_risk_level": "low",
+        "fusion_scores": {
+          "visual": 0.0,
+          "text": null,
+          "vlm": 0.15
+        },
+        "modules": {
+          "detector": "success",
+          "ocr": "success",
+          "baseline": "skipped",
+          "vlm": "success"
+        },
+        "timing": {
+          "request_total_ms": 13052.67029999959,
+          "queue_wait_ms": 0.08779999916441739,
+          "inference_ms": 13022.246399999858,
+          "response_serialization_ms": 0.09479999971517827,
+          "pipeline_total_ms": 13021.636899999066,
+          "detector_ms": 18.78759999999602,
+          "ocr_ms": 7077.471000000514,
+          "baseline_ms": 0.0,
+          "routing_ms": 0.08820000039122533,
+          "vlm_ms": 5916.870900000504,
+          "fusion_ms": 0.09099999988393392
+        }
+      },
+      "classification": "CONFIRMED_REGRESSION",
+      "classification_reasons": [
+        "required manual review was lost",
+        "non-low ground truth was downgraded to low"
+      ]
+    },
+    {
+      "case_id": "real-014",
+      "scenario": "weapon",
+      "image_sha256": "3e58c9241976d069d7eef3c5866578e8060f4da8830beae9a34a383de27ea29d",
+      "expected": {
+        "risk_level": "medium",
+        "categories": [
+          "weapon"
+        ],
+        "text": null,
+        "objects": null,
+        "requires_manual_review": true
+      },
+      "actual": {
+        "status": "completed",
+        "risk_level": "medium",
+        "risk_score": 0.3304282949921315,
+        "categories": [
+          {
+            "name": "weapon",
+            "score": 0.6
+          }
+        ],
+        "requires_manual_review": true,
+        "decision_source": "fusion",
+        "route": "vlm_path",
+        "vlm_called": true,
+        "vlm_status": "success",
+        "vlm_risk_level": "medium",
+        "fusion_scores": {
+          "visual": 0.0,
+          "text": 0.00214147496065734,
+          "vlm": 0.6
+        },
+        "modules": {
+          "detector": "success",
+          "ocr": "success",
+          "baseline": "success",
+          "vlm": "success"
+        },
+        "timing": {
+          "request_total_ms": 9587.74689999882,
+          "queue_wait_ms": 0.049700000090524554,
+          "inference_ms": 9583.905399998912,
+          "response_serialization_ms": 0.1269999993382953,
+          "pipeline_total_ms": 9583.350700000665,
+          "detector_ms": 19.883800001480267,
+          "ocr_ms": 2315.4672000000573,
+          "baseline_ms": 1.6644999996060506,
+          "routing_ms": 0.08650000017951243,
+          "vlm_ms": 7242.023500000869,
+          "fusion_ms": 0.10789999942062423
+        }
+      },
+      "classification": "EQUIVALENT",
+      "classification_reasons": [
+        "risk, required categories, and manual-review behavior match"
+      ]
+    },
+    {
+      "case_id": "real-015",
+      "scenario": "violence",
+      "image_sha256": "3d0226d0c7f33ce7cb0246a33fc4cba0ea6be6bddf1b7a4b30be06b2aa46d71b",
+      "expected": {
+        "risk_level": "medium",
+        "categories": [
+          "violence"
+        ],
+        "text": null,
+        "objects": null,
+        "requires_manual_review": true
+      },
+      "actual": {
+        "status": "completed",
+        "risk_level": "low",
+        "risk_score": 0.001401108346135975,
+        "categories": [],
+        "requires_manual_review": false,
+        "decision_source": "fusion",
+        "route": "fast_path",
+        "vlm_called": false,
+        "vlm_status": "skipped",
+        "vlm_risk_level": null,
+        "fusion_scores": {
+          "visual": 0.0,
+          "text": 0.0031524937788059435,
+          "vlm": null
+        },
+        "modules": {
+          "detector": "success",
+          "ocr": "success",
+          "baseline": "success",
+          "vlm": "skipped"
+        },
+        "timing": {
+          "request_total_ms": 7607.651599999372,
+          "queue_wait_ms": 0.0548999996681232,
+          "inference_ms": 7594.107700000677,
+          "response_serialization_ms": 0.22480000006908085,
+          "pipeline_total_ms": 7592.923000000155,
+          "detector_ms": 20.332699999926263,
+          "ocr_ms": 7562.8460999996605,
+          "baseline_ms": 2.4504999983037123,
+          "routing_ms": 0.08760000127949752,
+          "vlm_ms": 0.0,
+          "fusion_ms": 0.22960000023886096
+        }
+      },
+      "classification": "CONFIRMED_REGRESSION",
+      "classification_reasons": [
+        "required manual review was lost",
+        "non-low ground truth was downgraded to low"
+      ]
+    },
+    {
+      "case_id": "real-016",
+      "scenario": "violence",
+      "image_sha256": "7f145a204cb04750bb2824c6d167e24319d439bbe57511b8dbb919c0929df479",
+      "expected": {
+        "risk_level": "medium",
+        "categories": [
+          "violence"
+        ],
+        "text": null,
+        "objects": null,
+        "requires_manual_review": true
+      },
+      "actual": {
+        "status": "completed",
+        "risk_level": "low",
+        "risk_score": 0.103125,
+        "categories": [],
+        "requires_manual_review": false,
+        "decision_source": "fusion",
+        "route": "vlm_path",
+        "vlm_called": true,
+        "vlm_status": "success",
+        "vlm_risk_level": "low",
+        "fusion_scores": {
+          "visual": 0.0,
+          "text": null,
+          "vlm": 0.15
+        },
+        "modules": {
+          "detector": "success",
+          "ocr": "success",
+          "baseline": "skipped",
+          "vlm": "success"
+        },
+        "timing": {
+          "request_total_ms": 12452.599899999768,
+          "queue_wait_ms": 0.10640000073181,
+          "inference_ms": 12405.70740000112,
+          "response_serialization_ms": 0.10029999975813553,
+          "pipeline_total_ms": 12404.720300000918,
+          "detector_ms": 16.992699998809258,
+          "ocr_ms": 7368.652900000598,
+          "baseline_ms": 0.0,
+          "routing_ms": 0.08340000022144523,
+          "vlm_ms": 5009.787500001039,
+          "fusion_ms": 0.08560000060242601
+        }
+      },
+      "classification": "CONFIRMED_REGRESSION",
+      "classification_reasons": [
+        "required manual review was lost",
+        "non-low ground truth was downgraded to low"
+      ]
+    },
+    {
+      "case_id": "real-017",
+      "scenario": "violence",
+      "image_sha256": "431e631270ba2e566bc19dbdae74b6b6e1585ce1387e1ae565bcbe283932bb95",
+      "expected": {
+        "risk_level": "medium",
+        "categories": [
+          "violence"
+        ],
+        "text": null,
+        "objects": null,
+        "requires_manual_review": true
+      },
+      "actual": {
+        "status": "completed",
+        "risk_level": "low",
+        "risk_score": 0.08288192342919432,
+        "categories": [],
+        "requires_manual_review": true,
+        "decision_source": "fusion",
+        "route": "vlm_path",
+        "vlm_called": true,
+        "vlm_status": "success",
+        "vlm_risk_level": "low",
+        "fusion_scores": {
+          "visual": 0.0,
+          "text": 0.0019096171459715495,
+          "vlm": 0.15
+        },
+        "modules": {
+          "detector": "success",
+          "ocr": "success",
+          "baseline": "success",
+          "vlm": "success"
+        },
+        "timing": {
+          "request_total_ms": 16647.91569999943,
+          "queue_wait_ms": 0.07089999962772708,
+          "inference_ms": 16603.355799999918,
+          "response_serialization_ms": 0.17489999845565762,
+          "pipeline_total_ms": 16602.768499999,
+          "detector_ms": 21.60079999885056,
+          "ocr_ms": 7641.920599999139,
+          "baseline_ms": 2.3053000004438218,
+          "routing_ms": 0.09180000051856041,
+          "vlm_ms": 8928.442399999767,
+          "fusion_ms": 0.09490000047662761
+        }
+      },
+      "classification": "CONFIRMED_REGRESSION",
+      "classification_reasons": [
+        "non-low ground truth was downgraded to low"
+      ]
+    },
+    {
+      "case_id": "real-018",
+      "scenario": "blood",
+      "image_sha256": "0baa7adef041c8ad4d27505ce6d2f9facfad3cf00b5cdad7dcc00f325cf59666",
+      "expected": {
+        "risk_level": "medium",
+        "categories": [
+          "blood"
+        ],
+        "text": null,
+        "objects": null,
+        "requires_manual_review": true
+      },
+      "actual": {
+        "status": "completed",
+        "risk_level": "low",
+        "risk_score": 0.103125,
+        "categories": [],
+        "requires_manual_review": false,
+        "decision_source": "fusion",
+        "route": "vlm_path",
+        "vlm_called": true,
+        "vlm_status": "success",
+        "vlm_risk_level": "low",
+        "fusion_scores": {
+          "visual": 0.0,
+          "text": null,
+          "vlm": 0.15
+        },
+        "modules": {
+          "detector": "success",
+          "ocr": "success",
+          "baseline": "skipped",
+          "vlm": "success"
+        },
+        "timing": {
+          "request_total_ms": 9640.59300000008,
+          "queue_wait_ms": 0.05229999987932388,
+          "inference_ms": 9633.947599999374,
+          "response_serialization_ms": 0.10149999980058055,
+          "pipeline_total_ms": 9633.333699999639,
+          "detector_ms": 19.722299999557436,
+          "ocr_ms": 3603.287800000544,
+          "baseline_ms": 0.0,
+          "routing_ms": 0.09400000089954119,
+          "vlm_ms": 6005.210300001636,
+          "fusion_ms": 0.09049999971466605
+        }
+      },
+      "classification": "CONFIRMED_REGRESSION",
+      "classification_reasons": [
+        "required manual review was lost",
+        "non-low ground truth was downgraded to low"
+      ]
+    },
+    {
+      "case_id": "real-019",
+      "scenario": "blood",
+      "image_sha256": "8313e761f403ef891076f9537b51dd749906d42c9f5b0e71104822ce6d73e5c8",
+      "expected": {
+        "risk_level": "low",
+        "categories": [],
+        "text": null,
+        "objects": null,
+        "requires_manual_review": false
+      },
+      "actual": {
+        "status": "completed",
+        "risk_level": "low",
+        "risk_score": 0.0012747426740111647,
+        "categories": [],
+        "requires_manual_review": false,
+        "decision_source": "fusion",
+        "route": "fast_path",
+        "vlm_called": false,
+        "vlm_status": "skipped",
+        "vlm_risk_level": null,
+        "fusion_scores": {
+          "visual": 0.0,
+          "text": 0.0028681710165251203,
+          "vlm": null
+        },
+        "modules": {
+          "detector": "success",
+          "ocr": "success",
+          "baseline": "success",
+          "vlm": "skipped"
+        },
+        "timing": {
+          "request_total_ms": 8799.430399998528,
+          "queue_wait_ms": 0.07969999933266081,
+          "inference_ms": 8782.191699998293,
+          "response_serialization_ms": 0.18509999972593505,
+          "pipeline_total_ms": 8781.000999999378,
+          "detector_ms": 21.711200000936515,
+          "ocr_ms": 8746.950500000821,
+          "baseline_ms": 2.3034000005281996,
+          "routing_ms": 0.09339999996882398,
+          "vlm_ms": 0.0,
+          "fusion_ms": 0.23459999829356093
+        }
+      },
+      "classification": "EQUIVALENT",
+      "classification_reasons": [
+        "risk, required categories, and manual-review behavior match"
+      ]
+    },
+    {
+      "case_id": "real-020",
+      "scenario": "blood",
+      "image_sha256": "f8859c02158b9a939a8fa1b82b5dd0c21b566f8d1787cf763b12b845d4914ca9",
+      "expected": {
+        "risk_level": "medium",
+        "categories": [
+          "blood"
+        ],
+        "text": null,
+        "objects": null,
+        "requires_manual_review": true
+      },
+      "actual": {
+        "status": "completed",
+        "risk_level": "low",
+        "risk_score": 0.08301758635105608,
+        "categories": [],
+        "requires_manual_review": false,
+        "decision_source": "fusion",
+        "route": "vlm_path",
+        "vlm_called": true,
+        "vlm_status": "success",
+        "vlm_risk_level": "low",
+        "fusion_scores": {
+          "visual": 0.0,
+          "text": 0.0025879317552803616,
+          "vlm": 0.15
+        },
+        "modules": {
+          "detector": "success",
+          "ocr": "success",
+          "baseline": "success",
+          "vlm": "success"
+        },
+        "timing": {
+          "request_total_ms": 28118.18900000071,
+          "queue_wait_ms": 0.1112000009015901,
+          "inference_ms": 28082.663799999864,
+          "response_serialization_ms": 0.13519999993150122,
+          "pipeline_total_ms": 28081.964200000584,
+          "detector_ms": 24.319499998455285,
+          "ocr_ms": 10668.356299998777,
+          "baseline_ms": 2.342200001294259,
+          "routing_ms": 0.08969999908003956,
+          "vlm_ms": 17374.850900001547,
+          "fusion_ms": 0.09710000085760839
+        }
+      },
+      "classification": "CONFIRMED_REGRESSION",
+      "classification_reasons": [
+        "required manual review was lost",
+        "non-low ground truth was downgraded to low"
+      ]
+    },
+    {
+      "case_id": "real-021",
+      "scenario": "violence",
+      "image_sha256": "237bc4e893b15c54b69c1b5ba9b38eb2d627fd8a0bcba9edd823bd93c3c9bb68",
+      "expected": {
+        "risk_level": "medium",
+        "categories": [
+          "visual_sensitive_region",
+          "violence"
+        ],
+        "text": null,
+        "objects": null,
+        "requires_manual_review": true
+      },
+      "actual": {
+        "status": "completed",
+        "risk_level": "low",
+        "risk_score": 0.08284570732318992,
+        "categories": [],
+        "requires_manual_review": true,
+        "decision_source": "fusion",
+        "route": "vlm_path",
+        "vlm_called": true,
+        "vlm_status": "success",
+        "vlm_risk_level": "low",
+        "fusion_scores": {
+          "visual": 0.0,
+          "text": 0.001728536615949578,
+          "vlm": 0.15
+        },
+        "modules": {
+          "detector": "success",
+          "ocr": "success",
+          "baseline": "success",
+          "vlm": "success"
+        },
+        "timing": {
+          "request_total_ms": 16573.10900000084,
+          "queue_wait_ms": 0.08460000026389025,
+          "inference_ms": 16535.980099999506,
+          "response_serialization_ms": 0.11780000022554304,
+          "pipeline_total_ms": 16535.359000001336,
+          "detector_ms": 20.516099999440485,
+          "ocr_ms": 9641.451600000437,
+          "baseline_ms": 1.981399998840061,
+          "routing_ms": 0.08539999907952733,
+          "vlm_ms": 6856.586200001402,
+          "fusion_ms": 0.139899999339832
+        }
+      },
+      "classification": "CONFIRMED_REGRESSION",
+      "classification_reasons": [
+        "non-low ground truth was downgraded to low"
+      ]
+    },
+    {
+      "case_id": "real-022",
+      "scenario": "prohibited_symbol",
+      "image_sha256": "197db28a84c054fd31cde82989ad6ad2e30aabe0a5617c7b94be35b0d31a63ae",
+      "expected": {
+        "risk_level": "medium",
+        "categories": [
+          "prohibited_symbol"
+        ],
+        "text": null,
+        "objects": null,
+        "requires_manual_review": true
+      },
+      "actual": {
+        "status": "completed",
+        "risk_level": "low",
+        "risk_score": 0.0014104207499139791,
+        "categories": [],
+        "requires_manual_review": false,
+        "decision_source": "fusion",
+        "route": "fast_path",
+        "vlm_called": false,
+        "vlm_status": "skipped",
+        "vlm_risk_level": null,
+        "fusion_scores": {
+          "visual": 0.0,
+          "text": 0.003173446687306453,
+          "vlm": null
+        },
+        "modules": {
+          "detector": "success",
+          "ocr": "success",
+          "baseline": "success",
+          "vlm": "skipped"
+        },
+        "timing": {
+          "request_total_ms": 7765.352999998868,
+          "queue_wait_ms": 0.08010000055946875,
+          "inference_ms": 7750.270500000624,
+          "response_serialization_ms": 0.2037999984167982,
+          "pipeline_total_ms": 7749.128999999812,
+          "detector_ms": 28.44340000046941,
+          "ocr_ms": 7710.208700000294,
+          "baseline_ms": 2.425099999527447,
+          "routing_ms": 0.08859999979904387,
+          "vlm_ms": 0.0,
+          "fusion_ms": 0.22930000159249175
+        }
+      },
+      "classification": "CONFIRMED_REGRESSION",
+      "classification_reasons": [
+        "required manual review was lost",
+        "non-low ground truth was downgraded to low"
+      ]
+    },
+    {
+      "case_id": "real-023",
+      "scenario": "prohibited_symbol",
+      "image_sha256": "d7469a8fd2bfc611d9ac98f8c3e88b96745bafb09e4e785752605034c5c83804",
+      "expected": {
+        "risk_level": "medium",
+        "categories": [
+          "prohibited_symbol"
+        ],
+        "text": null,
+        "objects": null,
+        "requires_manual_review": true
+      },
+      "actual": {
+        "status": "completed",
+        "risk_level": "medium",
+        "risk_score": 0.4955653831436615,
+        "categories": [
+          {
+            "name": "prohibited_symbol",
+            "score": 0.9
+          }
+        ],
+        "requires_manual_review": true,
+        "decision_source": "fusion",
+        "route": "vlm_path",
+        "vlm_called": true,
+        "vlm_status": "success",
+        "vlm_risk_level": "high",
+        "fusion_scores": {
+          "visual": 0.0,
+          "text": 0.0028269157183071756,
+          "vlm": 0.9
+        },
+        "modules": {
+          "detector": "success",
+          "ocr": "success",
+          "baseline": "success",
+          "vlm": "success"
+        },
+        "timing": {
+          "request_total_ms": 19543.896699999095,
+          "queue_wait_ms": 0.0455999997939216,
+          "inference_ms": 19403.540699999212,
+          "response_serialization_ms": 0.1526000014564488,
+          "pipeline_total_ms": 19402.79350000128,
+          "detector_ms": 20.381000000270433,
+          "ocr_ms": 8732.296100000895,
+          "baseline_ms": 2.3118999997677747,
+          "routing_ms": 0.11470000026747584,
+          "vlm_ms": 10632.294199998796,
+          "fusion_ms": 0.12629999946511816
+        }
+      },
+      "classification": "EQUIVALENT",
+      "classification_reasons": [
+        "risk, required categories, and manual-review behavior match"
+      ]
+    },
+    {
+      "case_id": "real-024",
+      "scenario": "prohibited_symbol",
+      "image_sha256": "9b0a64eb53581cd41733e78df11bfa76ce4a269ac8307aae0dbae03402bf9295",
+      "expected": {
+        "risk_level": "medium",
+        "categories": [
+          "prohibited_symbol"
+        ],
+        "text": null,
+        "objects": null,
+        "requires_manual_review": true
+      },
+      "actual": {
+        "status": "completed",
+        "risk_level": "low",
+        "risk_score": 0.0011541736272150447,
+        "categories": [],
+        "requires_manual_review": false,
+        "decision_source": "fusion",
+        "route": "fast_path",
+        "vlm_called": false,
+        "vlm_status": "skipped",
+        "vlm_risk_level": null,
+        "fusion_scores": {
+          "visual": 0.0,
+          "text": 0.0025968906612338504,
+          "vlm": null
+        },
+        "modules": {
+          "detector": "success",
+          "ocr": "success",
+          "baseline": "success",
+          "vlm": "skipped"
+        },
+        "timing": {
+          "request_total_ms": 9507.35429999986,
+          "queue_wait_ms": 0.06709999979648273,
+          "inference_ms": 9485.21620000065,
+          "response_serialization_ms": 0.18799999998009298,
+          "pipeline_total_ms": 9484.10530000001,
+          "detector_ms": 17.68360000096436,
+          "ocr_ms": 9455.46480000121,
+          "baseline_ms": 2.3859000011725584,
+          "routing_ms": 0.08990000060293823,
+          "vlm_ms": 0.0,
+          "fusion_ms": 0.24019999909796752
+        }
+      },
+      "classification": "CONFIRMED_REGRESSION",
+      "classification_reasons": [
+        "required manual review was lost",
+        "non-low ground truth was downgraded to low"
+      ]
+    },
+    {
+      "case_id": "real-025",
+      "scenario": "prohibited_symbol",
+      "image_sha256": "4b4fdae56639a8842ffa6db233f3cd6b124c89b8ef62a3d894c1383b3139d8d2",
+      "expected": {
+        "risk_level": "medium",
+        "categories": [
+          "prohibited_symbol"
+        ],
+        "text": null,
+        "objects": null,
+        "requires_manual_review": true
+      },
+      "actual": {
+        "status": "completed",
+        "risk_level": "medium",
+        "risk_score": 0.61875,
+        "categories": [
+          {
+            "name": "prohibited_symbol",
+            "score": 0.9
+          }
+        ],
+        "requires_manual_review": true,
+        "decision_source": "fusion",
+        "route": "vlm_path",
+        "vlm_called": true,
+        "vlm_status": "success",
+        "vlm_risk_level": "high",
+        "fusion_scores": {
+          "visual": 0.0,
+          "text": null,
+          "vlm": 0.9
+        },
+        "modules": {
+          "detector": "success",
+          "ocr": "success",
+          "baseline": "skipped",
+          "vlm": "success"
+        },
+        "timing": {
+          "request_total_ms": 16974.478900001486,
+          "queue_wait_ms": 0.09250000039173756,
+          "inference_ms": 16954.658500000733,
+          "response_serialization_ms": 0.11959999937971588,
+          "pipeline_total_ms": 16954.041599999982,
+          "detector_ms": 21.622499998557032,
+          "ocr_ms": 7685.502100001031,
+          "baseline_ms": 0.0,
+          "routing_ms": 0.08829999933368526,
+          "vlm_ms": 9237.937000001693,
+          "fusion_ms": 0.10239999937766697
+        }
+      },
+      "classification": "EQUIVALENT",
+      "classification_reasons": [
+        "risk, required categories, and manual-review behavior match"
+      ]
+    },
+    {
+      "case_id": "real-026",
+      "scenario": "watermark",
+      "image_sha256": "608fc23dd142a7c75b35bd93224fa7159c4d1d3f4d73f297ee9835d871071590",
+      "expected": {
+        "risk_level": "medium",
+        "categories": [
+          "watermark"
+        ],
+        "text": null,
+        "objects": null,
+        "requires_manual_review": true
+      },
+      "actual": {
+        "status": "completed",
+        "risk_level": "low",
+        "risk_score": 0.0831607698209627,
+        "categories": [],
+        "requires_manual_review": false,
+        "decision_source": "fusion",
+        "route": "vlm_path",
+        "vlm_called": true,
+        "vlm_status": "success",
+        "vlm_risk_level": "low",
+        "fusion_scores": {
+          "visual": 0.0,
+          "text": 0.0033038491048134684,
+          "vlm": 0.15
+        },
+        "modules": {
+          "detector": "success",
+          "ocr": "success",
+          "baseline": "success",
+          "vlm": "success"
+        },
+        "timing": {
+          "request_total_ms": 15506.469399999332,
+          "queue_wait_ms": 0.039200000173877925,
+          "inference_ms": 15502.76599999961,
+          "response_serialization_ms": 0.1289000010729069,
+          "pipeline_total_ms": 15502.075300000797,
+          "detector_ms": 16.51529999980994,
+          "ocr_ms": 3981.0747999999876,
+          "baseline_ms": 2.3344999990513315,
+          "routing_ms": 0.08960000013757963,
+          "vlm_ms": 11495.58789999901,
+          "fusion_ms": 0.1171000003523659
+        }
+      },
+      "classification": "CONFIRMED_REGRESSION",
+      "classification_reasons": [
+        "required manual review was lost",
+        "non-low ground truth was downgraded to low"
+      ]
+    },
+    {
+      "case_id": "real-027",
+      "scenario": "watermark",
+      "image_sha256": "cd9b27c74025dd9ac63557877c686f57d4c5ee2dbe9880413e71645ee5241acf",
+      "expected": {
+        "risk_level": "medium",
+        "categories": [
+          "watermark"
+        ],
+        "text": null,
+        "objects": null,
+        "requires_manual_review": true
+      },
+      "actual": {
+        "status": "completed",
+        "risk_level": "low",
+        "risk_score": 0.08284402715835193,
+        "categories": [],
+        "requires_manual_review": true,
+        "decision_source": "fusion",
+        "route": "vlm_path",
+        "vlm_called": true,
+        "vlm_status": "success",
+        "vlm_risk_level": "low",
+        "fusion_scores": {
+          "visual": 0.0,
+          "text": 0.0017201357917596553,
+          "vlm": 0.15
+        },
+        "modules": {
+          "detector": "success",
+          "ocr": "success",
+          "baseline": "success",
+          "vlm": "success"
+        },
+        "timing": {
+          "request_total_ms": 11426.467599998432,
+          "queue_wait_ms": 0.08519999937561806,
+          "inference_ms": 11410.546399998566,
+          "response_serialization_ms": 0.19439999960013665,
+          "pipeline_total_ms": 11409.880900000644,
+          "detector_ms": 22.34889999999723,
+          "ocr_ms": 4542.633099999875,
+          "baseline_ms": 1.959399998668232,
+          "routing_ms": 0.08139999954437371,
+          "vlm_ms": 6836.992300000929,
+          "fusion_ms": 0.09469999895372894
+        }
+      },
+      "classification": "CONFIRMED_REGRESSION",
+      "classification_reasons": [
+        "non-low ground truth was downgraded to low"
+      ]
+    }
+  ],
+  "blocker": "17 confirmed regressions require remediation; clean-machine replay is still required."
+}
