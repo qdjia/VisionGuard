@@ -295,6 +295,15 @@ def test_gate1_workflow_self_builds_and_uses_a_separate_smoke_job() -> None:
     assert "create release" not in workflow.casefold()
 
 
+def test_gate1_contract_job_installs_collection_dependencies() -> None:
+    workflow = Path(".github/workflows/windows-release-smoke.yml").read_text(encoding="utf-8")
+    contract_job = workflow.split("  acceptance-contract:", maxsplit=1)[1].split(
+        "  build-candidate:", maxsplit=1
+    )[0]
+    assert "pytest==8.4.2" in contract_job
+    assert "PyYAML==6.0.3" in contract_job
+
+
 def test_gate1_metadata_records_numeric_application_version() -> None:
     workflow = Path(".github/workflows/windows-release-smoke.yml").read_text(encoding="utf-8")
     assert 'tauri.conf.json" | ConvertFrom-Json).version' in workflow
@@ -311,9 +320,7 @@ def test_release_nsis_template_rejects_downgrades_before_reinstall() -> None:
     assert windows["nsis"]["template"] == "nsis/installer.nsi"
 
     template = Path("desktop/src-tauri/nsis/installer.nsi").read_text(encoding="utf-8")
-    init = template.split("Function .onInit", maxsplit=1)[1].split(
-        "FunctionEnd", maxsplit=1
-    )[0]
+    init = template.split("Function .onInit", maxsplit=1)[1].split("FunctionEnd", maxsplit=1)[0]
     assert 'ReadRegStr $R8 SHCTX "${UNINSTKEY}" "DisplayVersion"' in init
     assert 'nsis_tauri_utils::SemverCompare "${VERSION}" $R8' in init
     assert "SetErrorLevel 2" in init
