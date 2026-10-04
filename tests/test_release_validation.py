@@ -2,7 +2,13 @@ import hashlib
 import json
 from pathlib import Path
 
-from scripts.validate_release import _validate_release_evidence, _validate_sbom, validate_release
+from scripts.build_release import derive_final_rc_gates
+from scripts.validate_release import (
+    _validate_release_evidence,
+    _validate_sbom,
+    release_gate_passed,
+    validate_release,
+)
 
 
 def _hash(path: Path) -> str:
@@ -314,3 +320,17 @@ def test_stable_gate_rejects_historical_regression_limitation(tmp_path: Path) ->
     _validate_release_evidence(tmp_path, errors, allow_historical_limitation=False)
 
     assert "historical regression clean-machine limitation is not allowed for stable" in errors
+
+
+def test_final_rc_gates_are_derived_from_repository_evidence() -> None:
+    gates, blockers = derive_final_rc_gates(Path("release-evidence"))
+
+    assert blockers == []
+    assert gates["historical_regression"] == "passed_with_limitation"
+    assert all(value in {"passed", "passed_with_limitation"} for value in gates.values())
+
+
+def test_historical_limitation_is_rc_only() -> None:
+    assert release_gate_passed("historical_regression", "passed_with_limitation", "rc")
+    assert not release_gate_passed("historical_regression", "passed_with_limitation", "stable")
+    assert not release_gate_passed("clean_core", "passed_with_limitation", "rc")

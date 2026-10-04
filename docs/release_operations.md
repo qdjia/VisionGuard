@@ -37,19 +37,23 @@ artifact 后验收。该 artifact 不是 Final Candidate 或 GitHub Release，�
 
 ## RC Checklist
 
-- [ ] GitHub-hosted Windows Clean Core 验收 PASS
-- [ ] 当前机器新普通用户 Fresh-user GUI 验收 PASS
-- [ ] RTX 4060 独立受管环境 Advanced AI GPU 验收 PASS
-- [ ] `overall_clean_environment` 聚合结果 PASS
-- [ ] 完整 fresh-cache Advanced AI 下载与恢复流程通过
-- [ ] Core readiness、Fast Review、Deep Review 和 fail-safe 通过
-- [ ] 动态端口、session token、关闭与无 orphan process 通过
-- [ ] 更新、回滚、卸载与重装通过
-- [ ] 历史真实图片回归完成
-- [ ] Detector AGPL 来源、Corresponding Source、commit/tag 映射完整
-- [ ] SBOM、LICENSE、NOTICE 和第三方声明随候选包分发
+- [x] GitHub-hosted Windows Clean Core 验收 PASS
+- [x] 当前机器新普通用户 Fresh-user GUI 验收 PASS
+- [x] RTX 4060 独立受管环境 Advanced AI GPU 验收 PASS
+- [x] `overall_clean_environment` 聚合结果 PASS
+- [x] 完整 fresh-cache Advanced AI 下载与恢复流程通过
+- [x] Core readiness、Fast Review、Deep Review 和 fail-safe 通过
+- [x] 动态端口、session token、关闭与无 orphan process 通过
+- [x] 更新、回滚、卸载与重装通过
+- [x] 历史真实图片回归达到 `PASS_WITH_LIMITATION`；独立干净机复验延期至 Stable gate
+- [x] Detector AGPL 来源、Corresponding Source、commit/tag 映射完整
+- [x] SBOM、LICENSE、NOTICE 和第三方声明由构建器写入候选包
 - [ ] 最终候选包未包含禁止的模型、wheel、CUDA/NVIDIA DLL 或旧分卷
 - [ ] `python scripts/validate_release.py <candidate> --rc` 无绕过通过
+
+最终 RC 必须使用 `python scripts/build_release.py --version 1.0.0-rc.1 --final-rc`。
+该模式要求 Git tracked tree 干净，禁止复用旧二进制或旧输出，强制重建 Core Models，且只允许
+online-bootstrap 分发。构建结束会自动运行严格 RC validator；失败时不得创建 Tag 或 Release。
 
 ## 硬件验证边界
 

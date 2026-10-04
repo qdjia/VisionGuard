@@ -100,6 +100,13 @@ def test_online_release_scan_rejects_cuda_and_model_payloads(tmp_path: Path) -> 
         assert_online_bootstrap_hygiene(tmp_path)
 
 
+def test_online_release_scan_allows_nvidia_evidence_documents(tmp_path: Path) -> None:
+    (tmp_path / "nvjitlink-analysis.json").write_text("{}", encoding="utf-8")
+    (tmp_path / "native-nvidia-inventory.json").write_text("{}", encoding="utf-8")
+
+    assert_online_bootstrap_hygiene(tmp_path)
+
+
 def test_cancel_file_stops_managed_subprocess(tmp_path: Path) -> None:
     wheel = tmp_path / "visionguard.whl"
     wheel.write_bytes(b"wheel")

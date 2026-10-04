@@ -37,6 +37,16 @@ FORBIDDEN_ONLINE_ASSET_NAMES = (
     "nvrtc",
     "torch_cuda",
 )
+FINAL_RC_ACCEPTANCE_GATES = {
+    "advanced_ai_gpu",
+    "clean_core",
+    "fresh_user_gui",
+    "overall_clean_environment",
+    "reinstall",
+    "rollback",
+    "uninstall",
+    "upgrade",
+}
 
 
 def sha256(path: Path) -> str:
@@ -61,6 +71,68 @@ def source_commit() -> str:
     ).strip()
 
 
+def assert_clean_source_tree() -> None:
+    changed = subprocess.check_output(
+        ["git", "status", "--porcelain", "--untracked-files=no"],
+        cwd=ROOT,
+        text=True,
+        encoding="utf-8",
+    ).strip()
+    if changed:
+        raise RuntimeError("final RC requires a clean tracked source tree")
+
+
+def load_json(path: Path) -> dict:
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def derive_final_rc_gates(evidence_root: Path) -> tuple[dict[str, str], list[str]]:
+    acceptance = load_json(evidence_root / "acceptance-status.json")
+    acceptance_gates = acceptance.get("gates", {})
+    gates = {
+        "asset_hosting": "passed",
+        "detector_license": "passed",
+        "local_inference": "passed",
+        "license_distribution": "passed",
+        "native_redistribution": "passed",
+        "paddle_evidence": "passed",
+        "qwen_evidence": "passed",
+        "sbom": "passed",
+    }
+    blockers: list[str] = []
+    for name in sorted(FINAL_RC_ACCEPTANCE_GATES):
+        status = str(acceptance_gates.get(name, {}).get("status", "MISSING")).upper()
+        gates[name] = "passed" if status == "PASS" else "blocked"
+        if status != "PASS":
+            blockers.append(f"{name.upper()}_{status}")
+
+    historical = load_json(evidence_root / "historical-regression.json")
+    historical_status = str(historical.get("gate_status", "MISSING")).upper()
+    if historical_status == "PASS":
+        gates["historical_regression"] = "passed"
+    elif historical_status == "PASS_WITH_LIMITATION":
+        gates["historical_regression"] = "passed_with_limitation"
+    else:
+        gates["historical_regression"] = "blocked"
+        blockers.append(f"HISTORICAL_REGRESSION_{historical_status}")
+
+    detector = load_json(evidence_root / "detector-provenance.json")
+    if detector.get("redistribution_status") != "ALLOWED_WITH_CONDITIONS":
+        gates["detector_license"] = "blocked"
+        blockers.append("DETECTOR_REDISTRIBUTION_NOT_CLEARED")
+
+    local_inference = load_json(evidence_root / "local-inference-architecture.json")
+    if local_inference.get("status") != "PASS":
+        gates["local_inference"] = "blocked"
+        blockers.append("LOCAL_INFERENCE_NOT_PASSED")
+
+    migration = load_json(evidence_root / "license-migration.json")
+    if migration.get("current_project_license") != "AGPL-3.0-only":
+        gates["license_distribution"] = "blocked"
+        blockers.append("PROJECT_LICENSE_ALIGNMENT_NOT_PASSED")
+    return gates, blockers
+
+
 def run(command: list[str], *, cwd: Path = ROOT, env: dict[str, str] | None = None) -> None:
     print("+", subprocess.list2cmdline(command), flush=True)
     subprocess.run(command, cwd=cwd, check=True, env=env)
@@ -83,11 +155,15 @@ def assert_online_bootstrap_hygiene(*roots: Path) -> None:
             if not path.is_file():
                 continue
             lowered = path.name.casefold()
-            if (
-                any(token in lowered for token in FORBIDDEN_ONLINE_ASSET_NAMES)
-                or path.suffix.casefold() in {".whl", ".safetensors", ".gguf"}
+            suffix = path.suffix.casefold()
+            forbidden_native = suffix in {".dll", ".dylib", ".pyd", ".so"} and any(
+                token in lowered for token in FORBIDDEN_ONLINE_ASSET_NAMES
+            )
+            forbidden_model_or_wheel = (
+                suffix in {".whl", ".safetensors", ".gguf"}
                 and "visionguard_moderation" not in lowered
-            ):
+            )
+            if forbidden_native or forbidden_model_or_wheel:
                 violations.append(path)
     if violations:
         rendered = ", ".join(str(path) for path in violations[:10])
@@ -186,13 +262,30 @@ def write_checksums(output: Path, paths: list[Path]) -> Path:
     return target
 
 
-def write_release_notes(output: Path, version: str, blockers: list[str]) -> Path:
+def write_release_notes(
+    output: Path,
+    version: str,
+    blockers: list[str],
+    *,
+    final_rc: bool = False,
+    limitations: list[str] | None = None,
+) -> Path:
     target = output / "RELEASE_NOTES.md"
-    blocker_text = "\n".join(f"- `{blocker}`" for blocker in blockers)
+    blocker_text = (
+        "\n".join(f"- `{blocker}`" for blocker in blockers)
+        if blockers
+        else "- None recorded for this RC candidate."
+    )
+    limitation_text = "\n".join(f"- {limitation}" for limitation in limitations or []) or "- None."
+    candidate_status = (
+        "严格 RC 候选；仍须完成候选级 CI smoke 后才能创建 Tag 或公开上传。"
+        if final_rc
+        else "本地生成的候选产物，不表示已经获准公开发布。"
+    )
     target.write_text(
         f"""# VisionGuard {version} Local Release Candidate
 
-这是本地生成的候选产物，不表示已经获准公开发布。
+{candidate_status}
 
 ## Distribution model
 
@@ -204,6 +297,10 @@ def write_release_notes(output: Path, version: str, blockers: list[str]) -> Path
 ## Blocking gates
 
 {blocker_text}
+
+## Accepted limitations
+
+{limitation_text}
 
 公开分发前必须完成 `docs/release_gate.md` 所列门禁并让严格 validator 无绕过通过。
 """,
@@ -234,6 +331,11 @@ def main() -> None:
         help="Default is small official-source bootstrap; bundled is legacy fallback only.",
     )
     parser.add_argument("--skip-validation", action="store_true")
+    parser.add_argument(
+        "--final-rc",
+        action="store_true",
+        help="Rebuild an evidence-backed RC from a clean committed source tree.",
+    )
     args = parser.parse_args()
     if not SEMVER.fullmatch(args.version):
         raise ValueError("--version must be a SemVer value")
@@ -242,6 +344,17 @@ def main() -> None:
         raise ValueError(
             f"release base version {args.version} does not match app version {app_version}"
         )
+    if args.final_rc:
+        if not re.fullmatch(r"1\.0\.0-rc\.[1-9][0-9]*", args.version):
+            raise ValueError("--final-rc requires version 1.0.0-rc.N")
+        if args.advanced_ai_mode != "online-bootstrap":
+            raise ValueError("--final-rc only supports online-bootstrap distribution")
+        if args.skip_build or args.no_clean or args.skip_advanced_ai or args.skip_validation:
+            raise ValueError(
+                "--final-rc forbids --skip-build, --no-clean, --skip-advanced-ai, "
+                "and --skip-validation"
+            )
+        assert_clean_source_tree()
 
     output = RELEASE_ROOT / f"v{args.version}"
     RELEASE_ROOT.mkdir(exist_ok=True)
@@ -256,7 +369,7 @@ def main() -> None:
             build_bootstrap_wheel()
             assert_online_bootstrap_hygiene(ROOT / "bootstrap-dist", ROOT / "packaging/bootstrap")
         run([sys.executable, "scripts/build_runtime.py", "--profile", "core"])
-        if not core_models.joinpath("manifest.json").is_file():
+        if args.final_rc or not core_models.joinpath("manifest.json").is_file():
             run(
                 [
                     sys.executable,
@@ -268,6 +381,7 @@ def main() -> None:
                     "--output",
                     str(core_models),
                     "--hardlink",
+                    *(["--force"] if args.final_rc else []),
                 ]
             )
         if args.advanced_ai_mode == "online-bootstrap":
@@ -281,8 +395,15 @@ def main() -> None:
     assets: list[dict[str, object]] = []
     installer = output / f"VisionGuard-Setup-{args.version}.exe"
     shutil.copy2(find_installer(), installer)
-    # Public flag remains false until detector/native redistribution gates are cleared.
-    assets.append(asset_record(installer, output, kind="windows_installer", publishable=False))
+    # Only the strict final-RC path may mark the rebuilt installer publishable.
+    assets.append(
+        asset_record(
+            installer,
+            output,
+            kind="windows_installer",
+            publishable=args.final_rc,
+        )
+    )
 
     advanced_manifest: str | None = None
     if not args.skip_advanced_ai and args.advanced_ai_mode == "bundled":
@@ -310,13 +431,46 @@ def main() -> None:
         webview_installer,
         include_legacy_vlm=args.advanced_ai_mode == "bundled",
     )
-    blockers = [
-        "CLEAN_CORE_ACCEPTANCE_PENDING",
-        "FRESH_USER_GUI_ACCEPTANCE_PENDING",
-        "ADVANCED_AI_GPU_ACCEPTANCE_PENDING",
-        "HISTORICAL_REGRESSION_PENDING",
-    ]
-    notes = write_release_notes(output, args.version, blockers)
+    if args.final_rc:
+        gates, blockers = derive_final_rc_gates(ROOT / "release-evidence")
+    else:
+        blockers = [
+            "CLEAN_CORE_ACCEPTANCE_PENDING",
+            "FRESH_USER_GUI_ACCEPTANCE_PENDING",
+            "ADVANCED_AI_GPU_ACCEPTANCE_PENDING",
+            "HISTORICAL_REGRESSION_PENDING",
+        ]
+        gates = {
+            "advanced_ai_gpu": "pending_manual",
+            "asset_hosting": "passed",
+            "clean_core": "pending",
+            "detector_license": "passed",
+            "fresh_user_gui": "pending_manual",
+            "local_inference": "passed",
+            "overall_clean_environment": "pending",
+            "upgrade": "pending_manual",
+            "rollback": "pending_manual",
+            "uninstall": "pending_manual",
+            "reinstall": "pending_manual",
+            "historical_regression": "pending",
+            "license_distribution": "blocked",
+            "native_redistribution": "passed",
+            "paddle_evidence": "passed",
+            "qwen_evidence": "passed",
+            "sbom": "passed",
+        }
+    limitations = (
+        load_json(ROOT / "release-evidence/historical-regression.json").get("limitations", [])
+        if args.final_rc
+        else []
+    )
+    notes = write_release_notes(
+        output,
+        args.version,
+        blockers,
+        final_rc=args.final_rc,
+        limitations=limitations,
+    )
     notice = output / "THIRD_PARTY_NOTICES.md"
     license_report = output / "release_licenses.md"
     detector_provenance = output / "detector_provenance.md"
@@ -387,28 +541,10 @@ def main() -> None:
             "local_inference": True,
             "cloud_inference": False,
             "code_signing": "unsigned",
-            "public_release_ready": False,
+            "public_release_ready": args.final_rc and not blockers,
             "blockers": blockers,
         },
-        "gates": {
-            "advanced_ai_gpu": "pending_manual",
-            "asset_hosting": "passed",
-            "clean_core": "pending",
-            "detector_license": "passed",
-            "fresh_user_gui": "pending_manual",
-            "local_inference": "passed",
-            "overall_clean_environment": "pending",
-            "upgrade": "pending_manual",
-            "rollback": "pending_manual",
-            "uninstall": "pending_manual",
-            "reinstall": "pending_manual",
-            "historical_regression": "pending",
-            "license_distribution": "blocked",
-            "native_redistribution": "passed",
-            "paddle_evidence": "passed",
-            "qwen_evidence": "passed",
-            "sbom": "passed",
-        },
+        "gates": gates,
         "assets": assets,
         "metadata_files": [
             "SHA256SUMS.txt",
@@ -444,7 +580,10 @@ def main() -> None:
     if args.advanced_ai_mode == "online-bootstrap":
         assert_online_bootstrap_hygiene(output)
     if not args.skip_validation:
-        run([sys.executable, "scripts/validate_release.py", str(output)])
+        validation = [sys.executable, "scripts/validate_release.py", str(output)]
+        if args.final_rc:
+            validation.append("--rc")
+        run(validation)
     print(json.dumps({"release": str(output), "assets": len(assets)}, ensure_ascii=False))
 
 

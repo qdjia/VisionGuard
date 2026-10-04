@@ -76,6 +76,15 @@ WINDOWS_ACCEPTANCE_FILES = {
 WINDOWS_ACCEPTANCE_STATUSES = {"PASS", "BLOCKED", "BLOCKED_NETWORK", "FAIL"}
 
 
+def release_gate_passed(name: str, value: object, gate: str) -> bool:
+    normalized = str(value).casefold()
+    if normalized == "passed":
+        return True
+    return (
+        gate == "rc" and name == "historical_regression" and normalized == "passed_with_limitation"
+    )
+
+
 def sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as stream:
@@ -525,9 +534,15 @@ def validate_release(
             if not path.is_file():
                 continue
             lowered = path.name.casefold()
-            if any(
+            suffix = path.suffix.casefold()
+            forbidden_native = suffix in {".dll", ".dylib", ".pyd", ".so"} and any(
                 token in lowered for token in FORBIDDEN_ONLINE_NAMES
-            ) or path.suffix.casefold() in {".whl", ".safetensors", ".gguf"}:
+            )
+            forbidden_model_or_wheel = (
+                suffix in {".whl", ".safetensors", ".gguf"}
+                and "visionguard_moderation" not in lowered
+            )
+            if forbidden_native or forbidden_model_or_wheel:
                 errors.append(f"forbidden online-bootstrap release asset: {path.relative_to(root)}")
     if public and not distribution.get("public_release_ready", False):
         errors.append("release manifest explicitly blocks public distribution")
@@ -553,7 +568,7 @@ def validate_release(
             errors.append(f"release has unresolved blockers: {', '.join(map(str, blockers))}")
         gates = manifest.get("gates", {})
         for name in sorted(RC_REQUIRED_GATES):
-            if gates.get(name) != "passed":
+            if not release_gate_passed(name, gates.get(name), gate):
                 errors.append(f"RC gate not passed: {name}")
         for sbom in required_sboms:
             sbom_path = root / "sbom" / sbom
@@ -629,7 +644,7 @@ def main() -> None:
             value = str(manifest.get("gates", {}).get(name, "missing")).casefold()
             status = (
                 "PASS"
-                if value == "passed"
+                if release_gate_passed(name, value, gate)
                 else "FAIL"
                 if value == "failed"
                 else "N/A"
