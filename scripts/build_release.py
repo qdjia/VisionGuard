@@ -138,6 +138,53 @@ def run(command: list[str], *, cwd: Path = ROOT, env: dict[str, str] | None = No
     subprocess.run(command, cwd=cwd, check=True, env=env)
 
 
+def replace_directory(staged: Path, target: Path, *, allowed_parent: Path) -> None:
+    staged = staged.resolve()
+    target = target.resolve()
+    allowed_parent = allowed_parent.resolve()
+    if staged.parent != allowed_parent or target.parent != allowed_parent:
+        raise ValueError("refusing to replace a directory outside the allowed parent")
+    if not staged.is_dir():
+        raise FileNotFoundError(f"staged directory is missing: {staged}")
+    backup = allowed_parent / f".{target.name}.previous"
+    if backup.exists():
+        shutil.rmtree(backup)
+    if target.exists():
+        target.replace(backup)
+    try:
+        staged.replace(target)
+    except BaseException:
+        if backup.exists() and not target.exists():
+            backup.replace(target)
+        raise
+    if backup.exists():
+        shutil.rmtree(backup)
+
+
+def rebuild_final_core_models(core_models: Path) -> None:
+    models_root = (ROOT / "models").resolve()
+    staged = models_root / ".core-models-v1-final-rc-staging"
+    if staged.exists():
+        if staged.parent != models_root:
+            raise ValueError("unexpected Core Models staging path")
+        shutil.rmtree(staged)
+    run(
+        [
+            sys.executable,
+            "scripts/prepare_gate1_core_models.py",
+            "--output",
+            str(staged),
+            "--work-root",
+            str(ROOT / "artifacts/final-rc-core-model-build"),
+        ]
+    )
+    manifest = load_json(staged / "manifest.json")
+    expected = {"baseline", "detector", "ocr_detection", "ocr_orientation", "ocr_recognition"}
+    if set(manifest.get("models", {})) != expected:
+        raise RuntimeError("rebuilt final RC Core Models have an unexpected component set")
+    replace_directory(staged, core_models, allowed_parent=models_root)
+
+
 def safe_clean(path: Path) -> None:
     resolved = path.resolve()
     if resolved.parent != RELEASE_ROOT.resolve():
@@ -369,7 +416,9 @@ def main() -> None:
             build_bootstrap_wheel()
             assert_online_bootstrap_hygiene(ROOT / "bootstrap-dist", ROOT / "packaging/bootstrap")
         run([sys.executable, "scripts/build_runtime.py", "--profile", "core"])
-        if args.final_rc or not core_models.joinpath("manifest.json").is_file():
+        if args.final_rc:
+            rebuild_final_core_models(core_models)
+        elif not core_models.joinpath("manifest.json").is_file():
             run(
                 [
                     sys.executable,
@@ -381,7 +430,6 @@ def main() -> None:
                     "--output",
                     str(core_models),
                     "--hardlink",
-                    *(["--force"] if args.final_rc else []),
                 ]
             )
         if args.advanced_ai_mode == "online-bootstrap":

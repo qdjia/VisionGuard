@@ -122,15 +122,6 @@ def parser() -> argparse.ArgumentParser:
 def main() -> None:
     args = parser().parse_args()
     output = args.output.expanduser().resolve()
-    if output.exists():
-        if not args.force:
-            raise FileExistsError(f"model bundle already exists: {output}")
-        expected_parent = (Path(__file__).resolve().parents[1] / "models").resolve()
-        if output.parent != expected_parent:
-            raise ValueError(
-                "--force only removes a direct child of the repository models directory"
-            )
-        shutil.rmtree(output)
     sources = {
         "detector": args.detector.resolve(),
         "ocr_detection": args.ocr_detection.resolve(),
@@ -146,6 +137,15 @@ def main() -> None:
     missing = [f"{name}: {path}" for name, path in sources.items() if not path.exists()]
     if missing:
         raise FileNotFoundError("missing model sources:\n" + "\n".join(missing))
+    if output.exists():
+        if not args.force:
+            raise FileExistsError(f"model bundle already exists: {output}")
+        expected_parent = (Path(__file__).resolve().parents[1] / "models").resolve()
+        if output.parent != expected_parent:
+            raise ValueError(
+                "--force only removes a direct child of the repository models directory"
+            )
+        shutil.rmtree(output)
     all_destinations = {
         "detector": output / "detector" / f"model{args.detector.suffix.lower()}",
         "ocr_detection": output / "ocr" / "text_detection",

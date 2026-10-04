@@ -1,8 +1,12 @@
 import hashlib
 import json
+import sys
 from pathlib import Path
 
-from scripts.build_release import derive_final_rc_gates
+import pytest
+
+from scripts import build_model_bundle
+from scripts.build_release import derive_final_rc_gates, replace_directory
 from scripts.validate_release import (
     _validate_release_evidence,
     _validate_sbom,
@@ -334,3 +338,55 @@ def test_historical_limitation_is_rc_only() -> None:
     assert release_gate_passed("historical_regression", "passed_with_limitation", "rc")
     assert not release_gate_passed("historical_regression", "passed_with_limitation", "stable")
     assert not release_gate_passed("clean_core", "passed_with_limitation", "rc")
+
+
+def test_release_directory_replacement_is_bounded_and_atomic(tmp_path: Path) -> None:
+    target = tmp_path / "core-models-v1"
+    staged = tmp_path / ".core-models-v1-staged"
+    target.mkdir()
+    staged.mkdir()
+    (target / "old.txt").write_text("old", encoding="utf-8")
+    (staged / "new.txt").write_text("new", encoding="utf-8")
+
+    replace_directory(staged, target, allowed_parent=tmp_path)
+
+    assert not staged.exists()
+    assert not (tmp_path / ".core-models-v1.previous").exists()
+    assert (target / "new.txt").read_text(encoding="utf-8") == "new"
+
+
+def test_forced_model_bundle_preserves_existing_output_when_sources_are_missing(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    output = tmp_path / "core-models-v1"
+    output.mkdir()
+    marker = output / "existing.txt"
+    marker.write_text("keep", encoding="utf-8")
+    missing = tmp_path / "missing"
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "build_model_bundle.py",
+            "--profile",
+            "core",
+            "--output",
+            str(output),
+            "--detector",
+            str(missing / "detector.onnx"),
+            "--baseline",
+            str(missing / "baseline"),
+            "--ocr-detection",
+            str(missing / "ocr-det"),
+            "--ocr-recognition",
+            str(missing / "ocr-rec"),
+            "--ocr-orientation",
+            str(missing / "ocr-ori"),
+            "--force",
+        ],
+    )
+
+    with pytest.raises(FileNotFoundError, match="missing model sources"):
+        build_model_bundle.main()
+
+    assert marker.read_text(encoding="utf-8") == "keep"
