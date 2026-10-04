@@ -4,9 +4,11 @@ import sys
 from pathlib import Path
 
 import pytest
+import yaml
 
 from scripts import build_model_bundle
 from scripts.build_release import derive_final_rc_gates, replace_directory
+from scripts.prepare_gate1_core_models import write_isolated_training_configs
 from scripts.validate_release import (
     _validate_release_evidence,
     _validate_sbom,
@@ -390,3 +392,16 @@ def test_forced_model_bundle_preserves_existing_output_when_sources_are_missing(
         build_model_bundle.main()
 
     assert marker.read_text(encoding="utf-8") == "keep"
+
+
+def test_final_rc_training_configs_are_isolated(tmp_path: Path) -> None:
+    detector_config, detector_model, baseline_config, baseline_model = (
+        write_isolated_training_configs(tmp_path)
+    )
+    detector = yaml.safe_load(detector_config.read_text(encoding="utf-8"))
+    baseline = yaml.safe_load(baseline_config.read_text(encoding="utf-8"))["baseline"]
+
+    assert detector_model.parent.parent == tmp_path / "experiments" / detector["experiment_name"]
+    assert baseline_model == tmp_path / "baseline" / baseline["experiment_name"]
+    assert Path(detector["artifacts_dir"]) == (tmp_path / "experiments").resolve()
+    assert Path(baseline["artifacts_dir"]) == (tmp_path / "baseline").resolve()

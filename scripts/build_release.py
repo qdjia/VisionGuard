@@ -176,6 +176,7 @@ def rebuild_final_core_models(core_models: Path) -> None:
             str(staged),
             "--work-root",
             str(ROOT / "artifacts/final-rc-core-model-build"),
+            "--isolated-training",
         ]
     )
     manifest = load_json(staged / "manifest.json")

@@ -9,7 +9,10 @@ import shutil
 import subprocess
 import sys
 import urllib.request
+import uuid
 from pathlib import Path
+
+import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 BASE_CHECKPOINT = {
@@ -117,10 +120,60 @@ def ensure_clean_checkout_inputs() -> None:
         raise FileNotFoundError(f"tracked Gate 1 build inputs are missing: {', '.join(missing)}")
 
 
+def write_isolated_training_configs(work_root: Path) -> tuple[Path, Path, Path, Path]:
+    token = uuid.uuid4().hex[:8]
+    config_root = work_root / "configs" / token
+    config_root.mkdir(parents=True, exist_ok=False)
+
+    detector = yaml.safe_load((ROOT / "configs/train_detector_smoke.yaml").read_text("utf-8"))
+    detector_name = f"yolo26n_final_rc_{token}"
+    detector_artifacts = work_root / "experiments"
+    detector.update(
+        {
+            "experiment_name": detector_name,
+            "model": str((ROOT / "yolo26n.pt").resolve()),
+            "data": str((ROOT / "configs/datasets/visionguard_smoke.yaml").resolve()),
+            "artifacts_dir": str(detector_artifacts.resolve()),
+        }
+    )
+    detector_config = config_root / "detector.yaml"
+    detector_config.write_text(
+        yaml.safe_dump(detector, sort_keys=False, allow_unicode=True), encoding="utf-8"
+    )
+
+    baseline = yaml.safe_load((ROOT / "configs/baseline_text.yaml").read_text("utf-8"))
+    baseline_name = f"char_2_4_gbdt_final_rc_{token}"
+    baseline_artifacts = work_root / "baseline"
+    baseline["baseline"].update(
+        {
+            "experiment_name": baseline_name,
+            "train": str((ROOT / "data/text_moderation/sample/train.csv").resolve()),
+            "val": str((ROOT / "data/text_moderation/sample/val.csv").resolve()),
+            "test": str((ROOT / "data/text_moderation/sample/test.csv").resolve()),
+            "artifacts_dir": str(baseline_artifacts.resolve()),
+        }
+    )
+    baseline_config = config_root / "baseline.yaml"
+    baseline_config.write_text(
+        yaml.safe_dump(baseline, sort_keys=False, allow_unicode=True), encoding="utf-8"
+    )
+    return (
+        detector_config,
+        detector_artifacts / detector_name / "weights/best.pt",
+        baseline_config,
+        baseline_artifacts / baseline_name,
+    )
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=ROOT / "models/core-models-v1")
     parser.add_argument("--work-root", type=Path, default=ROOT / "artifacts/gate1-build")
+    parser.add_argument(
+        "--isolated-training",
+        action="store_true",
+        help="Use unique experiment directories without modifying prior development runs.",
+    )
     args = parser.parse_args(argv)
     output = args.output.resolve()
     work_root = args.work_root.resolve()
@@ -132,17 +185,25 @@ def main(argv: list[str] | None = None) -> int:
     work_root.mkdir(parents=True, exist_ok=True)
     checkpoint = ROOT / "yolo26n.pt"
     download_base_checkpoint(checkpoint)
+    if args.isolated_training:
+        detector_config, trained, baseline_config, baseline = write_isolated_training_configs(
+            work_root
+        )
+    else:
+        detector_config = ROOT / "configs/train_detector_smoke.yaml"
+        trained = ROOT / "artifacts/experiments/yolo26n_smoke_640/weights/best.pt"
+        baseline_config = ROOT / "configs/baseline_text.yaml"
+        baseline = ROOT / "artifacts/baseline/char_2_4_gbdt_sample_v1"
     run(
         [
             sys.executable,
             "scripts/train_detector.py",
             "--config",
-            "configs/train_detector_smoke.yaml",
+            str(detector_config),
             "--device",
             "cpu",
         ]
     )
-    trained = ROOT / "artifacts/experiments/yolo26n_smoke_640/weights/best.pt"
     detector = work_root / "detector/model.onnx"
     run(
         [
@@ -158,10 +219,7 @@ def main(argv: list[str] | None = None) -> int:
             "1",
         ]
     )
-    run(
-        [sys.executable, "scripts/train_text_baseline.py", "--config", "configs/baseline_text.yaml"]
-    )
-    baseline = ROOT / "artifacts/baseline/char_2_4_gbdt_sample_v1"
+    run([sys.executable, "scripts/train_text_baseline.py", "--config", str(baseline_config)])
     ocr = fetch_ocr_models(work_root)
     run(
         [
