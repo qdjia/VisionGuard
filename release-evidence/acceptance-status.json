@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "audited_at": "2026-10-02",
+  "audited_at": "2026-10-04",
   "candidate": "1.0.0-rc.1",
   "environment": {
     "acceptance_model": "split-windows-acceptance",
@@ -16,7 +16,8 @@
     "upgrade": {"status": "PASS", "evidence": "release-evidence/upgrade-rollback-acceptance.json"},
     "rollback": {"status": "PASS", "evidence": "release-evidence/upgrade-rollback-acceptance.json"},
     "uninstall": {"status": "PASS", "evidence": "release-evidence/fresh-user-gui.json"},
-    "reinstall": {"status": "PASS", "evidence": "release-evidence/fresh-user-gui.json"}
+    "reinstall": {"status": "PASS", "evidence": "release-evidence/fresh-user-gui.json"},
+    "historical_regression": {"status": "PASS_WITH_LIMITATION", "evidence": "release-evidence/historical-regression.json"}
   },
   "claim_boundaries": {
     "github_runner_is_gpu_clean_machine": false,

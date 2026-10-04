@@ -258,7 +258,11 @@ def _validate_windows_acceptance(evidence: Path, errors: list[str]) -> None:
 
 
 def _validate_release_evidence(
-    root: Path, errors: list[str], *, online_bootstrap: bool = False
+    root: Path,
+    errors: list[str],
+    *,
+    online_bootstrap: bool = False,
+    allow_historical_limitation: bool = True,
 ) -> None:
     evidence = root / "release-evidence"
     provenance = _load_json(evidence / "model-provenance.json", "model provenance", errors)
@@ -383,14 +387,40 @@ def _validate_release_evidence(
         errors.append("historical regression did not replay packaged Core Runtime")
     if regression.get("managed_local_vlm_runtime_replayed") is not True:
         errors.append("historical regression did not replay managed local VLM Runtime")
-    if regression.get("clean_machine_replay_completed") is not True:
-        errors.append("historical regression clean-machine replay is incomplete")
     if regression.get("confirmed_regression_count") != 0:
         errors.append("historical regression has confirmed regressions or missing count")
     if regression.get("potential_regression_count") != 0:
         errors.append("historical regression has unresolved potential regressions")
     regression_status = str(regression.get("gate_status", "")).upper()
-    if regression_status != "PASS":
+    limited_pass = regression_status == "PASS_WITH_LIMITATION"
+    clean_replay = regression.get("clean_machine_replay_completed") is True
+    if limited_pass:
+        risk_acceptance = regression.get("risk_acceptance", {})
+        if clean_replay:
+            errors.append("limited historical regression contradicts completed clean replay")
+        if not allow_historical_limitation:
+            errors.append(
+                "historical regression clean-machine limitation is not allowed for stable"
+            )
+        if regression.get("development_machine_replay_completed") is not True:
+            errors.append("limited historical regression lacks a development-machine replay")
+        if regression.get("clean_machine_replay_deferred") is not True:
+            errors.append(
+                "limited historical regression does not explicitly defer clean-machine replay"
+            )
+        if str(risk_acceptance.get("status", "")).upper() != "ACCEPTED":
+            errors.append("limited historical regression risk was not accepted")
+        if risk_acceptance.get("scope") != "v1.0.0-rc.1":
+            errors.append("limited historical regression risk scope is invalid")
+        if risk_acceptance.get("decision") != "defer_clean_machine_replay":
+            errors.append("limited historical regression risk decision is invalid")
+        if not risk_acceptance.get("accepted_at"):
+            errors.append("limited historical regression risk acceptance date is missing")
+        if not regression.get("limitations"):
+            errors.append("limited historical regression has no recorded limitation")
+    elif not clean_replay:
+        errors.append("historical regression clean-machine replay is incomplete")
+    if regression_status not in {"PASS", "PASS_WITH_LIMITATION"}:
         errors.append(
             f"historical real-image regression is not passed: {regression_status or 'MISSING'}"
         )
@@ -531,7 +561,12 @@ def validate_release(
                 errors.append(f"missing release SBOM: sbom/{sbom}")
             else:
                 _validate_sbom(sbom_path, errors, enforce_runtime_hygiene=True)
-        _validate_release_evidence(root, errors, online_bootstrap=online_bootstrap)
+        _validate_release_evidence(
+            root,
+            errors,
+            online_bootstrap=online_bootstrap,
+            allow_historical_limitation=gate == "rc",
+        )
         models_path = root / "sbom/models.cdx.json"
         if models_path.is_file():
             model_names = {

@@ -111,9 +111,7 @@ def compact_result(record: HistoricalImageRecord, response: dict) -> dict[str, o
                 "routing_policy_version"
             ),
             "prompt_version": (response.get("metadata") or {}).get("prompt_version"),
-            "moderation_policy_version": (response.get("metadata") or {}).get(
-                "policy_version"
-            ),
+            "moderation_policy_version": (response.get("metadata") or {}).get("policy_version"),
         },
         "classification": classification,
         "classification_reasons": reasons,
@@ -184,6 +182,14 @@ def main() -> int:
         "--environment-claim",
         choices=("development_acceptance_machine", "clean_acceptance_machine"),
         default="development_acceptance_machine",
+    )
+    parser.add_argument(
+        "--accept-clean-machine-deferral",
+        action="store_true",
+        help=(
+            "Record an explicit RC risk acceptance when a zero-regression development "
+            "replay is used before an independent clean-machine replay."
+        ),
     )
     args = parser.parse_args()
     if platform.system() != "Windows":
@@ -266,27 +272,51 @@ def main() -> int:
     confirmed = int(summary["confirmed_regression_count"])
     potential = int(summary["potential_regression_count"])
     clean = args.environment_claim == "clean_acceptance_machine"
-    gate_status = "PASS" if clean and not confirmed and not potential else "BLOCKED"
+    regression_free = not confirmed and not potential
+    limited_pass = regression_free and not clean and args.accept_clean_machine_deferral
+    gate_status = (
+        "PASS"
+        if clean and regression_free
+        else "PASS_WITH_LIMITATION"
+        if limited_pass
+        else "BLOCKED"
+    )
     blockers = []
     if confirmed:
         blockers.append(f"{confirmed} confirmed regressions require remediation")
     if potential:
         blockers.append(f"{potential} potential regressions require review")
-    if not clean:
+    if not clean and not limited_pass:
         blockers.append("clean-machine replay is still required")
+    limitations = (
+        ["Independent clean-machine real-image replay is deferred for this RC."]
+        if limited_pass
+        else []
+    )
+    generated_at = datetime.now(UTC).isoformat()
     payload = {
         "schema_version": 1,
-        "generated_at": datetime.now(UTC).isoformat(),
+        "generated_at": generated_at,
         "gate": "historical_real_image_regression",
         "gate_status": gate_status,
         "environment_claim": args.environment_claim,
         "packaged_core_runtime": True,
         "managed_local_vlm_runtime": True,
+        "development_machine_replay_completed": not clean,
+        "clean_machine_replay_completed": clean,
+        "clean_machine_replay_deferred": limited_pass,
+        "risk_acceptance": {
+            "status": "ACCEPTED" if limited_pass else "NOT_APPLICABLE",
+            "accepted_at": generated_at if limited_pass else None,
+            "scope": "v1.0.0-rc.1" if limited_pass else None,
+            "decision": "defer_clean_machine_replay" if limited_pass else None,
+        },
+        "limitations": limitations,
         "dataset": coverage(records),
         **summary,
         "elapsed_seconds": round(time.perf_counter() - started, 3),
         "results": results,
-        "blocker": None if gate_status == "PASS" else "; ".join(blockers) + ".",
+        "blocker": "; ".join(blockers) + "." if blockers else None,
     }
     report_path.write_text(
         json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"

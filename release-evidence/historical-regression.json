@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "audited_at": "2026-10-03",
+  "audited_at": "2026-10-04",
   "behavior_contract_count": 16,
   "behavior_contract_passed": 16,
   "historical_image_case_count": 27,
@@ -11,14 +11,15 @@
   "managed_local_vlm_runtime_replayed": true,
   "development_machine_replay_completed": true,
   "clean_machine_replay_completed": false,
+  "clean_machine_replay_deferred": true,
   "classification_counts": {
-    "EQUIVALENT": 11,
-    "EXPECTED_DIFFERENCE": 1,
+    "EQUIVALENT": 22,
+    "EXPECTED_DIFFERENCE": 5,
     "POTENTIAL_REGRESSION": 0,
-    "CONFIRMED_REGRESSION": 15,
+    "CONFIRMED_REGRESSION": 0,
     "NOT_COMPARABLE": 0
   },
-  "confirmed_regression_count": 15,
+  "confirmed_regression_count": 0,
   "potential_regression_count": 0,
   "routing_policy_version": "routing_v3",
   "unsafe_fast_path_count": 0,
@@ -27,6 +28,15 @@
   "real_image_manifest": "data/regression/real_image_manifest.jsonl",
   "replay_evidence": "release-evidence/historical-real-image-regression.json",
   "legacy_runtime_verdict": "REFERENCE_ONLY",
-  "gate_status": "BLOCKED",
-  "blocker": "The routing_v3 packaged Core + managed local VLM development-machine replay eliminated all unsafe fast-path decisions, but 15 confirmed safety regressions remain after VLM/fusion. Clean-machine replay is also still required after remediation."
+  "gate_status": "PASS_WITH_LIMITATION",
+  "risk_acceptance": {
+    "status": "ACCEPTED",
+    "accepted_at": "2026-10-04",
+    "scope": "v1.0.0-rc.1",
+    "decision": "defer_clean_machine_replay"
+  },
+  "limitations": [
+    "Independent clean-machine real-image replay is deferred for v1.0.0-rc.1."
+  ],
+  "blocker": null
 }

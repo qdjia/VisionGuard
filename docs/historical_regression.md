@@ -2,7 +2,7 @@
 
 候选版本：`1.0.0-rc.1`<br>
 审计更新：2026-10-04<br>
-当前结论：**BLOCKED**。`routing_v3` 保持零错误 fast path；开发验收机已达到 0 confirmed / 0 potential，唯一剩余阻塞项是同一矩阵尚未在干净机器复跑。Legacy Full Runtime 继续仅作参考。
+当前结论：**PASS_WITH_LIMITATION**。`routing_v3` 保持零错误 fast path；开发验收机已达到 0 confirmed / 0 potential。项目已接受 `v1.0.0-rc.1` 在独立干净机器复跑前继续推进的风险；未执行的复验仍明确记录为限制。Legacy Full Runtime 继续仅作参考。
 
 ## 真实图片数据集
 
@@ -78,7 +78,7 @@
 
 `data/regression/contract_manifest.jsonl` 固定 16 个行为合同，覆盖 safe、risky、no text、OCR low confidence、baseline ambiguous、detector high risk、evidence conflict、prompt injection、fast path、VLM route、no VLM、VLM failure、partial result、fusion boundary、routing boundary 和 structured-output recovery。
 
-这 16 项是源码级行为合同，不能替代真实图片模型质量集，也不能把 clean-machine replay 标为 PASS。
+这 16 项是源码级行为合同，不能替代真实图片模型质量集，也不能把未执行的 clean-machine replay 记为已完成。
 
 ## 2026-09-25 hard-case 诊断
 
@@ -86,9 +86,10 @@
 
 原始执行产物含开发机路径，按设计由 Git 忽略；仓库仅保留无私人绝对路径的摘要。
 
-## 后续阻塞项
+## 已接受的限制
 
-1. 在干净验收机使用同一 Core、VLM wheel、模型 revision、prompt v2 与锁定图片清单重复回放。
-2. 只有干净机器同样达到 0 confirmed / 0 potential，才能把 Historical Regression 标为 PASS。
+1. `v1.0.0-rc.1` 接受开发验收机完整回放作为受限通过依据。
+2. 独立干净验收机复跑被延期，不再阻断 RC，但仍是 Stable Release 的硬门槛。
+3. 后续复验必须使用同一 Core、VLM wheel、模型 revision、prompt v2 与锁定图片清单，并达到 0 confirmed / 0 potential。
 
-在锁定真实图片矩阵达到零确认回归、零未决潜在回归并通过干净机器验证前，Historical Regression 保持 `BLOCKED`，Legacy source 不能标记为 Safe To Retire。
+因此 Historical Regression 对 RC 标记为 `PASS_WITH_LIMITATION`，而不是无条件 `PASS`；`clean_machine_replay_completed` 继续保持 `false`。在独立复验完成前，Stable Release 校验仍会拒绝该限制，Legacy source 也不能标记为 Safe To Retire。

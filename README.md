@@ -48,7 +48,7 @@ Core-only 安装体积约 0.843 GiB。Advanced AI 默认不再随 GitHub Release
 - 目标平台：64 位 Windows。
 - Core：CPU 模式；最低内存与性能仍需多机验证。
 - Advanced AI：当前只在 RTX 4060 Laptop 8 GiB 上完成开发验证，这不是最低配置承诺。
-- Clean Core、Fresh-user GUI、Advanced AI GPU 三个分层 Windows Gate 与历史真实图片回归仍待完成。
+- Clean Core、Fresh-user GUI、Advanced AI GPU 和安装器生命周期 Gate 已通过。历史真实图片回归以 `PASS_WITH_LIMITATION` 推进 RC：开发验收机 27 张图片为 0 confirmed / 0 potential，独立干净机复验延期且仍是 Stable Release 硬门槛。
 - Windows RC 计划为未签名包，可能出现 SmartScreen 提示。
 - Ultralytics Detector 在 AGPL 开源发行路径下为 `ALLOWED_WITH_CONDITIONS`；发布时必须同时满足源码、许可证、构建脚本、来源记录及发行版本映射条件。
 - 默认 online-bootstrap Release 不再直接携带 PyTorch/CUDA/NVIDIA DLL；这些依赖在安装时由官方 PyTorch 源获取。NVIDIA 依赖仍需记录，但 `nvJitLink` 的 VisionGuard 直接二进制再分发门禁因此为 N/A。

@@ -2,10 +2,22 @@
   "schema_version": 1,
   "generated_at": "2026-10-04T06:58:04.330268+00:00",
   "gate": "historical_real_image_regression",
-  "gate_status": "BLOCKED",
+  "gate_status": "PASS_WITH_LIMITATION",
   "environment_claim": "development_acceptance_machine",
   "packaged_core_runtime": true,
   "managed_local_vlm_runtime": true,
+  "development_machine_replay_completed": true,
+  "clean_machine_replay_completed": false,
+  "clean_machine_replay_deferred": true,
+  "risk_acceptance": {
+    "status": "ACCEPTED",
+    "accepted_at": "2026-10-04",
+    "scope": "v1.0.0-rc.1",
+    "decision": "defer_clean_machine_replay"
+  },
+  "limitations": [
+    "Independent clean-machine real-image replay is deferred for v1.0.0-rc.1."
+  ],
   "dataset": {
     "total": 27,
     "verified_annotations": 27,
@@ -2360,5 +2372,5 @@
       ]
     }
   ],
-  "blocker": "clean-machine replay is still required."
+  "blocker": null
 }

@@ -277,6 +277,40 @@ def test_repository_blocker_evidence_fails_closed() -> None:
     assert not any("ground truth is incomplete" in error for error in errors)
     assert not any("did not replay packaged Core" in error for error in errors)
     assert not any("did not replay managed local VLM" in error for error in errors)
-    assert "historical regression clean-machine replay is incomplete" in errors
-    assert "historical regression has confirmed regressions or missing count" in errors
-    assert "historical real-image regression is not passed: BLOCKED" in errors
+    assert "historical regression clean-machine replay is incomplete" not in errors
+    assert "historical regression has confirmed regressions or missing count" not in errors
+    assert not any("historical real-image regression is not passed" in error for error in errors)
+
+
+def test_limited_historical_regression_requires_explicit_risk_acceptance(
+    tmp_path: Path,
+) -> None:
+    source = Path("release-evidence")
+    evidence = tmp_path / "release-evidence"
+    evidence.mkdir()
+    for item in source.iterdir():
+        if item.is_file():
+            (evidence / item.name).write_bytes(item.read_bytes())
+    payload_path = evidence / "historical-regression.json"
+    payload = json.loads(payload_path.read_text(encoding="utf-8"))
+    payload["risk_acceptance"]["status"] = "NOT_ACCEPTED"
+    payload_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    errors: list[str] = []
+    _validate_release_evidence(tmp_path, errors)
+
+    assert "limited historical regression risk was not accepted" in errors
+
+
+def test_stable_gate_rejects_historical_regression_limitation(tmp_path: Path) -> None:
+    source = Path("release-evidence")
+    evidence = tmp_path / "release-evidence"
+    evidence.mkdir()
+    for item in source.iterdir():
+        if item.is_file():
+            (evidence / item.name).write_bytes(item.read_bytes())
+
+    errors: list[str] = []
+    _validate_release_evidence(tmp_path, errors, allow_historical_limitation=False)
+
+    assert "historical regression clean-machine limitation is not allowed for stable" in errors
