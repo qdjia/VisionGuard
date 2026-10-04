@@ -7,7 +7,12 @@ import pytest
 import yaml
 
 from scripts import build_model_bundle
-from scripts.build_release import derive_final_rc_gates, replace_directory
+from scripts.build_release import (
+    copy_release_evidence,
+    derive_final_rc_gates,
+    redact_private_paths,
+    replace_directory,
+)
 from scripts.prepare_gate1_core_models import write_isolated_training_configs
 from scripts.validate_release import (
     _validate_release_evidence,
@@ -340,6 +345,34 @@ def test_historical_limitation_is_rc_only() -> None:
     assert release_gate_passed("historical_regression", "passed_with_limitation", "rc")
     assert not release_gate_passed("historical_regression", "passed_with_limitation", "stable")
     assert not release_gate_passed("clean_core", "passed_with_limitation", "rc")
+
+
+def test_release_evidence_redacts_private_paths_without_mutating_source(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "source.json"
+    target = tmp_path / "release-evidence" / "source.json"
+    payload = {
+        "model": r"D:\VisionGuard-Acceptance\advanced-ai\models\vlm",
+        "nested": [r"C:\Users\developer\cache", "https://example.com/model"],
+        "status": "PASS",
+    }
+    source.write_text(json.dumps(payload), encoding="utf-8")
+
+    copy_release_evidence(source, target)
+
+    copied = json.loads(target.read_text(encoding="utf-8"))
+    assert copied["model"] == "<redacted-local-path>"
+    assert copied["nested"] == ["<redacted-local-path>", "https://example.com/model"]
+    assert copied["status"] == "PASS"
+    assert json.loads(source.read_text(encoding="utf-8")) == payload
+
+
+def test_private_path_redaction_handles_nested_values() -> None:
+    assert redact_private_paths({"path": "/home/developer/model", "count": 1}) == {
+        "path": "<redacted-local-path>",
+        "count": 1,
+    }
 
 
 def test_release_directory_replacement_is_bounded_and_atomic(tmp_path: Path) -> None:

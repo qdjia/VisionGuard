@@ -47,6 +47,7 @@ FINAL_RC_ACCEPTANCE_GATES = {
     "uninstall",
     "upgrade",
 }
+PRIVATE_ABSOLUTE_PATH = re.compile(r"(?:[A-Za-z]:\\|/Users/|/home/)")
 
 
 def sha256(path: Path) -> str:
@@ -84,6 +85,30 @@ def assert_clean_source_tree() -> None:
 
 def load_json(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def redact_private_paths(value: object) -> object:
+    """Remove machine-local absolute paths from distributable evidence."""
+    if isinstance(value, dict):
+        return {key: redact_private_paths(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [redact_private_paths(item) for item in value]
+    if isinstance(value, str) and PRIVATE_ABSOLUTE_PATH.search(value):
+        return "<redacted-local-path>"
+    return value
+
+
+def copy_release_evidence(source: Path, target: Path) -> None:
+    """Copy evidence while keeping private workstation paths out of release assets."""
+    target.parent.mkdir(parents=True, exist_ok=True)
+    if source.suffix.casefold() != ".json":
+        shutil.copy2(source, target)
+        return
+    payload = json.loads(source.read_text(encoding="utf-8"))
+    target.write_text(
+        json.dumps(redact_private_paths(payload), ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
 
 
 def derive_final_rc_gates(evidence_root: Path) -> tuple[dict[str, str], list[str]]:
@@ -545,6 +570,7 @@ def main() -> None:
         ROOT / "release-evidence/fresh-user-gui.json",
         ROOT / "release-evidence/advanced-ai-gpu-acceptance.json",
         ROOT / "release-evidence/windows-acceptance-summary.json",
+        ROOT / "release-evidence/upgrade-rollback-acceptance.json",
         ROOT / "release-evidence/licenses/APACHE-2.0.txt",
         ROOT / "release-evidence/model-cards/Qwen3-VL-2B-Instruct.md",
     ]
@@ -552,8 +578,7 @@ def main() -> None:
     for source in evidence_sources:
         relative = source.relative_to(ROOT)
         target = output / relative
-        target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(source, target)
+        copy_release_evidence(source, target)
         evidence_paths.append(target)
     manifest = {
         "schema_version": 4,
