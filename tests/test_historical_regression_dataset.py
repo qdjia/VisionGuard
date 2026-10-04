@@ -94,6 +94,11 @@ def test_coverage_counts_verified_annotations() -> None:
     assert report["scenario_counts"] == {"safe_publishing": 1}
 
 
+def test_visual_sensitive_region_is_a_supported_adjudicated_scenario() -> None:
+    source = _source("real-001", "visual_sensitive_region")
+    assert source.scenario == "visual_sensitive_region"
+
+
 def test_real_image_classification_blocks_unsafe_downgrade() -> None:
     source = HistoricalImageSource(
         case_id="real-001",

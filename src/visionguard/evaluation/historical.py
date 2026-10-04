@@ -20,6 +20,7 @@ HistoricalScenario = Literal[
     "weapon",
     "violence",
     "blood",
+    "visual_sensitive_region",
     "prohibited_symbol",
     "watermark",
 ]

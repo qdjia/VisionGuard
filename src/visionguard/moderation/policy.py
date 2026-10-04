@@ -8,6 +8,17 @@ from visionguard.config.models import StrictConfigModel
 
 class PolicyDescription(StrictConfigModel):
     description: str = Field(min_length=1)
+    semantic_cues: tuple[str, ...] = ()
+    negative_cues: tuple[str, ...] = ()
+
+    @model_validator(mode="after")
+    def check_cues(self) -> "PolicyDescription":
+        normalized = [cue.strip().casefold() for cue in (*self.semantic_cues, *self.negative_cues)]
+        if any(not cue for cue in normalized):
+            raise ValueError("policy cues must not be blank")
+        if len(normalized) != len(set(normalized)):
+            raise ValueError("policy cues must be unique within a category")
+        return self
 
 
 class ModerationPolicy(StrictConfigModel):

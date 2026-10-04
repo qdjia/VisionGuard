@@ -154,6 +154,73 @@ def test_low_risk_with_category_is_normalized_upward(policy):
     assert result.requires_manual_review
 
 
+@pytest.mark.parametrize(
+    ("reason", "evidence", "input_category", "expected_category"),
+    [
+        (
+            "A historical boxing bout is a violent activity.",
+            "Two boxers are competing in a boxing ring.",
+            "weapon",
+            "violence",
+        ),
+        (
+            "The image contains a prohibited symbol.",
+            "A repeating pattern of swastikas is visible.",
+            "weapon",
+            "prohibited_symbol",
+        ),
+    ],
+)
+def test_semantic_evidence_cues_reconcile_category_labels(
+    policy, reason, evidence, input_category, expected_category
+):
+    raw = {
+        **payload(),
+        "risk_level": "medium",
+        "categories": [{"name": input_category, "score": 0.8}],
+        "reason": reason,
+        "evidence": [{"type": "visual", "description": evidence}],
+        "requires_manual_review": True,
+    }
+    result = parse_result(json.dumps(raw), policy)
+    assert [category.name for category in result.categories] == [expected_category]
+    assert result.metadata["semantic_category_normalized"] == 2
+
+
+def test_explicitly_negated_category_is_removed_without_inventing_a_replacement(policy):
+    raw = {
+        **payload(),
+        "risk_level": "medium",
+        "categories": [{"name": "weapon", "score": 0.8}],
+        "reason": "The wall-mounted light is not a weapon.",
+        "evidence": [{"type": "visual", "description": "A wall-mounted light fixture."}],
+        "requires_manual_review": True,
+    }
+    result = parse_result(json.dumps(raw), policy)
+    assert result.categories == []
+    assert result.metadata["semantic_category_normalized"] == 1
+
+
+def test_semantic_reconciliation_does_not_hide_duplicate_or_unknown_categories(policy):
+    duplicate = {
+        **payload(),
+        "risk_level": "medium",
+        "categories": [
+            {"name": "weapon", "score": 0.8},
+            {"name": "weapon", "score": 0.7},
+        ],
+        "reason": "A knife is visible.",
+        "evidence": [{"type": "visual", "description": "A kitchen knife."}],
+        "requires_manual_review": True,
+    }
+    with pytest.raises(VLMParseError):
+        parse_result(json.dumps(duplicate), policy)
+
+    duplicate["categories"] = [{"name": "unknown", "score": 0.8}]
+    with pytest.raises(VLMParseError):
+        parse_result(json.dumps(duplicate), policy)
+
+
 def test_bbox_array_normalization(policy):
     raw = {
         **payload(),

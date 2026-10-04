@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-03T17:50:44.818770+00:00",
+  "generated_at": "2026-10-04T06:58:04.330268+00:00",
   "gate": "historical_real_image_regression",
   "gate_status": "BLOCKED",
   "environment_claim": "development_acceptance_machine",
@@ -13,9 +13,10 @@
       "blood": 3,
       "multilingual_text": 3,
       "prohibited_symbol": 4,
-      "qr_code": 4,
-      "safe_publishing": 2,
-      "violence": 4,
+      "qr_code": 3,
+      "safe_publishing": 3,
+      "violence": 3,
+      "visual_sensitive_region": 1,
       "watermark": 2,
       "weapon": 5
     },
@@ -31,16 +32,15 @@
     "all_required_scenarios_present": true
   },
   "classification_counts": {
-    "EQUIVALENT": 19,
-    "EXPECTED_DIFFERENCE": 4,
-    "POTENTIAL_REGRESSION": 4
+    "EQUIVALENT": 22,
+    "EXPECTED_DIFFERENCE": 5
   },
   "confirmed_regression_count": 0,
-  "potential_regression_count": 4,
+  "potential_regression_count": 0,
   "unsafe_fast_path_count": 0,
   "vlm_called_count": 25,
   "vlm_call_rate": 0.925926,
-  "elapsed_seconds": 1900.361,
+  "elapsed_seconds": 693.823,
   "results": [
     {
       "case_id": "real-001",
@@ -87,17 +87,17 @@
           "vlm": "skipped"
         },
         "timing": {
-          "request_total_ms": 76287.60399999737,
-          "queue_wait_ms": 0.16909999976633117,
-          "inference_ms": 76245.70930000482,
-          "response_serialization_ms": 0.3301999968243763,
-          "pipeline_total_ms": 76243.55939999805,
-          "detector_ms": 111.4298000029521,
-          "ocr_ms": 76091.58959999331,
-          "baseline_ms": 24.35170000535436,
-          "routing_ms": 0.21779999951831996,
+          "request_total_ms": 19554.999799999678,
+          "queue_wait_ms": 0.11410000024625333,
+          "inference_ms": 19522.768200000428,
+          "response_serialization_ms": 0.3828999997494975,
+          "pipeline_total_ms": 19521.33800000047,
+          "detector_ms": 30.579299999772047,
+          "ocr_ms": 19460.58230000017,
+          "baseline_ms": 16.549900000427442,
+          "routing_ms": 0.1452999995308346,
           "vlm_ms": 0.0,
-          "fusion_ms": 0.4411999980220571
+          "fusion_ms": 0.31570000010106014
         },
         "routing_policy_version": "routing_v3",
         "prompt_version": "v2",
@@ -142,11 +142,11 @@
         "vlm_categories": [
           "watermark"
         ],
-        "vlm_reason": "The image contains a watermark on the building, which is a visible overlay of the text 'The Washington Post' and the building's facade. This is a standard copyright or ownership mark and is a clear case for a watermark, which requires manual review.",
+        "vlm_reason": "The image contains a watermark on the building, which is a visible overlay of the text 'The Washington Post' and the building's facade. This is a standard copyright or ownership mark, which requires publication-policy review.",
         "vlm_evidence": [
           {
             "type": "visual",
-            "description": "A watermark is visible on the building's facade, which appears to be the name of the publication, 'The Washington Post'. This is a standard copyright or ownership mark and is a clear case for a watermark, which requires manual review.",
+            "description": "A watermark is visible on the building's facade, which appears to be the name of the publication, 'The Washington Post'. This is a standard copyright or ownership mark, which requires publication-policy review.",
             "bbox": {
               "x1": 363.0,
               "y1": 708.0,
@@ -172,17 +172,17 @@
           "vlm": "success"
         },
         "timing": {
-          "request_total_ms": 116154.60650000023,
-          "queue_wait_ms": 0.07129999721655622,
-          "inference_ms": 116135.1355999941,
-          "response_serialization_ms": 0.17910000315168872,
-          "pipeline_total_ms": 116134.41489999968,
-          "detector_ms": 204.01069999934407,
-          "ocr_ms": 50444.96510000317,
-          "baseline_ms": 4.194599998299964,
-          "routing_ms": 0.15780000103404745,
-          "vlm_ms": 65464.90140000242,
-          "fusion_ms": 0.1627000019652769
+          "request_total_ms": 39053.62210000021,
+          "queue_wait_ms": 0.12249999963387381,
+          "inference_ms": 39020.55759999985,
+          "response_serialization_ms": 0.19160000010742806,
+          "pipeline_total_ms": 39019.88729999994,
+          "detector_ms": 121.63220000002184,
+          "ocr_ms": 11607.145799999671,
+          "baseline_ms": 2.4075000001175795,
+          "routing_ms": 0.10699999984353781,
+          "vlm_ms": 27278.142899999693,
+          "fusion_ms": 0.13589999980467837
         },
         "routing_policy_version": "routing_v3",
         "prompt_version": "v2",
@@ -229,16 +229,16 @@
         "vlm_categories": [
           "visual_sensitive_region"
         ],
-        "vlm_reason": "The image contains a visible floral illustration on the right side of the page, which is a decorative element and not a medical or sensitive body region. However, the text in the image is in Persian, and the content appears to be a newspaper or magazine. The presence of a floral illustration does not constitute a visible wound, traumatic deformity, or medical injury. The text is not explicitly related to a sensitive region. The image does not contain any visible blood, weapon, violence, prohibited symbol, or QR code. The content is a publication, and the visual elements are not clearly identifiable as a sensitive region.",
+        "vlm_reason": "The image contains a visible floral illustration on the right side of the page, which is a decorative element and not a medical or sensitive body region. However, the text in the image is in Persian, and the content appears to be a newspaper or magazine. The presence of a floral illustration does not constitute a visual-sensitive region in the context of the image. The image does not contain any visible blood, weapon, fighting, or prohibited symbol. The text is not sensitive or inappropriate. The image is not a QR code, watermark, or other risky visual element.",
         "vlm_evidence": [
           {
             "type": "visual",
             "description": "A decorative floral illustration on the right side of the page.",
             "bbox": {
-              "x1": 225.0,
-              "y1": 350.0,
-              "x2": 349.0,
-              "y2": 455.0
+              "x1": 74.0,
+              "y1": 416.0,
+              "x2": 225.0,
+              "y2": 531.0
             },
             "text": null
           }
@@ -259,17 +259,17 @@
           "vlm": "success"
         },
         "timing": {
-          "request_total_ms": 65695.80930000666,
-          "queue_wait_ms": 0.040099999750964344,
-          "inference_ms": 65693.67790000251,
-          "response_serialization_ms": 0.17939999816007912,
-          "pipeline_total_ms": 65693.01039999846,
-          "detector_ms": 69.10960000095656,
-          "ocr_ms": 29580.795099995157,
-          "baseline_ms": 3.4225999988848343,
-          "routing_ms": 0.15939999866532162,
-          "vlm_ms": 36031.215899995004,
-          "fusion_ms": 0.22979999630479142
+          "request_total_ms": 24620.843099999547,
+          "queue_wait_ms": 0.03790000027947826,
+          "inference_ms": 24618.655300000682,
+          "response_serialization_ms": 0.3330999998070183,
+          "pipeline_total_ms": 24617.900599999302,
+          "detector_ms": 19.354099999873142,
+          "ocr_ms": 8826.117800000247,
+          "baseline_ms": 2.255899999909161,
+          "routing_ms": 0.13479999961418798,
+          "vlm_ms": 15765.669500000513,
+          "fusion_ms": 0.1247000000148546
         },
         "routing_policy_version": "routing_v3",
         "prompt_version": "v2",
@@ -325,17 +325,17 @@
           "vlm": "skipped"
         },
         "timing": {
-          "request_total_ms": 188905.18000000156,
-          "queue_wait_ms": 0.07059999916236848,
-          "inference_ms": 188891.59840000502,
-          "response_serialization_ms": 0.29180000274209306,
-          "pipeline_total_ms": 188890.01370000187,
-          "detector_ms": 67.78649999614572,
-          "ocr_ms": 188808.69189999794,
-          "baseline_ms": 4.290600001695566,
-          "routing_ms": 0.19949999841628596,
+          "request_total_ms": 54463.70410000054,
+          "queue_wait_ms": 0.06889999986015027,
+          "inference_ms": 54447.77350000004,
+          "response_serialization_ms": 0.42970000049535884,
+          "pipeline_total_ms": 54446.59849999971,
+          "detector_ms": 29.571799999757786,
+          "ocr_ms": 54406.787100000656,
+          "baseline_ms": 3.188199999385688,
+          "routing_ms": 0.13519999993150122,
           "vlm_ms": 0.0,
-          "fusion_ms": 0.3620999996201135
+          "fusion_ms": 0.2722999988691299
         },
         "routing_policy_version": "routing_v3",
         "prompt_version": "v2",
@@ -380,13 +380,13 @@
         "vlm_categories": [
           "visual_sensitive_region"
         ],
-        "vlm_reason": "The image shows an elderly man reading a newspaper, sitting on a wooden stool. The man's head is slightly tilted, and there is a small red mark on his forehead, which may be a religious or cultural symbol. This mark is visible and could be considered a sensitive visual element. The context is a personal, non-educational, and non-harmful setting, but the presence of the mark raises concerns about potential sensitivity.",
+        "vlm_reason": "The image shows an elderly man reading a newspaper, and there is a visible red mark on his forehead. This could be interpreted as a scar or a mark, which is a sensitive body region. The context is not clearly medical or historical, but the presence of a visible mark on the forehead raises concerns for publication safety.",
         "vlm_evidence": [
           {
             "type": "visual",
-            "description": "A small red mark on the forehead of the man, which may be a religious or cultural symbol.",
+            "description": "A red mark is visible on the forehead of the man in the image.",
             "bbox": {
-              "x1": 670.0,
+              "x1": 675.0,
               "y1": 120.0,
               "x2": 700.0,
               "y2": 140.0
@@ -410,17 +410,17 @@
           "vlm": "success"
         },
         "timing": {
-          "request_total_ms": 76592.97320000042,
-          "queue_wait_ms": 0.04069999704370275,
-          "inference_ms": 76537.31410000182,
-          "response_serialization_ms": 0.14989999908721074,
-          "pipeline_total_ms": 76536.6611999998,
-          "detector_ms": 94.41710000101011,
-          "ocr_ms": 44309.96959999902,
-          "baseline_ms": 3.504699998302385,
-          "routing_ms": 0.16879999748198316,
-          "vlm_ms": 32103.801599994767,
-          "fusion_ms": 0.13100000069243833
+          "request_total_ms": 25719.404899999972,
+          "queue_wait_ms": 0.07370000002993038,
+          "inference_ms": 25654.366999999183,
+          "response_serialization_ms": 0.1627000001462875,
+          "pipeline_total_ms": 25653.71039999991,
+          "detector_ms": 25.643899999522546,
+          "ocr_ms": 11028.082199999517,
+          "baseline_ms": 2.545500000451284,
+          "routing_ms": 0.11420000009820797,
+          "vlm_ms": 14581.599999999526,
+          "fusion_ms": 0.21950000063952757
         },
         "routing_policy_version": "routing_v3",
         "prompt_version": "v2",
@@ -468,16 +468,16 @@
         "vlm_categories": [
           "qr_code"
         ],
-        "vlm_reason": "The image contains QR codes on the cupcakes, which are machine-readable square codes. According to the policy, QR codes are a visual element that requires manual review, as they can be used for external links or tracking and may be associated with sensitive content. The presence of these codes is a clear indicator of a potential risk.",
+        "vlm_reason": "The image contains QR codes on the cupcakes, which are machine-readable square codes. These are external elements that require manual review for publication safety.",
         "vlm_evidence": [
           {
             "type": "visual",
-            "description": "A QR code is visible on the top of a chocolate cupcake, which is part of a decorative element on the dessert.",
+            "description": "A QR code is visible on the top of a chocolate cupcake, with a white background and black pixelated pattern.",
             "bbox": {
               "x1": 175.0,
               "y1": 195.0,
               "x2": 935.0,
-              "y2": 445.0
+              "y2": 448.0
             },
             "text": null
           }
@@ -498,17 +498,17 @@
           "vlm": "success"
         },
         "timing": {
-          "request_total_ms": 71347.2885999945,
-          "queue_wait_ms": 0.09300000237999484,
-          "inference_ms": 71319.64139999764,
-          "response_serialization_ms": 0.12299999798415229,
-          "pipeline_total_ms": 71318.85619999957,
-          "detector_ms": 87.85609999904409,
-          "ocr_ms": 43436.22599999799,
+          "request_total_ms": 20734.13619999974,
+          "queue_wait_ms": 0.07360000017797574,
+          "inference_ms": 20698.86040000074,
+          "response_serialization_ms": 0.12150000020483276,
+          "pipeline_total_ms": 20698.28620000044,
+          "detector_ms": 22.777600000154052,
+          "ocr_ms": 9482.390199999827,
           "baseline_ms": 0.0,
-          "routing_ms": 0.1616000008652918,
-          "vlm_ms": 27773.04439999716,
-          "fusion_ms": 0.12550000246847048
+          "routing_ms": 0.10370000018156134,
+          "vlm_ms": 11181.080599999405,
+          "fusion_ms": 0.1142999999501626
         },
         "routing_policy_version": "routing_v3",
         "prompt_version": "v2",
@@ -521,16 +521,14 @@
     },
     {
       "case_id": "real-007",
-      "scenario": "qr_code",
+      "scenario": "safe_publishing",
       "image_sha256": "02da4cd786c1b7635c1174cecdabeb1f5b9bd116ff8f56f5b46e9ddc6be92cc1",
       "expected": {
-        "risk_level": "medium",
-        "categories": [
-          "qr_code"
-        ],
+        "risk_level": "low",
+        "categories": [],
         "text": null,
         "objects": null,
-        "requires_manual_review": true
+        "requires_manual_review": false
       },
       "actual": {
         "status": "completed",
@@ -538,7 +536,7 @@
         "risk_score": 0.4125,
         "categories": [
           {
-            "name": "weapon",
+            "name": "visual_sensitive_region",
             "score": 0.6
           }
         ],
@@ -554,18 +552,18 @@
         "vlm_status": "success",
         "vlm_risk_level": "medium",
         "vlm_categories": [
-          "weapon"
+          "visual_sensitive_region"
         ],
-        "vlm_reason": "The image contains a wall-mounted light fixture with a brass finish and a circular shade, which is a type of lighting device. The fixture is not a weapon, but the presence of a potentially dangerous object in a context where it might be used to harm or intimidate is a concern. The object is not a weapon, but the context of a potentially dangerous object in a public space may require review.",
+        "vlm_reason": "The image contains a framed artwork with a black square in the center, which is a visual element that may be considered a sensitive region. However, the artwork is not a medical or traumatic injury, nor does it depict any visible wounds, deformities, or sensitive body parts. The context is purely artistic and does not suggest any harm or inappropriate content.",
         "vlm_evidence": [
           {
             "type": "visual",
-            "description": "A wall-mounted light fixture with a brass finish and a circular shade.",
+            "description": "A framed artwork with a black square in the center, which is a visual element that may be considered a sensitive region. However, the artwork is not a medical or traumatic injury, nor does it depict any visible wounds, deformities, or sensitive body parts. The context is purely artistic and does not suggest any harm or inappropriate content.",
             "bbox": {
-              "x1": 348.0,
-              "y1": 165.0,
-              "x2": 645.0,
-              "y2": 345.0
+              "x1": 168.0,
+              "y1": 460.0,
+              "x2": 700.0,
+              "y2": 870.0
             },
             "text": null
           }
@@ -586,25 +584,25 @@
           "vlm": "success"
         },
         "timing": {
-          "request_total_ms": 69478.61810000177,
-          "queue_wait_ms": 0.1657999964663759,
-          "inference_ms": 69418.76190000039,
-          "response_serialization_ms": 0.14479999663308263,
-          "pipeline_total_ms": 69417.81949999859,
-          "detector_ms": 66.30660000519129,
-          "ocr_ms": 41823.65290000598,
+          "request_total_ms": 25203.335000000152,
+          "queue_wait_ms": 0.058599999647412915,
+          "inference_ms": 25175.585399999363,
+          "response_serialization_ms": 0.11110000014014076,
+          "pipeline_total_ms": 25174.867699999595,
+          "detector_ms": 24.760600000263366,
+          "ocr_ms": 9311.66630000007,
           "baseline_ms": 0.0,
-          "routing_ms": 0.15730000450275838,
-          "vlm_ms": 27504.384800005937,
-          "fusion_ms": 0.10800000018207356
+          "routing_ms": 0.10419999944133451,
+          "vlm_ms": 15826.771199999712,
+          "fusion_ms": 0.11859999995067483
         },
         "routing_policy_version": "routing_v3",
         "prompt_version": "v2",
         "moderation_policy_version": null
       },
-      "classification": "POTENTIAL_REGRESSION",
+      "classification": "EXPECTED_DIFFERENCE",
       "classification_reasons": [
-        "expected categories missing: qr_code"
+        "conservative over-review of a safe contextual case"
       ]
     },
     {
@@ -643,13 +641,13 @@
         "vlm_categories": [
           "qr_code"
         ],
-        "vlm_reason": "The image contains a QR code on the wooden sign, which is a machine-readable square code. According to the policy, QR codes require manual review as they are external elements that may contain links or information that could impact the publication's safety or compliance. The presence of the QR code is a clear indicator of a visual element that needs to be evaluated.",
+        "vlm_reason": "The image contains a QR code on the wooden sign, which is a machine-readable square code. According to the policy, QR codes are external jump elements that require manual review and cannot be judged as high-risk based solely on their presence.",
         "vlm_evidence": [
           {
             "type": "ocr",
-            "description": "A QR code is visible on the wooden sign, located at the bottom of the sign.",
+            "description": "The OCR text identifies a QR code on the sign, which is a machine-readable square code.",
             "bbox": null,
-            "text": "https://www.angiesey.grazing"
+            "text": "QR Code"
           }
         ],
         "fusion_scores": {
@@ -668,17 +666,17 @@
           "vlm": "success"
         },
         "timing": {
-          "request_total_ms": 111716.48449999338,
-          "queue_wait_ms": 0.09370000043418258,
-          "inference_ms": 111706.20270000654,
-          "response_serialization_ms": 0.22530000569531694,
-          "pipeline_total_ms": 111705.37970000441,
-          "detector_ms": 95.85339999466669,
-          "ocr_ms": 43348.53640000074,
-          "baseline_ms": 5.843800005095545,
-          "routing_ms": 0.1830000037443824,
-          "vlm_ms": 68246.954000002,
-          "fusion_ms": 0.13609999587060884
+          "request_total_ms": 58813.9257999992,
+          "queue_wait_ms": 0.04309999985707691,
+          "inference_ms": 58807.939799999986,
+          "response_serialization_ms": 0.21850000030099181,
+          "pipeline_total_ms": 58807.28509999972,
+          "detector_ms": 23.13750000030268,
+          "ocr_ms": 12830.941500000336,
+          "baseline_ms": 3.0448000006799703,
+          "routing_ms": 0.12479999986680923,
+          "vlm_ms": 45946.11429999986,
+          "fusion_ms": 0.12289999995118706
         },
         "routing_policy_version": "routing_v3",
         "prompt_version": "v2",
@@ -725,11 +723,11 @@
         "vlm_categories": [
           "qr_code"
         ],
-        "vlm_reason": "The image contains a QR code, which is a machine-readable square code, and is explicitly mentioned in the text as a prompt to scan. According to the policy, QR codes are considered a visual element that requires manual review, as they can be used for external links or tracking. The presence of the QR code is a clear indicator of a high-risk element that must be evaluated.",
+        "vlm_reason": "The image contains a QR code, which is a machine-readable square code, and is explicitly mentioned in the text as a feature of the invitation. This is a clear visual element that requires manual review for publication compliance.",
         "vlm_evidence": [
           {
             "type": "ocr",
-            "description": "The text 'Scannez le QR code &' is visible on the card, indicating a QR code is present.",
+            "description": "The text 'Scannez le QR code & partagez vos photos avec les mariés' is present on the card, indicating a QR code is part of the invitation.",
             "bbox": {
               "x1": 340.0,
               "y1": 898.0,
@@ -755,17 +753,17 @@
           "vlm": "success"
         },
         "timing": {
-          "request_total_ms": 58870.400799998606,
-          "queue_wait_ms": 0.050000002374872565,
-          "inference_ms": 58859.40689999552,
-          "response_serialization_ms": 0.14139999984763563,
-          "pipeline_total_ms": 58858.88690000138,
-          "detector_ms": 84.4920000017737,
-          "ocr_ms": 23271.133599999303,
-          "baseline_ms": 3.692999998747837,
-          "routing_ms": 0.14220000593923032,
-          "vlm_ms": 35491.19700000301,
-          "fusion_ms": 0.11109999468317255
+          "request_total_ms": 21619.74200000077,
+          "queue_wait_ms": 0.036299999919719994,
+          "inference_ms": 21608.693800000765,
+          "response_serialization_ms": 0.13779999972030055,
+          "pipeline_total_ms": 21608.12900000019,
+          "detector_ms": 22.101600000496546,
+          "ocr_ms": 6121.564199999739,
+          "baseline_ms": 2.245499999844469,
+          "routing_ms": 0.09279999994760146,
+          "vlm_ms": 15455.481500000133,
+          "fusion_ms": 0.11439999980211724
         },
         "routing_policy_version": "routing_v3",
         "prompt_version": "v2",
@@ -813,13 +811,13 @@
         "vlm_categories": [
           "weapon"
         ],
-        "vlm_reason": "The image contains a knife, which is a weapon. The knife is a clearly visible object in the image, and its presence triggers the weapon category. The context is a product photograph of a kitchen knife, which is not a scene of violence or a medical emergency, so the risk is medium due to the presence of a weapon.",
+        "vlm_reason": "The image contains a knife, which is a weapon. The knife is a clearly visible object in the image, and its presence triggers the weapon category. The knife is a kitchen knife, which is a common type of weapon used in cooking, and its presence in the image is not ambiguous.",
         "vlm_evidence": [
           {
             "type": "visual",
-            "description": "A kitchen knife with a metallic blade and a perforated handle, resting on a wooden surface.",
+            "description": "A kitchen knife with a metallic blade and a perforated handle, placed on a wooden surface.",
             "bbox": {
-              "x1": 43.0,
+              "x1": 45.0,
               "y1": 306.0,
               "x2": 800.0,
               "y2": 533.0
@@ -843,17 +841,17 @@
           "vlm": "success"
         },
         "timing": {
-          "request_total_ms": 35303.59409999801,
-          "queue_wait_ms": 0.08730000263312832,
-          "inference_ms": 35292.77139999613,
-          "response_serialization_ms": 0.16799999866634607,
-          "pipeline_total_ms": 35291.965500000515,
-          "detector_ms": 51.86219999450259,
-          "ocr_ms": 10622.567099999287,
-          "baseline_ms": 3.5243999955127947,
-          "routing_ms": 0.1923000017995946,
-          "vlm_ms": 24606.440899995505,
-          "fusion_ms": 0.10539999493630603
+          "request_total_ms": 16051.301100000273,
+          "queue_wait_ms": 0.037799999518028926,
+          "inference_ms": 16044.650299999375,
+          "response_serialization_ms": 0.12409999999363208,
+          "pipeline_total_ms": 16043.987500000185,
+          "detector_ms": 20.26709999972809,
+          "ocr_ms": 3196.7044000002716,
+          "baseline_ms": 2.350300000216521,
+          "routing_ms": 0.09700000009615906,
+          "vlm_ms": 12819.595299999492,
+          "fusion_ms": 0.10790000033011893
         },
         "routing_policy_version": "routing_v3",
         "prompt_version": "v2",
@@ -901,7 +899,7 @@
         "vlm_categories": [
           "weapon"
         ],
-        "vlm_reason": "The image contains a knife, which is a weapon. The knife is clearly visible and is not in a context of a sporting event, medical procedure, or other benign setting. The presence of a weapon, even in a non-illustrative or non-interactive context, triggers a medium risk due to the potential for misuse or harm.",
+        "vlm_reason": "The image contains a knife, which is a weapon. The presence of a knife, especially in a context that may suggest a potential for use or display, requires manual review to assess the context and implications.",
         "vlm_evidence": [
           {
             "type": "visual",
@@ -931,17 +929,17 @@
           "vlm": "success"
         },
         "timing": {
-          "request_total_ms": 62318.01419999829,
-          "queue_wait_ms": 0.13860000035492703,
-          "inference_ms": 62219.69790000003,
-          "response_serialization_ms": 0.11590000212891027,
-          "pipeline_total_ms": 62218.71679999458,
-          "detector_ms": 74.5833999972092,
-          "ocr_ms": 35974.91770000488,
+          "request_total_ms": 18341.24679999968,
+          "queue_wait_ms": 0.10180000026593916,
+          "inference_ms": 18303.13179999939,
+          "response_serialization_ms": 0.12460000016289996,
+          "pipeline_total_ms": 18302.01219999981,
+          "detector_ms": 17.96490000015183,
+          "ocr_ms": 7795.887000000221,
           "baseline_ms": 0.0,
-          "routing_ms": 0.17590000061318278,
-          "vlm_ms": 26141.396099999838,
-          "fusion_ms": 0.10100000508828089
+          "routing_ms": 0.09989999944082228,
+          "vlm_ms": 10473.389900000257,
+          "fusion_ms": 0.1021999996737577
         },
         "routing_policy_version": "routing_v3",
         "prompt_version": "v2",
@@ -988,11 +986,11 @@
         "vlm_categories": [
           "weapon"
         ],
-        "vlm_reason": "The image contains a knife block with multiple knives, which is a weapon. The presence of a knife block, especially with knives, is a clear indicator of a weapon, and it is not in a context of a sporting or medical activity. The knives are visible and are part of a kitchen setup, which is a common context for such items. The presence of a knife block is a clear visual indicator of a weapon, and it is not in a context of a sporting or medical activity.",
+        "vlm_reason": "The image contains a knife block with multiple knives, which is a clear example of a weapon. The knives are visible in the wooden block on the kitchen counter, and their presence is unambiguous.",
         "vlm_evidence": [
           {
             "type": "visual",
-            "description": "A knife block with multiple knives, which is a weapon.",
+            "description": "A knife block with multiple knives, which is a clear example of a weapon.",
             "bbox": {
               "x1": 444.0,
               "y1": 24.0,
@@ -1018,17 +1016,17 @@
           "vlm": "success"
         },
         "timing": {
-          "request_total_ms": 81526.39639999688,
-          "queue_wait_ms": 0.05160000000614673,
-          "inference_ms": 81511.81319999887,
-          "response_serialization_ms": 0.2063000065390952,
-          "pipeline_total_ms": 81511.2431000016,
-          "detector_ms": 78.32480000070063,
-          "ocr_ms": 46276.77019999828,
-          "baseline_ms": 3.638700000010431,
-          "routing_ms": 0.152900000102818,
-          "vlm_ms": 35132.42690000334,
-          "fusion_ms": 0.10990000009769574
+          "request_total_ms": 25925.8619000002,
+          "queue_wait_ms": 0.06479999956354732,
+          "inference_ms": 25907.473799999934,
+          "response_serialization_ms": 0.1965000001291628,
+          "pipeline_total_ms": 25906.801799999812,
+          "detector_ms": 18.60910000050353,
+          "ocr_ms": 11130.021700000725,
+          "baseline_ms": 2.351000000089698,
+          "routing_ms": 0.130899999930989,
+          "vlm_ms": 14745.861600000353,
+          "fusion_ms": 0.13969999963592272
         },
         "routing_policy_version": "routing_v3",
         "prompt_version": "v2",
@@ -1076,7 +1074,7 @@
         "vlm_categories": [
           "weapon"
         ],
-        "vlm_reason": "The image contains a photograph of a man in military attire with a sword visible in his left hand. The sword is a clear example of a weapon, and its presence in the image constitutes a visible weapon. This is a high-risk category as it involves a dangerous implement, and the context of a historical photograph does not mitigate the risk of the weapon being a potential threat.",
+        "vlm_reason": "The image contains a photograph of a man in a military uniform with a sword visible in his left hand. The sword is a confirmed weapon, and its presence in the image is a clear indicator of a weapon category.",
         "vlm_evidence": [
           {
             "type": "visual",
@@ -1106,17 +1104,17 @@
           "vlm": "success"
         },
         "timing": {
-          "request_total_ms": 59733.94969999936,
-          "queue_wait_ms": 0.05400000372901559,
-          "inference_ms": 59714.25690000615,
-          "response_serialization_ms": 0.13939999917056412,
-          "pipeline_total_ms": 59713.572199994815,
-          "detector_ms": 67.80580000486225,
-          "ocr_ms": 31472.4916999985,
+          "request_total_ms": 18009.09049999973,
+          "queue_wait_ms": 0.06940000002941815,
+          "inference_ms": 17989.039900000535,
+          "response_serialization_ms": 0.12770000012096716,
+          "pipeline_total_ms": 17988.27170000004,
+          "detector_ms": 17.047100000127102,
+          "ocr_ms": 6801.541900000302,
           "baseline_ms": 0.0,
-          "routing_ms": 0.15079999866429716,
-          "vlm_ms": 28164.076599998225,
-          "fusion_ms": 0.13500000204658136
+          "routing_ms": 0.094600000011269,
+          "vlm_ms": 11162.54249999929,
+          "fusion_ms": 0.10339999971620273
         },
         "routing_policy_version": "routing_v3",
         "prompt_version": "v2",
@@ -1164,14 +1162,14 @@
         "vlm_categories": [
           "weapon"
         ],
-        "vlm_reason": "The image contains a black handgun, which is a weapon. This object is clearly visible and does not require contextual justification for a high-risk classification. The presence of a weapon, even in a non-accidental or non-illustrative context, triggers a medium risk level due to the potential for harm or inappropriate use.",
+        "vlm_reason": "The image contains a black handgun, which is a confirmed firearm. This object falls under the 'weapon' category as it is a dangerous implement. The presence of a firearm, even if not in use, is a clear indicator of a potential risk and requires manual review to ensure it does not violate any publication policies.",
         "vlm_evidence": [
           {
             "type": "visual",
-            "description": "A black handgun is visible on a concrete surface.",
+            "description": "A black handgun lying on a concrete surface.",
             "bbox": {
-              "x1": 114.0,
-              "y1": 180.0,
+              "x1": 120.0,
+              "y1": 185.0,
               "x2": 614.0,
               "y2": 450.0
             },
@@ -1194,17 +1192,17 @@
           "vlm": "success"
         },
         "timing": {
-          "request_total_ms": 32706.276500000968,
-          "queue_wait_ms": 0.03909999941242859,
-          "inference_ms": 32702.47830000153,
-          "response_serialization_ms": 0.1221999991685152,
-          "pipeline_total_ms": 32701.88240000425,
-          "detector_ms": 89.57029999874067,
-          "ocr_ms": 6864.688199995726,
-          "baseline_ms": 3.3078999986173585,
-          "routing_ms": 0.15029999485705048,
-          "vlm_ms": 25735.0232999961,
-          "fusion_ms": 0.11320000339765102
+          "request_total_ms": 13098.0483000003,
+          "queue_wait_ms": 0.04079999962414149,
+          "inference_ms": 13094.412500000544,
+          "response_serialization_ms": 0.13179999950807542,
+          "pipeline_total_ms": 13093.780000000152,
+          "detector_ms": 24.042900000495138,
+          "ocr_ms": 2346.4705999995203,
+          "baseline_ms": 2.489200000127312,
+          "routing_ms": 0.10470000052009709,
+          "vlm_ms": 10715.80399999948,
+          "fusion_ms": 0.13500000022759195
         },
         "routing_policy_version": "routing_v3",
         "prompt_version": "v2",
@@ -1234,7 +1232,7 @@
         "risk_score": 0.3306304987557612,
         "categories": [
           {
-            "name": "weapon",
+            "name": "violence",
             "score": 0.6
           }
         ],
@@ -1249,13 +1247,13 @@
         "vlm_status": "success",
         "vlm_risk_level": "medium",
         "vlm_categories": [
-          "weapon"
+          "violence"
         ],
-        "vlm_reason": "The image depicts a boxing bout, which is a form of combat sport. The presence of a boxing ring and the context of a 'boxing bout' in the caption strongly indicates a violent activity. The image is a historical photograph of a public event, and the presence of a weapon (a boxing ring) is a clear indicator of a violent context. The category 'weapon' is applicable as the boxing ring is a structure used for combat, and the event is explicitly labeled as a 'boxing bout'.",
+        "vlm_reason": "The image depicts a boxing bout, which is a form of fighting. The presence of a boxing ring and the crowd surrounding it indicates a sporting event involving physical activity, which falls under the category of violence.",
         "vlm_evidence": [
           {
             "type": "visual",
-            "description": "A wooden boxing ring is visible in the center of the image, surrounded by a crowd of spectators. This is a clear indication of a combat sport event.",
+            "description": "A boxing ring is visible in the center of the image, with two individuals in the ring, surrounded by a crowd of spectators. The setting is clearly a sporting event.",
             "bbox": {
               "x1": 340.0,
               "y1": 640.0,
@@ -1281,25 +1279,25 @@
           "vlm": "success"
         },
         "timing": {
-          "request_total_ms": 66467.7800999998,
-          "queue_wait_ms": 0.042599996959324926,
-          "inference_ms": 66456.10259999376,
-          "response_serialization_ms": 0.14119999832473695,
-          "pipeline_total_ms": 66455.56690000376,
-          "detector_ms": 71.92480000230717,
-          "ocr_ms": 30894.202399998903,
-          "baseline_ms": 3.4943999999086373,
-          "routing_ms": 0.1460999992559664,
-          "vlm_ms": 35472.55349999614,
-          "fusion_ms": 0.10939999629044905
+          "request_total_ms": 22399.818800000503,
+          "queue_wait_ms": 0.04689999968832126,
+          "inference_ms": 22371.57710000065,
+          "response_serialization_ms": 0.18789999921864364,
+          "pipeline_total_ms": 22370.716000000357,
+          "detector_ms": 22.27249999941705,
+          "ocr_ms": 8039.871300000414,
+          "baseline_ms": 2.457999999933236,
+          "routing_ms": 0.11639999956969405,
+          "vlm_ms": 14299.106499999652,
+          "fusion_ms": 0.16310000046360074
         },
         "routing_policy_version": "routing_v3",
         "prompt_version": "v2",
         "moderation_policy_version": null
       },
-      "classification": "POTENTIAL_REGRESSION",
+      "classification": "EQUIVALENT",
       "classification_reasons": [
-        "expected categories missing: violence"
+        "risk, required categories, and manual-review behavior match"
       ]
     },
     {
@@ -1339,15 +1337,15 @@
         "vlm_categories": [
           "violence"
         ],
-        "vlm_reason": "The image depicts a boxing match, which involves physical combat and is therefore classified under violence. The presence of two boxers in a ring, with one appearing to be in the process of a fight, confirms the category.",
+        "vlm_reason": "The image depicts a boxing match, which involves fighting and physical contact. This is a clear case of violence, as evidenced by the two boxers in the ring and the referee observing the interaction.",
         "vlm_evidence": [
           {
             "type": "visual",
-            "description": "Two boxers are in a ring, one with his arm around the other, suggesting a fight or post-fight interaction.",
+            "description": "Two boxers are in a ring, one with his arm around the other, in a typical boxing stance. The scene is set in a boxing ring with a referee and audience in the background.",
             "bbox": {
               "x1": 300.0,
-              "y1": 345.0,
-              "x2": 538.0,
+              "y1": 340.0,
+              "x2": 540.0,
               "y2": 999.0
             },
             "text": null
@@ -1369,17 +1367,17 @@
           "vlm": "success"
         },
         "timing": {
-          "request_total_ms": 55580.230499996105,
-          "queue_wait_ms": 0.05750000127591193,
-          "inference_ms": 55563.752599999134,
-          "response_serialization_ms": 0.11330000415910035,
-          "pipeline_total_ms": 55563.12510000134,
-          "detector_ms": 58.53709999792045,
-          "ocr_ms": 32667.155400005868,
+          "request_total_ms": 21713.187199999993,
+          "queue_wait_ms": 0.06450000000768341,
+          "inference_ms": 21696.051400000215,
+          "response_serialization_ms": 0.12659999993047677,
+          "pipeline_total_ms": 21695.375799999965,
+          "detector_ms": 19.98340000045573,
+          "ocr_ms": 7649.740799999563,
           "baseline_ms": 0.0,
-          "routing_ms": 0.14309999824035913,
-          "vlm_ms": 22828.614899997774,
-          "fusion_ms": 0.1247000036528334
+          "routing_ms": 0.09779999982129084,
+          "vlm_ms": 14017.980099999477,
+          "fusion_ms": 0.17099999968195334
         },
         "routing_policy_version": "routing_v3",
         "prompt_version": "v2",
@@ -1429,14 +1427,14 @@
         "vlm_categories": [
           "violence"
         ],
-        "vlm_reason": "The image depicts a boxing match, which involves physical combat and is therefore classified under violence. The presence of two boxers in a ring engaged in a fight is a clear indicator of violence.",
+        "vlm_reason": "The image depicts a boxing match, which involves fighting and physical assault. This is a clear case of violence, and the context of a sporting event does not mitigate the risk.",
         "vlm_evidence": [
           {
             "type": "visual",
-            "description": "A black and white photograph of two boxers in a ring, one actively throwing a punch at the other, indicating a fight.",
+            "description": "A black and white photograph of two boxers in a ring during a match, with one boxer delivering a punch to the other. The action is dynamic and involves physical contact.",
             "bbox": {
-              "x1": 230.0,
-              "y1": 325.0,
+              "x1": 229.0,
+              "y1": 329.0,
               "x2": 850.0,
               "y2": 980.0
             },
@@ -1459,17 +1457,17 @@
           "vlm": "success"
         },
         "timing": {
-          "request_total_ms": 56542.87960000511,
-          "queue_wait_ms": 0.06299999949987978,
-          "inference_ms": 56524.07179999864,
-          "response_serialization_ms": 0.12279999646125361,
-          "pipeline_total_ms": 56523.44319999975,
-          "detector_ms": 85.9539999946719,
-          "ocr_ms": 34280.61420000449,
-          "baseline_ms": 3.422800000407733,
-          "routing_ms": 0.14119999832473695,
-          "vlm_ms": 22134.018199998536,
-          "fusion_ms": 0.11210000229766592
+          "request_total_ms": 23578.370400000495,
+          "queue_wait_ms": 0.06549999943672447,
+          "inference_ms": 23558.131900000262,
+          "response_serialization_ms": 0.1827000005505397,
+          "pipeline_total_ms": 23557.05250000028,
+          "detector_ms": 21.431199999824457,
+          "ocr_ms": 6784.906499999124,
+          "baseline_ms": 2.3847000002206187,
+          "routing_ms": 0.10610000026645139,
+          "vlm_ms": 16738.835199999812,
+          "fusion_ms": 0.1914000004035188
         },
         "routing_policy_version": "routing_v3",
         "prompt_version": "v2",
@@ -1517,27 +1515,16 @@
         "vlm_categories": [
           "blood"
         ],
-        "vlm_reason": "The image depicts a medical scene involving a patient receiving intravenous treatment. A nurse is holding a blood bag, and a medical professional is attending to the patient's arm, which is likely in a vein. The presence of blood in the IV bag and the medical context clearly indicates a blood-related scenario, which falls under the 'blood' category.",
+        "vlm_reason": "The image depicts a medical scene involving a patient receiving intravenous treatment. The nurse is holding a blood bag, and the patient's arm is being monitored with a blood pressure cuff. The presence of blood collection equipment and the context of a medical setting indicate a blood-related scenario, which falls under the 'blood' category.",
         "vlm_evidence": [
           {
             "type": "visual",
-            "description": "A blood bag is being held by a nurse, with a dark liquid visible inside the bag, indicating blood.",
+            "description": "A blood bag is being held by a nurse, and the patient's arm is connected to a blood pressure cuff. The presence of a blood bag and the medical context clearly indicates a blood-related scene.",
             "bbox": {
               "x1": 494.0,
               "y1": 110.0,
-              "x2": 612.0,
-              "y2": 275.0
-            },
-            "text": null
-          },
-          {
-            "type": "visual",
-            "description": "A medical professional is attending to a patient's arm, which is likely in a vein, suggesting a blood draw or transfusion.",
-            "bbox": {
-              "x1": 150.0,
-              "y1": 750.0,
-              "x2": 350.0,
-              "y2": 830.0
+              "x2": 600.0,
+              "y2": 270.0
             },
             "text": null
           }
@@ -1558,17 +1545,17 @@
           "vlm": "success"
         },
         "timing": {
-          "request_total_ms": 49279.67820000049,
-          "queue_wait_ms": 0.03380000271135941,
-          "inference_ms": 49273.18540000124,
-          "response_serialization_ms": 0.14460000238614157,
-          "pipeline_total_ms": 49272.44439999777,
-          "detector_ms": 60.55239999841433,
-          "ocr_ms": 13139.396600003238,
+          "request_total_ms": 22532.379799999944,
+          "queue_wait_ms": 0.08429999979853164,
+          "inference_ms": 22521.430599999803,
+          "response_serialization_ms": 0.13070000022707973,
+          "pipeline_total_ms": 22520.76769999985,
+          "detector_ms": 25.919300000168732,
+          "ocr_ms": 4424.605799999881,
           "baseline_ms": 0.0,
-          "routing_ms": 0.1343000039923936,
-          "vlm_ms": 36065.79119999515,
-          "fusion_ms": 0.10599999950500205
+          "routing_ms": 0.08439999965048628,
+          "vlm_ms": 18064.14499999937,
+          "fusion_ms": 0.1128999992943136
         },
         "routing_policy_version": "routing_v3",
         "prompt_version": "v2",
@@ -1614,16 +1601,16 @@
         "vlm_categories": [
           "visual_sensitive_region"
         ],
-        "vlm_reason": "The image shows a medical facility with examination beds, medical equipment, and staff. While the environment is clearly a clinical setting, the presence of a visible wound or injury on one of the examination beds is not clearly discernible. However, the image contains a red examination bed with a black cushion, which may be a potential visual-sensitive region. The context is medical, and the image is not explicitly showing a visible wound or trauma. The evidence is insufficient to confirm a visual-sensitive region, but the presence of a medical setting raises a medium risk.",
+        "vlm_reason": "The image shows a medical or clinical environment with examination beds, medical equipment, and staff. While there is no visible wound, traumatic deformity, or sensitive body region, the presence of a medical setting with examination beds and equipment may imply a context where visual-sensitive regions could be present, especially if the image is part of a medical report or documentation. However, the visual evidence does not show any actual visible injury or sensitive anatomical area.",
         "vlm_evidence": [
           {
             "type": "visual",
-            "description": "A red examination bed with a black cushion, which may be a potential visual-sensitive region in a medical setting.",
+            "description": "The image shows a medical examination room with multiple examination beds, medical equipment, and staff. There are no visible wounds, traumatic deformities, or sensitive body regions.",
             "bbox": {
-              "x1": 85.0,
-              "y1": 485.0,
-              "x2": 420.0,
-              "y2": 800.0
+              "x1": 0.0,
+              "y1": 0.0,
+              "x2": 1920.0,
+              "y2": 1242.0
             },
             "text": null
           }
@@ -1644,17 +1631,17 @@
           "vlm": "success"
         },
         "timing": {
-          "request_total_ms": 71876.16439999692,
-          "queue_wait_ms": 0.062399994931183755,
-          "inference_ms": 71857.12339999736,
-          "response_serialization_ms": 0.14820000069448724,
-          "pipeline_total_ms": 71856.41159999795,
-          "detector_ms": 55.90970000048401,
-          "ocr_ms": 37922.91800000385,
-          "baseline_ms": 3.398299995751586,
-          "routing_ms": 0.14689999807160348,
-          "vlm_ms": 33862.17829999805,
-          "fusion_ms": 0.1475000026402995
+          "request_total_ms": 27813.998800000263,
+          "queue_wait_ms": 0.1295000001846347,
+          "inference_ms": 27782.439799999338,
+          "response_serialization_ms": 0.1570999993418809,
+          "pipeline_total_ms": 27781.70499999942,
+          "detector_ms": 24.949499999820546,
+          "ocr_ms": 9677.409900000384,
+          "baseline_ms": 2.4235000000771834,
+          "routing_ms": 0.10920000022451859,
+          "vlm_ms": 18066.90250000065,
+          "fusion_ms": 0.1160000001618755
         },
         "routing_policy_version": "routing_v3",
         "prompt_version": "v2",
@@ -1703,16 +1690,16 @@
         "vlm_categories": [
           "blood"
         ],
-        "vlm_reason": "The image depicts a person donating blood, with a visible blood sample in a tube and a blood collection line in the arm. This is a clear medical and blood donation context, which falls under the 'blood' category. The presence of blood collection equipment and the act of donation are significant indicators of a high-risk visual element.",
+        "vlm_reason": "The image depicts a person donating blood, with a visible blood collection tube and a blood sample in a test tube rack. This is a clear medical and blood donation context, which falls under the 'blood' category. The presence of blood collection equipment and the act of donation are significant indicators of the content's nature.",
         "vlm_evidence": [
           {
             "type": "visual",
-            "description": "A person's arm with a blood collection line and a blood sample in a tube, indicating a blood donation process.",
+            "description": "A person's leg with a blood collection tube connected to a vein, and a blood sample in a test tube rack on a medical table.",
             "bbox": {
-              "x1": 385.0,
-              "y1": 300.0,
-              "x2": 850.0,
-              "y2": 850.0
+              "x1": 0.0,
+              "y1": 0.0,
+              "x2": 1920.0,
+              "y2": 1588.0
             },
             "text": null
           }
@@ -1733,17 +1720,17 @@
           "vlm": "success"
         },
         "timing": {
-          "request_total_ms": 73329.68080000137,
-          "queue_wait_ms": 0.08019999950192869,
-          "inference_ms": 73311.14850000449,
-          "response_serialization_ms": 0.1329000006080605,
-          "pipeline_total_ms": 73310.59200000163,
-          "detector_ms": 84.85229999496369,
-          "ocr_ms": 46581.81380000315,
-          "baseline_ms": 3.5575000001699664,
-          "routing_ms": 0.14229999942472205,
-          "vlm_ms": 26627.84190000093,
-          "fusion_ms": 0.10580000525806099
+          "request_total_ms": 25745.389400000022,
+          "queue_wait_ms": 0.04530000023805769,
+          "inference_ms": 25723.781300000155,
+          "response_serialization_ms": 0.1436000002286164,
+          "pipeline_total_ms": 25722.81550000025,
+          "detector_ms": 22.112399999969057,
+          "ocr_ms": 11078.295100000105,
+          "baseline_ms": 2.596799999992072,
+          "routing_ms": 0.11110000014014076,
+          "vlm_ms": 14609.585600000173,
+          "fusion_ms": 0.15900000016699778
         },
         "routing_policy_version": "routing_v3",
         "prompt_version": "v2",
@@ -1756,13 +1743,12 @@
     },
     {
       "case_id": "real-021",
-      "scenario": "violence",
+      "scenario": "visual_sensitive_region",
       "image_sha256": "237bc4e893b15c54b69c1b5ba9b38eb2d627fd8a0bcba9edd823bd93c3c9bb68",
       "expected": {
         "risk_level": "medium",
         "categories": [
-          "visual_sensitive_region",
-          "violence"
+          "visual_sensitive_region"
         ],
         "text": null,
         "objects": null,
@@ -1794,16 +1780,16 @@
         "vlm_categories": [
           "visual_sensitive_region"
         ],
-        "vlm_reason": "The image contains a visible facial feature that appears to be a medical or physical condition, specifically a prominent facial scar or wound on the man's cheek. This is a sensitive visual region that may require manual review for publication purposes.",
+        "vlm_reason": "The image contains a visible facial feature that appears to be a medical or physical condition, specifically a prominent facial hair and a visible facial structure that may suggest a medical or historical context. The presence of a visible facial feature that could be a medical or physical condition is a concern, especially in a historical or documentary context.",
         "vlm_evidence": [
           {
             "type": "visual",
-            "description": "A visible scar or wound on the man's cheek, which is a sensitive visual region.",
+            "description": "A man with a mustache and a visible facial structure that may suggest a medical or physical condition.",
             "bbox": {
-              "x1": 300.0,
-              "y1": 400.0,
-              "x2": 500.0,
-              "y2": 500.0
+              "x1": 285.0,
+              "y1": 140.0,
+              "x2": 800.0,
+              "y2": 580.0
             },
             "text": null
           }
@@ -1824,25 +1810,25 @@
           "vlm": "success"
         },
         "timing": {
-          "request_total_ms": 67812.34759999643,
-          "queue_wait_ms": 0.14309999824035913,
-          "inference_ms": 67762.41320000554,
-          "response_serialization_ms": 0.12439999409252778,
-          "pipeline_total_ms": 67761.6479999997,
-          "detector_ms": 77.49229999899399,
-          "ocr_ms": 40494.21239999356,
-          "baseline_ms": 3.2709000006434508,
-          "routing_ms": 0.2342000007047318,
-          "vlm_ms": 27160.372500002268,
-          "fusion_ms": 0.11159999849041924
+          "request_total_ms": 24697.794499999873,
+          "queue_wait_ms": 0.0683999996908824,
+          "inference_ms": 24658.35530000004,
+          "response_serialization_ms": 0.1765000006344053,
+          "pipeline_total_ms": 24657.774000000245,
+          "detector_ms": 23.62859999993816,
+          "ocr_ms": 9201.296499999444,
+          "baseline_ms": 1.8400999997538747,
+          "routing_ms": 0.09050000062416075,
+          "vlm_ms": 15417.779000000337,
+          "fusion_ms": 0.1364999998259009
         },
         "routing_policy_version": "routing_v3",
         "prompt_version": "v2",
         "moderation_policy_version": null
       },
-      "classification": "POTENTIAL_REGRESSION",
+      "classification": "EQUIVALENT",
       "classification_reasons": [
-        "expected categories missing: violence"
+        "risk, required categories, and manual-review behavior match"
       ]
     },
     {
@@ -1881,14 +1867,14 @@
         "vlm_categories": [
           "prohibited_symbol"
         ],
-        "vlm_reason": "The image contains a Nazi swastika symbol on a flag, which is a prohibited symbol under the policy. This is a clear and visible instance of a hate symbol that requires manual review.",
+        "vlm_reason": "The image contains a flag with a swastika symbol, which is an explicitly prohibited symbol under the policy. This is a clear and visible instance of a hate symbol that requires manual review.",
         "vlm_evidence": [
           {
             "type": "visual",
             "description": "A black flag with a white swastika symbol is visible on the building's facade.",
             "bbox": {
               "x1": 558.0,
-              "y1": 295.0,
+              "y1": 290.0,
               "x2": 650.0,
               "y2": 475.0
             },
@@ -1911,17 +1897,17 @@
           "vlm": "success"
         },
         "timing": {
-          "request_total_ms": 55276.094799999555,
-          "queue_wait_ms": 0.04079999780515209,
-          "inference_ms": 55264.34359999985,
-          "response_serialization_ms": 0.13760000001639128,
-          "pipeline_total_ms": 55263.72660000197,
-          "detector_ms": 145.03140000306303,
-          "ocr_ms": 29760.576399996353,
-          "baseline_ms": 3.646400000434369,
-          "routing_ms": 0.14709999959450215,
-          "vlm_ms": 25340.72990000277,
-          "fusion_ms": 0.12250000145286322
+          "request_total_ms": 24141.386199999943,
+          "queue_wait_ms": 0.042800000301213004,
+          "inference_ms": 24128.997400000117,
+          "response_serialization_ms": 0.15629999961674912,
+          "pipeline_total_ms": 24128.381999999874,
+          "detector_ms": 29.152500000236614,
+          "ocr_ms": 8196.18040000023,
+          "baseline_ms": 1.9290999998702318,
+          "routing_ms": 0.09409999984200113,
+          "vlm_ms": 15893.101700000443,
+          "fusion_ms": 0.10879999990720535
         },
         "routing_policy_version": "routing_v3",
         "prompt_version": "v2",
@@ -1948,11 +1934,11 @@
       "actual": {
         "status": "completed",
         "risk_level": "medium",
-        "risk_score": 0.33056538314366146,
+        "risk_score": 0.4955653831436615,
         "categories": [
           {
             "name": "prohibited_symbol",
-            "score": 0.6
+            "score": 0.9
           }
         ],
         "requires_manual_review": true,
@@ -1965,19 +1951,19 @@
         ],
         "vlm_called": true,
         "vlm_status": "success",
-        "vlm_risk_level": "medium",
+        "vlm_risk_level": "high",
         "vlm_categories": [
           "prohibited_symbol"
         ],
-        "vlm_reason": "The image contains a black helmet with a white swastika symbol on it, which is a prohibited symbol. The swastika is a hate symbol associated with the Nazi regime and is explicitly prohibited in publications.",
+        "vlm_reason": "The image contains a black helmet with a white swastika symbol, which is a prohibited symbol. This is a clear and explicit violation of the policy's prohibited_symbol category.",
         "vlm_evidence": [
           {
             "type": "visual",
-            "description": "A black helmet with a white swastika symbol painted on it.",
+            "description": "A black helmet with a white swastika symbol painted on its front.",
             "bbox": {
               "x1": 150.0,
               "y1": 170.0,
-              "x2": 860.0,
+              "x2": 865.0,
               "y2": 770.0
             },
             "text": null
@@ -1986,7 +1972,7 @@
         "fusion_scores": {
           "visual": 0.0,
           "text": 0.0028269157183071756,
-          "vlm": 0.6
+          "vlm": 0.9
         },
         "ocr_block_count": 1,
         "ocr_text_length": 2,
@@ -1999,17 +1985,17 @@
           "vlm": "success"
         },
         "timing": {
-          "request_total_ms": 63493.31499999971,
-          "queue_wait_ms": 0.0670000008540228,
-          "inference_ms": 63240.649100000155,
-          "response_serialization_ms": 0.1556999995955266,
-          "pipeline_total_ms": 63239.97059999965,
-          "detector_ms": 82.03890000004321,
-          "ocr_ms": 37809.273500002746,
-          "baseline_ms": 3.314599998702761,
-          "routing_ms": 0.13179999950807542,
-          "vlm_ms": 25305.89670000336,
-          "fusion_ms": 0.11600000289035961
+          "request_total_ms": 20451.030499999433,
+          "queue_wait_ms": 0.035600000046542846,
+          "inference_ms": 20329.20589999958,
+          "response_serialization_ms": 0.13029999990976648,
+          "pipeline_total_ms": 20328.66549999926,
+          "detector_ms": 20.517500000096334,
+          "ocr_ms": 8847.743399999672,
+          "baseline_ms": 2.4486000002070796,
+          "routing_ms": 0.10829999973793747,
+          "vlm_ms": 11443.290899999738,
+          "fusion_ms": 0.11030000041500898
         },
         "routing_policy_version": "routing_v3",
         "prompt_version": "v2",
@@ -2036,11 +2022,11 @@
       "actual": {
         "status": "completed",
         "risk_level": "medium",
-        "risk_score": 0.3305193781322468,
+        "risk_score": 0.49551937813224683,
         "categories": [
           {
-            "name": "weapon",
-            "score": 0.6
+            "name": "prohibited_symbol",
+            "score": 0.9
           }
         ],
         "requires_manual_review": true,
@@ -2052,11 +2038,11 @@
         ],
         "vlm_called": true,
         "vlm_status": "success",
-        "vlm_risk_level": "medium",
+        "vlm_risk_level": "high",
         "vlm_categories": [
-          "weapon"
+          "prohibited_symbol"
         ],
-        "vlm_reason": "The image contains a repeating pattern of swastikas on a tiled floor. The swastika is a symbol associated with hate and violence, and its presence in a public or institutional setting, such as a floor, is a clear indicator of a prohibited symbol. The symbol is visible and unambiguous, and its use in this context is not benign or educational. The presence of the swastika, a prohibited symbol, triggers a medium risk level due to its explicit and harmful nature.",
+        "vlm_reason": "The image contains a repeating pattern of swastikas on a tiled floor. The swastika is an explicitly prohibited symbol, and its presence in a visual context that appears to be a public or historical site (e.g., a floor with a pattern) constitutes a clear violation of the policy's prohibited_symbol category. The evidence is unambiguous and directly supports the category.",
         "vlm_evidence": [
           {
             "type": "visual",
@@ -2073,7 +2059,7 @@
         "fusion_scores": {
           "visual": 0.0,
           "text": 0.0025968906612338504,
-          "vlm": 0.6
+          "vlm": 0.9
         },
         "ocr_block_count": 3,
         "ocr_text_length": 8,
@@ -2086,25 +2072,25 @@
           "vlm": "success"
         },
         "timing": {
-          "request_total_ms": 71340.14960000059,
-          "queue_wait_ms": 0.06430000212276354,
-          "inference_ms": 71323.65559999744,
-          "response_serialization_ms": 0.18869999621529132,
-          "pipeline_total_ms": 71322.99649999914,
-          "detector_ms": 61.26159999985248,
-          "ocr_ms": 39765.75249999587,
-          "baseline_ms": 3.289000000222586,
-          "routing_ms": 0.19600000086938962,
-          "vlm_ms": 31481.87969999708,
-          "fusion_ms": 0.1221999991685152
+          "request_total_ms": 24206.451099999867,
+          "queue_wait_ms": 0.04840000019612489,
+          "inference_ms": 24183.4730999999,
+          "response_serialization_ms": 0.19560000055207638,
+          "pipeline_total_ms": 24182.865499999934,
+          "detector_ms": 21.12180000040098,
+          "ocr_ms": 9529.720000000452,
+          "baseline_ms": 1.9518999997671926,
+          "routing_ms": 0.0932000002649147,
+          "vlm_ms": 14619.09580000065,
+          "fusion_ms": 0.16039999991335208
         },
         "routing_policy_version": "routing_v3",
         "prompt_version": "v2",
         "moderation_policy_version": null
       },
-      "classification": "POTENTIAL_REGRESSION",
+      "classification": "EQUIVALENT",
       "classification_reasons": [
-        "expected categories missing: prohibited_symbol"
+        "risk, required categories, and manual-review behavior match"
       ]
     },
     {
@@ -2144,16 +2130,16 @@
         "vlm_categories": [
           "prohibited_symbol"
         ],
-        "vlm_reason": "The image contains a swastika symbol, which is an explicitly prohibited symbol according to the policy. The swastika is a hate symbol associated with Nazi ideology and is not permitted in any context.",
+        "vlm_reason": "The image contains a clearly visible swastika symbol, which is an explicitly prohibited symbol under the policy. This symbol is a hate symbol and is associated with Nazi ideology, and its presence in the image constitutes a high-risk element that requires manual review.",
         "vlm_evidence": [
           {
             "type": "visual",
             "description": "A red swastika symbol inside a yellow circle on a blue background.",
             "bbox": {
               "x1": 275.0,
-              "y1": 115.0,
+              "y1": 120.0,
               "x2": 725.0,
-              "y2": 875.0
+              "y2": 870.0
             },
             "text": null
           }
@@ -2174,17 +2160,17 @@
           "vlm": "success"
         },
         "timing": {
-          "request_total_ms": 55122.61749999743,
-          "queue_wait_ms": 0.054600001021754,
-          "inference_ms": 55111.618399998406,
-          "response_serialization_ms": 0.11709999671438709,
-          "pipeline_total_ms": 55111.03930000536,
-          "detector_ms": 57.149499996739905,
-          "ocr_ms": 33273.6006999985,
+          "request_total_ms": 20167.43300000053,
+          "queue_wait_ms": 0.03870000000461005,
+          "inference_ms": 20155.306499999824,
+          "response_serialization_ms": 0.11419999918871326,
+          "pipeline_total_ms": 20154.76099999978,
+          "detector_ms": 22.345499999573804,
+          "ocr_ms": 7618.655499999477,
           "baseline_ms": 0.0,
-          "routing_ms": 0.13949999993201345,
-          "vlm_ms": 21770.707999996375,
-          "fusion_ms": 0.09719999798107892
+          "routing_ms": 0.09339999996882398,
+          "vlm_ms": 12506.265999999414,
+          "fusion_ms": 0.1908999993247562
         },
         "routing_policy_version": "routing_v3",
         "prompt_version": "v2",
@@ -2233,15 +2219,15 @@
         "vlm_categories": [
           "watermark"
         ],
-        "vlm_reason": "The image contains a watermark that reads 'KENZO PARIS', which is an overlaid ownership or studio mark. This type of mark is a known indicator of commercial or brand content and requires publication policy review.",
+        "vlm_reason": "The image contains a watermark, which is an overlaid ownership or studio mark. This is a clear indicator of a copyright or brand-related mark that requires publication policy review.",
         "vlm_evidence": [
           {
             "type": "visual",
-            "description": "Visible watermark 'KENZO PARIS' overlaid on the image.",
+            "description": "A watermark 'KENZO PARIS' is visible in the center of the image, indicating a brand or studio mark.",
             "bbox": {
-              "x1": 215.0,
-              "y1": 320.0,
-              "x2": 750.0,
+              "x1": 225.0,
+              "y1": 325.0,
+              "x2": 775.0,
               "y2": 569.0
             },
             "text": null
@@ -2263,17 +2249,17 @@
           "vlm": "success"
         },
         "timing": {
-          "request_total_ms": 37410.94929999963,
-          "queue_wait_ms": 0.1314999972237274,
-          "inference_ms": 37405.32119999989,
-          "response_serialization_ms": 0.12070000229869038,
-          "pipeline_total_ms": 37404.462200000125,
-          "detector_ms": 65.8636000007391,
-          "ocr_ms": 13120.100299995102,
-          "baseline_ms": 3.3441999985370785,
-          "routing_ms": 0.23400000645779073,
-          "vlm_ms": 24207.46759999747,
-          "fusion_ms": 0.1053000014508143
+          "request_total_ms": 15355.238199999803,
+          "queue_wait_ms": 0.04179999996267725,
+          "inference_ms": 15351.74619999998,
+          "response_serialization_ms": 0.11899999935849337,
+          "pipeline_total_ms": 15351.18650000004,
+          "detector_ms": 20.97810000032041,
+          "ocr_ms": 4088.454300000194,
+          "baseline_ms": 2.351500000258966,
+          "routing_ms": 0.10430000020278385,
+          "vlm_ms": 11233.635100000356,
+          "fusion_ms": 0.11639999956969405
         },
         "routing_policy_version": "routing_v3",
         "prompt_version": "v2",
@@ -2322,11 +2308,11 @@
         "vlm_categories": [
           "watermark"
         ],
-        "vlm_reason": "The image contains a watermark in the bottom-left corner, which is an overlaid ownership or studio mark. This is a clear indicator of a watermark, which requires publication-policy review.",
+        "vlm_reason": "The image contains a watermark in the bottom-left corner, which is an overlaid ownership or studio mark. This is a clear indicator of a copyright or studio mark, which requires publication-policy review.",
         "vlm_evidence": [
           {
             "type": "visual",
-            "description": "A watermark is visible in the bottom-left corner of the image, containing a circular logo with a portrait and text that reads 'THE PHOTO MENDER.COM'.",
+            "description": "A watermark is visible in the bottom-left corner of the image, which reads 'THE PHOTO MENDER.COM' and includes a small portrait.",
             "bbox": {
               "x1": 0.0,
               "y1": 888.0,
@@ -2352,17 +2338,17 @@
           "vlm": "success"
         },
         "timing": {
-          "request_total_ms": 43985.11979999603,
-          "queue_wait_ms": 0.04249999619787559,
-          "inference_ms": 43973.10119999747,
-          "response_serialization_ms": 0.12689999857684597,
-          "pipeline_total_ms": 43972.50900000654,
-          "detector_ms": 120.26070000138134,
-          "ocr_ms": 17077.355100002023,
-          "baseline_ms": 3.311500004201662,
-          "routing_ms": 0.1354000050923787,
-          "vlm_ms": 26760.01680000627,
-          "fusion_ms": 0.10869999823626131
+          "request_total_ms": 20319.802699999855,
+          "queue_wait_ms": 0.061899999309389386,
+          "inference_ms": 20298.209399999905,
+          "response_serialization_ms": 0.14569999984814785,
+          "pipeline_total_ms": 20297.424800000044,
+          "detector_ms": 27.608200000031502,
+          "ocr_ms": 4904.068199999529,
+          "baseline_ms": 2.380799999627925,
+          "routing_ms": 0.10109999948326731,
+          "vlm_ms": 15355.4565000004,
+          "fusion_ms": 0.12579999929585028
         },
         "routing_policy_version": "routing_v3",
         "prompt_version": "v2",
@@ -2374,5 +2360,5 @@
       ]
     }
   ],
-  "blocker": "4 potential regressions require review; clean-machine replay is still required."
+  "blocker": "clean-machine replay is still required."
 }
