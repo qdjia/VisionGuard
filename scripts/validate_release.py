@@ -619,6 +619,8 @@ def validate_release(
             for disclosure, token in required_disclosures.items():
                 if token not in release_notes:
                     errors.append(f"stable release notes missing risk disclosure: {disclosure}")
+            if "v1.0.0-rc." in release_notes:
+                errors.append("stable release notes contain an RC-scoped limitation")
     checksums = _checksums(checksum_path, errors)
     for name, expected in checksums.items():
         if Path(name).is_absolute() or ".." in Path(name).parts:

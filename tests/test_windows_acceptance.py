@@ -71,7 +71,6 @@ def test_ocr_model_download_uses_windows_safe_local_directories(
     assert set(sources) == set(OCR_MODELS)
     assert len(calls) == len(OCR_MODELS)
     assert all("cache_dir" not in call for call in calls)
-    assert all(call["local_dir_use_symlinks"] is False for call in calls)
     assert all(call["max_workers"] == 1 for call in calls)
     assert all(not (source / ".cache").exists() for source in sources.values())
 

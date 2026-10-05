@@ -11,6 +11,7 @@ from scripts.build_release import (
     copy_release_evidence,
     derive_final_rc_gates,
     redact_private_paths,
+    release_limitations,
     replace_directory,
     validate_release_mode,
     write_release_notes,
@@ -410,6 +411,15 @@ def test_stable_release_notes_disclose_waived_risks(tmp_path: Path) -> None:
         assert token in notes
 
 
+def test_stable_limitations_are_derived_from_stable_waiver_not_rc_scope() -> None:
+    limitations = release_limitations(Path("release-evidence"), "stable")
+
+    assert limitations
+    assert any("historical_clean_machine_replay" in item for item in limitations)
+    assert any("authenticode_code_signing" in item for item in limitations)
+    assert not any("v1.0.0-rc.1" in item for item in limitations)
+
+
 def test_historical_limitation_requires_waiver_for_stable() -> None:
     assert release_gate_passed("historical_regression", "passed_with_limitation", "rc")
     assert not release_gate_passed("historical_regression", "passed_with_limitation", "stable")
@@ -552,6 +562,14 @@ def test_stable_validator_applies_waiver_to_limited_history_and_unsigned_install
         waived_errors
     )
     assert "stable installer is not Authenticode signed" not in waived_errors
+
+    notes_path = target / "RELEASE_NOTES.md"
+    notes_path.write_text(
+        notes_path.read_text(encoding="utf-8") + "\nDeferred only for v1.0.0-rc.1.\n",
+        encoding="utf-8",
+    )
+    stale_notes_errors = validate_release(target, gate="stable")
+    assert "stable release notes contain an RC-scoped limitation" in stale_notes_errors
 
     (evidence / "stable-release-risk-waiver.json").unlink()
     unwaived_errors = validate_release(target, gate="stable")

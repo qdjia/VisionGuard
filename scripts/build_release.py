@@ -195,6 +195,22 @@ def derive_final_rc_gates(evidence_root: Path) -> tuple[dict[str, str], list[str
     return gates, blockers
 
 
+def release_limitations(evidence_root: Path, strict_gate: str | None) -> list[str]:
+    if strict_gate == "rc":
+        return list(load_json(evidence_root / "historical-regression.json").get("limitations", []))
+    if strict_gate != "stable":
+        return []
+
+    waiver = load_json(evidence_root / "stable-release-risk-waiver.json")
+    limitations: list[str] = []
+    for name, decision in sorted(waiver.get("decisions", {}).items()):
+        rationale = str(decision.get("rationale", "")).strip()
+        if rationale:
+            limitations.append(f"{name}: {rationale}")
+        limitations.extend(str(item).strip() for item in decision.get("residual_risks", []) if item)
+    return limitations
+
+
 def run(command: list[str], *, cwd: Path = ROOT, env: dict[str, str] | None = None) -> None:
     print("+", subprocess.list2cmdline(command), flush=True)
     subprocess.run(command, cwd=cwd, check=True, env=env)
@@ -587,11 +603,7 @@ def main() -> None:
             "qwen_evidence": "passed",
             "sbom": "passed",
         }
-    limitations = (
-        load_json(ROOT / "release-evidence/historical-regression.json").get("limitations", [])
-        if strict_gate
-        else []
-    )
+    limitations = release_limitations(ROOT / "release-evidence", strict_gate)
     notes = write_release_notes(
         output,
         args.version,

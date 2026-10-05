@@ -101,7 +101,6 @@ def fetch_ocr_models(work_root: Path) -> dict[str, Path]:
                 repo_id=str(spec["repo_id"]),
                 revision=str(spec["revision"]),
                 local_dir=local_dir,
-                local_dir_use_symlinks=False,
                 max_workers=1,
             )
         ).resolve()
