@@ -55,6 +55,11 @@ artifact 后验收。该 artifact 不是 Final Candidate 或 GitHub Release，�
 该模式要求 Git tracked tree 干净，禁止复用旧二进制或旧输出，强制重建 Core Models，且只允许
 online-bootstrap 分发。构建结束会自动运行严格 RC validator；失败时不得创建 Tag 或 Release。
 
+Stable 候选必须使用 `python scripts/build_release.py --version 1.0.0 --stable`。该模式复用相同的
+干净源码、全量重建、online-bootstrap 和禁止跳过校验约束，但生成 `release_channel=stable`，
+在 Release Notes 中强制披露已豁免风险，并自动执行 `validate_release.py --stable`。本地通过不会
+自动创建 Tag、GitHub Release 或公开发布。
+
 ## 硬件验证边界
 
 当前仅在 Windows、NVIDIA GeForce RTX 4060 Laptop 8 GiB、Driver 580.97 上验证过

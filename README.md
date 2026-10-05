@@ -144,6 +144,14 @@ python scripts/build_release.py --version 1.0.0-rc.1
 python scripts/validate_release.py --rc
 ```
 
+严格 Stable 候选必须从干净的已提交源码树重建，并自动执行 Stable validator：
+
+```powershell
+python scripts/build_release.py --version 1.0.0 --stable
+```
+
+该命令不会创建 Git Tag、GitHub Release，也不会公开上传产物。
+
 发布候选必须通过严格校验、Windows 分层验收、GUI 生命周期、升级/回滚/卸载/重装、历史回归与许可证分发门。`v1.0.0` 对未完成的独立干净机历史回归与 Authenticode 签名采用显式、版本限定的所有者风险豁免；其原始状态继续保留为未完成。真实离线测试不是 v1.0 的产品要求。
 
 ## 许可证

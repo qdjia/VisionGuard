@@ -98,6 +98,35 @@ def release_gate_passed(
     )
 
 
+def release_gate_display_status(
+    name: str,
+    value: object,
+    gate: str,
+    *,
+    allow_stable_historical_waiver: bool = False,
+) -> str:
+    normalized = str(value).casefold()
+    if (
+        gate == "stable"
+        and name == "historical_regression"
+        and normalized == "passed_with_limitation"
+        and allow_stable_historical_waiver
+    ):
+        return "WAIVED"
+    if release_gate_passed(
+        name,
+        value,
+        gate,
+        allow_stable_historical_waiver=allow_stable_historical_waiver,
+    ):
+        return "PASS"
+    if normalized == "failed":
+        return "FAIL"
+    if normalized == "n/a":
+        return "N/A"
+    return "BLOCKED"
+
+
 def _validate_stable_risk_waiver(
     evidence: Path,
     release_version: str,
@@ -579,6 +608,17 @@ def validate_release(
         stable_waivers = _validate_stable_risk_waiver(
             root / "release-evidence", release_version, errors
         )
+        if stable_waivers:
+            release_notes = notes_path.read_text(encoding="utf-8").casefold()
+            required_disclosures = {
+                "clean_machine_replay_not_completed": "clean-machine",
+                "installer_unsigned": "unsigned",
+                "smartscreen_warning": "smartscreen",
+                "sha256_verification": "sha-256",
+            }
+            for disclosure, token in required_disclosures.items():
+                if token not in release_notes:
+                    errors.append(f"stable release notes missing risk disclosure: {disclosure}")
     checksums = _checksums(checksum_path, errors)
     for name, expected in checksums.items():
         if Path(name).is_absolute() or ".." in Path(name).parts:
@@ -732,7 +772,7 @@ def validate_release(
             if not any(item.get("hashes") for item in distribution_components):
                 errors.append("WebView2 distribution component is not hash-inventoried")
         if not distribution.get("public_release_ready", False):
-            errors.append("RC distribution is not marked public_release_ready")
+            errors.append("release distribution is not marked public_release_ready")
     if gate == "stable":
         code_signing = distribution.get("code_signing")
         if not _stable_code_signing_accepted(code_signing, stable_waivers):
@@ -773,19 +813,11 @@ def main() -> None:
             )
         for name in sorted(RC_REQUIRED_GATES):
             value = str(manifest.get("gates", {}).get(name, "missing")).casefold()
-            status = (
-                "PASS"
-                if release_gate_passed(
-                    name,
-                    value,
-                    gate,
-                    allow_stable_historical_waiver=("historical_clean_machine_replay" in waivers),
-                )
-                else "FAIL"
-                if value == "failed"
-                else "N/A"
-                if value == "n/a"
-                else "BLOCKED"
+            status = release_gate_display_status(
+                name,
+                value,
+                gate,
+                allow_stable_historical_waiver=("historical_clean_machine_replay" in waivers),
             )
             print(f"GATE {name}: {status}")
     if errors:

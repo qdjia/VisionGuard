@@ -12,6 +12,8 @@ from scripts.build_release import (
     derive_final_rc_gates,
     redact_private_paths,
     replace_directory,
+    validate_release_mode,
+    write_release_notes,
 )
 from scripts.prepare_gate1_core_models import write_isolated_training_configs
 from scripts.validate_release import (
@@ -20,6 +22,7 @@ from scripts.validate_release import (
     _validate_release_evidence,
     _validate_sbom,
     _validate_stable_risk_waiver,
+    release_gate_display_status,
     release_gate_passed,
     validate_release,
 )
@@ -344,6 +347,69 @@ def test_final_rc_gates_are_derived_from_repository_evidence() -> None:
     assert all(value in {"passed", "passed_with_limitation"} for value in gates.values())
 
 
+def test_strict_release_modes_select_the_correct_validator_gate() -> None:
+    common = {
+        "app_version": "1.0.0",
+        "advanced_ai_mode": "online-bootstrap",
+        "skip_build": False,
+        "no_clean": False,
+        "skip_advanced_ai": False,
+        "skip_validation": False,
+    }
+
+    assert (
+        validate_release_mode(version="1.0.0-rc.1", final_rc=True, stable=False, **common) == "rc"
+    )
+    assert validate_release_mode(version="1.0.0", final_rc=False, stable=True, **common) == "stable"
+
+
+@pytest.mark.parametrize(
+    ("overrides", "message"),
+    [
+        ({"version": "1.0.0-rc.1", "stable": True}, "--stable requires version 1.0.0"),
+        (
+            {"advanced_ai_mode": "bundled", "stable": True},
+            "--stable only supports online-bootstrap",
+        ),
+        ({"skip_build": True, "stable": True}, "--stable forbids"),
+        (
+            {"final_rc": True, "stable": True},
+            "--final-rc and --stable are mutually exclusive",
+        ),
+    ],
+)
+def test_strict_release_modes_fail_closed(overrides: dict[str, object], message: str) -> None:
+    arguments: dict[str, object] = {
+        "version": "1.0.0",
+        "app_version": "1.0.0",
+        "final_rc": False,
+        "stable": False,
+        "advanced_ai_mode": "online-bootstrap",
+        "skip_build": False,
+        "no_clean": False,
+        "skip_advanced_ai": False,
+        "skip_validation": False,
+    }
+    arguments.update(overrides)
+
+    with pytest.raises(ValueError, match=message):
+        validate_release_mode(**arguments)  # type: ignore[arg-type]
+
+
+def test_stable_release_notes_disclose_waived_risks(tmp_path: Path) -> None:
+    notes = write_release_notes(
+        tmp_path,
+        "1.0.0",
+        [],
+        strict_gate="stable",
+        limitations=["Independent clean-machine replay remains incomplete."],
+    ).read_text(encoding="utf-8")
+
+    assert "Stable Candidate" in notes
+    for token in ("clean-machine", "unsigned", "SmartScreen", "SHA-256"):
+        assert token in notes
+
+
 def test_historical_limitation_requires_waiver_for_stable() -> None:
     assert release_gate_passed("historical_regression", "passed_with_limitation", "rc")
     assert not release_gate_passed("historical_regression", "passed_with_limitation", "stable")
@@ -352,6 +418,15 @@ def test_historical_limitation_requires_waiver_for_stable() -> None:
         "passed_with_limitation",
         "stable",
         allow_stable_historical_waiver=True,
+    )
+    assert (
+        release_gate_display_status(
+            "historical_regression",
+            "passed_with_limitation",
+            "stable",
+            allow_stable_historical_waiver=True,
+        )
+        == "WAIVED"
     )
     assert not release_gate_passed("clean_core", "passed_with_limitation", "rc")
 
@@ -461,6 +536,7 @@ def test_stable_validator_applies_waiver_to_limited_history_and_unsigned_install
         "code_signing": "unsigned",
     }
     manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    write_release_notes(target, "1.0.0", [], strict_gate="stable")
     (target / "LICENSE").write_bytes(Path("LICENSE").read_bytes())
     (target / "NOTICE").write_bytes(Path("NOTICE").read_bytes())
     evidence = target / "release-evidence"

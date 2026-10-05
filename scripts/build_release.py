@@ -1,4 +1,4 @@
-"""Build a reproducible local Windows release candidate without publishing it."""
+"""Build a reproducible local Windows release without publishing it."""
 
 from __future__ import annotations
 
@@ -80,7 +80,44 @@ def assert_clean_source_tree() -> None:
         encoding="utf-8",
     ).strip()
     if changed:
-        raise RuntimeError("final RC requires a clean tracked source tree")
+        raise RuntimeError("strict release builds require a clean tracked source tree")
+
+
+def validate_release_mode(
+    *,
+    version: str,
+    app_version: str,
+    final_rc: bool,
+    stable: bool,
+    advanced_ai_mode: str,
+    skip_build: bool,
+    no_clean: bool,
+    skip_advanced_ai: bool,
+    skip_validation: bool,
+) -> str | None:
+    """Validate strict release arguments and return the validator gate."""
+    if not SEMVER.fullmatch(version):
+        raise ValueError("--version must be a SemVer value")
+    if version.split("-", maxsplit=1)[0] != app_version:
+        raise ValueError(f"release base version {version} does not match app version {app_version}")
+    if final_rc and stable:
+        raise ValueError("--final-rc and --stable are mutually exclusive")
+    if final_rc and not re.fullmatch(r"1\.0\.0-rc\.[1-9][0-9]*", version):
+        raise ValueError("--final-rc requires version 1.0.0-rc.N")
+    if stable and version != "1.0.0":
+        raise ValueError("--stable requires version 1.0.0")
+
+    gate = "rc" if final_rc else "stable" if stable else None
+    if gate and advanced_ai_mode != "online-bootstrap":
+        raise ValueError(
+            f"--{gate if gate == 'stable' else 'final-rc'} only supports online-bootstrap"
+        )
+    if gate and (skip_build or no_clean or skip_advanced_ai or skip_validation):
+        mode = "--final-rc" if final_rc else "--stable"
+        raise ValueError(
+            f"{mode} forbids --skip-build, --no-clean, --skip-advanced-ai, and --skip-validation"
+        )
+    return gate
 
 
 def load_json(path: Path) -> dict:
@@ -186,9 +223,9 @@ def replace_directory(staged: Path, target: Path, *, allowed_parent: Path) -> No
         shutil.rmtree(backup)
 
 
-def rebuild_final_core_models(core_models: Path) -> None:
+def rebuild_final_core_models(core_models: Path, *, build_label: str = "final-rc") -> None:
     models_root = (ROOT / "models").resolve()
-    staged = models_root / ".core-models-v1-final-rc-staging"
+    staged = models_root / ".core-models-v1-strict-staging"
     if staged.exists():
         if staged.parent != models_root:
             raise ValueError("unexpected Core Models staging path")
@@ -200,14 +237,14 @@ def rebuild_final_core_models(core_models: Path) -> None:
             "--output",
             str(staged),
             "--work-root",
-            str(ROOT / "artifacts/final-rc-core-model-build"),
+            str(ROOT / f"artifacts/{build_label}-core-model-build"),
             "--isolated-training",
         ]
     )
     manifest = load_json(staged / "manifest.json")
     expected = {"baseline", "detector", "ocr_detection", "ocr_orientation", "ocr_recognition"}
     if set(manifest.get("models", {})) != expected:
-        raise RuntimeError("rebuilt final RC Core Models have an unexpected component set")
+        raise RuntimeError("rebuilt release Core Models have an unexpected component set")
     replace_directory(staged, core_models, allowed_parent=models_root)
 
 
@@ -340,23 +377,37 @@ def write_release_notes(
     version: str,
     blockers: list[str],
     *,
-    final_rc: bool = False,
+    strict_gate: str | None = None,
     limitations: list[str] | None = None,
 ) -> Path:
     target = output / "RELEASE_NOTES.md"
     blocker_text = (
         "\n".join(f"- `{blocker}`" for blocker in blockers)
         if blockers
-        else "- None recorded for this RC candidate."
+        else "- None recorded for this candidate."
     )
     limitation_text = "\n".join(f"- {limitation}" for limitation in limitations or []) or "- None."
-    candidate_status = (
-        "严格 RC 候选；仍须完成候选级 CI smoke 后才能创建 Tag 或公开上传。"
-        if final_rc
-        else "本地生成的候选产物，不表示已经获准公开发布。"
+    candidate_status = {
+        "rc": "严格 RC 候选；通过本地校验不表示已经创建 Tag 或公开上传。",
+        "stable": "严格 Stable 候选；通过本地校验不表示已经创建 Tag 或公开发布。",
+    }.get(strict_gate, "本地生成的候选产物，不表示已经获准公开发布。")
+    stable_disclosures = (
+        """
+
+## v1.0.0 risk disclosures
+
+- Independent clean-machine historical image replay is **not completed** and is waived by the
+  project owner only for v1.0.0.
+- The Windows installer is **unsigned** and may trigger Microsoft SmartScreen warnings.
+- Verify the downloaded installer against the published **SHA-256** before running it.
+- These waivers do not claim the incomplete requirements passed and do not apply to future versions.
+"""
+        if strict_gate == "stable"
+        else ""
     )
+    release_kind = "Stable Candidate" if strict_gate == "stable" else "Local Release Candidate"
     target.write_text(
-        f"""# VisionGuard {version} Local Release Candidate
+        f"""# VisionGuard {version} {release_kind}
 
 {candidate_status}
 
@@ -374,6 +425,7 @@ def write_release_notes(
 ## Accepted limitations
 
 {limitation_text}
+{stable_disclosures}
 
 公开分发前必须完成 `docs/release_gate.md` 所列门禁并让严格 validator 无绕过通过。
 """,
@@ -404,29 +456,31 @@ def main() -> None:
         help="Default is small official-source bootstrap; bundled is legacy fallback only.",
     )
     parser.add_argument("--skip-validation", action="store_true")
-    parser.add_argument(
+    strict_mode = parser.add_mutually_exclusive_group()
+    strict_mode.add_argument(
         "--final-rc",
         action="store_true",
         help="Rebuild an evidence-backed RC from a clean committed source tree.",
     )
+    strict_mode.add_argument(
+        "--stable",
+        action="store_true",
+        help="Rebuild an evidence-backed v1.0.0 Stable candidate from a clean source tree.",
+    )
     args = parser.parse_args()
-    if not SEMVER.fullmatch(args.version):
-        raise ValueError("--version must be a SemVer value")
     app_version = source_version()
-    if args.version.split("-", maxsplit=1)[0] != app_version:
-        raise ValueError(
-            f"release base version {args.version} does not match app version {app_version}"
-        )
-    if args.final_rc:
-        if not re.fullmatch(r"1\.0\.0-rc\.[1-9][0-9]*", args.version):
-            raise ValueError("--final-rc requires version 1.0.0-rc.N")
-        if args.advanced_ai_mode != "online-bootstrap":
-            raise ValueError("--final-rc only supports online-bootstrap distribution")
-        if args.skip_build or args.no_clean or args.skip_advanced_ai or args.skip_validation:
-            raise ValueError(
-                "--final-rc forbids --skip-build, --no-clean, --skip-advanced-ai, "
-                "and --skip-validation"
-            )
+    strict_gate = validate_release_mode(
+        version=args.version,
+        app_version=app_version,
+        final_rc=args.final_rc,
+        stable=args.stable,
+        advanced_ai_mode=args.advanced_ai_mode,
+        skip_build=args.skip_build,
+        no_clean=args.no_clean,
+        skip_advanced_ai=args.skip_advanced_ai,
+        skip_validation=args.skip_validation,
+    )
+    if strict_gate:
         assert_clean_source_tree()
 
     output = RELEASE_ROOT / f"v{args.version}"
@@ -442,8 +496,8 @@ def main() -> None:
             build_bootstrap_wheel()
             assert_online_bootstrap_hygiene(ROOT / "bootstrap-dist", ROOT / "packaging/bootstrap")
         run([sys.executable, "scripts/build_runtime.py", "--profile", "core"])
-        if args.final_rc:
-            rebuild_final_core_models(core_models)
+        if strict_gate:
+            rebuild_final_core_models(core_models, build_label=f"v{args.version}")
         elif not core_models.joinpath("manifest.json").is_file():
             run(
                 [
@@ -469,13 +523,13 @@ def main() -> None:
     assets: list[dict[str, object]] = []
     installer = output / f"VisionGuard-Setup-{args.version}.exe"
     shutil.copy2(find_installer(), installer)
-    # Only the strict final-RC path may mark the rebuilt installer publishable.
+    # Only strict RC/Stable paths may mark a freshly rebuilt installer publishable.
     assets.append(
         asset_record(
             installer,
             output,
             kind="windows_installer",
-            publishable=args.final_rc,
+            publishable=bool(strict_gate),
         )
     )
 
@@ -505,7 +559,7 @@ def main() -> None:
         webview_installer,
         include_legacy_vlm=args.advanced_ai_mode == "bundled",
     )
-    if args.final_rc:
+    if strict_gate:
         gates, blockers = derive_final_rc_gates(ROOT / "release-evidence")
     else:
         blockers = [
@@ -535,14 +589,14 @@ def main() -> None:
         }
     limitations = (
         load_json(ROOT / "release-evidence/historical-regression.json").get("limitations", [])
-        if args.final_rc
+        if strict_gate
         else []
     )
     notes = write_release_notes(
         output,
         args.version,
         blockers,
-        final_rc=args.final_rc,
+        strict_gate=strict_gate,
         limitations=limitations,
     )
     notice = output / "THIRD_PARTY_NOTICES.md"
@@ -586,7 +640,7 @@ def main() -> None:
         "release_version": args.version,
         "project_license": "AGPL-3.0-only",
         "source": {"commit": source_commit(), "expected_tag": f"v{args.version}"},
-        "release_channel": "release_candidate",
+        "release_channel": "stable" if strict_gate == "stable" else "release_candidate",
         "generated_at": datetime.now(UTC).isoformat(),
         "app_version": app_version,
         "platform": "windows",
@@ -616,7 +670,7 @@ def main() -> None:
             "local_inference": True,
             "cloud_inference": False,
             "code_signing": "unsigned",
-            "public_release_ready": args.final_rc and not blockers,
+            "public_release_ready": bool(strict_gate) and not blockers,
             "blockers": blockers,
         },
         "gates": gates,
@@ -656,8 +710,8 @@ def main() -> None:
         assert_online_bootstrap_hygiene(output)
     if not args.skip_validation:
         validation = [sys.executable, "scripts/validate_release.py", str(output)]
-        if args.final_rc:
-            validation.append("--rc")
+        if strict_gate:
+            validation.append(f"--{strict_gate}")
         run(validation)
     print(json.dumps({"release": str(output), "assets": len(assets)}, ensure_ascii=False))
 
