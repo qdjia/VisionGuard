@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "gate": "stable_release_risk_waiver",
+  "status": "ACCEPTED",
+  "accepted_at": "2026-10-05",
+  "accepted_by": "project_owner",
+  "scope": "v1.0.0",
+  "valid_for_future_versions": false,
+  "does_not_claim_pass": true,
+  "decisions": {
+    "historical_clean_machine_replay": {
+      "status": "WAIVED_BY_OWNER",
+      "requirement_status": "NOT_COMPLETED",
+      "rationale": "The project owner accepted deferring the independent clean-machine historical image replay until after the initial stable release.",
+      "residual_risks": [
+        "Machine-specific packaging or inference regressions may remain undiscovered.",
+        "The completed development-machine replay does not prove behavior on an independent clean Windows installation."
+      ]
+    },
+    "authenticode_code_signing": {
+      "status": "WAIVED_BY_OWNER",
+      "requirement_status": "NOT_COMPLETED",
+      "rationale": "The project owner accepted publishing v1.0.0 without an Authenticode certificate.",
+      "residual_risks": [
+        "Windows SmartScreen may warn users or impede installation.",
+        "Users must verify the published SHA-256 checksum because Windows cannot establish publisher identity."
+      ]
+    }
+  },
+  "required_disclosures": [
+    "clean_machine_replay_not_completed",
+    "installer_unsigned",
+    "smartscreen_warning",
+    "sha256_verification"
+  ]
+}

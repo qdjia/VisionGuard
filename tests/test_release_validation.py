@@ -15,8 +15,11 @@ from scripts.build_release import (
 )
 from scripts.prepare_gate1_core_models import write_isolated_training_configs
 from scripts.validate_release import (
+    RC_REQUIRED_GATES,
+    _stable_code_signing_accepted,
     _validate_release_evidence,
     _validate_sbom,
+    _validate_stable_risk_waiver,
     release_gate_passed,
     validate_release,
 )
@@ -341,10 +344,147 @@ def test_final_rc_gates_are_derived_from_repository_evidence() -> None:
     assert all(value in {"passed", "passed_with_limitation"} for value in gates.values())
 
 
-def test_historical_limitation_is_rc_only() -> None:
+def test_historical_limitation_requires_waiver_for_stable() -> None:
     assert release_gate_passed("historical_regression", "passed_with_limitation", "rc")
     assert not release_gate_passed("historical_regression", "passed_with_limitation", "stable")
+    assert release_gate_passed(
+        "historical_regression",
+        "passed_with_limitation",
+        "stable",
+        allow_stable_historical_waiver=True,
+    )
     assert not release_gate_passed("clean_core", "passed_with_limitation", "rc")
+
+
+def test_stable_risk_waiver_accepts_only_declared_v1_requirements(tmp_path: Path) -> None:
+    evidence = tmp_path / "release-evidence"
+    evidence.mkdir()
+    source = Path("release-evidence/stable-release-risk-waiver.json")
+    (evidence / source.name).write_bytes(source.read_bytes())
+
+    errors: list[str] = []
+    accepted = _validate_stable_risk_waiver(evidence, "1.0.0", errors)
+
+    assert errors == []
+    assert accepted == {
+        "historical_clean_machine_replay",
+        "authenticode_code_signing",
+    }
+    assert _stable_code_signing_accepted("unsigned", accepted)
+    assert _stable_code_signing_accepted("authenticode_trusted", set())
+    assert not _stable_code_signing_accepted("unsigned", set())
+    assert not _stable_code_signing_accepted("unknown", accepted)
+
+
+@pytest.mark.parametrize(
+    ("mutation", "expected_error"),
+    [
+        (("scope", "v1.0.1"), "stable risk waiver scope does not match v1.0.0"),
+        (
+            ("valid_for_future_versions", True),
+            "stable risk waiver must not apply to future versions",
+        ),
+        (
+            ("does_not_claim_pass", False),
+            "stable risk waiver must explicitly preserve incomplete gate status",
+        ),
+    ],
+)
+def test_stable_risk_waiver_fails_closed_on_invalid_boundary(
+    tmp_path: Path,
+    mutation: tuple[str, object],
+    expected_error: str,
+) -> None:
+    evidence = tmp_path / "release-evidence"
+    evidence.mkdir()
+    payload = json.loads(
+        Path("release-evidence/stable-release-risk-waiver.json").read_text(encoding="utf-8")
+    )
+    payload[mutation[0]] = mutation[1]
+    (evidence / "stable-release-risk-waiver.json").write_text(json.dumps(payload), encoding="utf-8")
+
+    errors: list[str] = []
+    accepted = _validate_stable_risk_waiver(evidence, "1.0.0", errors)
+
+    assert accepted == set()
+    assert expected_error in errors
+
+
+def test_stable_risk_waiver_requires_residual_risks(tmp_path: Path) -> None:
+    evidence = tmp_path / "release-evidence"
+    evidence.mkdir()
+    payload = json.loads(
+        Path("release-evidence/stable-release-risk-waiver.json").read_text(encoding="utf-8")
+    )
+    payload["decisions"]["historical_clean_machine_replay"]["residual_risks"] = []
+    (evidence / "stable-release-risk-waiver.json").write_text(json.dumps(payload), encoding="utf-8")
+
+    errors: list[str] = []
+    accepted = _validate_stable_risk_waiver(evidence, "1.0.0", errors)
+
+    assert accepted == set()
+    assert (
+        "stable risk waiver residual risks are missing: historical_clean_machine_replay" in errors
+    )
+
+
+def test_stable_risk_waiver_is_missing_by_default(tmp_path: Path) -> None:
+    errors: list[str] = []
+
+    accepted = _validate_stable_risk_waiver(tmp_path, "1.0.0", errors)
+
+    assert accepted == set()
+    assert len(errors) == 1
+    assert errors[0].startswith("invalid stable release risk waiver:")
+
+
+def test_stable_validator_applies_waiver_to_limited_history_and_unsigned_installer(
+    tmp_path: Path,
+) -> None:
+    target = _release(tmp_path)
+    manifest_path = target / "release-manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest.update(
+        {
+            "release_version": "1.0.0",
+            "app_version": "1.0.0",
+            "project_license": "AGPL-3.0-only",
+            "source": {"commit": "a" * 40, "expected_tag": "v1.0.0"},
+            "gates": {name: "passed" for name in RC_REQUIRED_GATES},
+        }
+    )
+    manifest["gates"]["historical_regression"] = "passed_with_limitation"
+    manifest["distribution"] = {
+        "advanced_ai": "online-bootstrap",
+        "public_release_ready": True,
+        "blockers": [],
+        "code_signing": "unsigned",
+    }
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    (target / "LICENSE").write_bytes(Path("LICENSE").read_bytes())
+    (target / "NOTICE").write_bytes(Path("NOTICE").read_bytes())
+    evidence = target / "release-evidence"
+    evidence.mkdir()
+    for item in Path("release-evidence").iterdir():
+        if item.is_file():
+            (evidence / item.name).write_bytes(item.read_bytes())
+
+    waived_errors = validate_release(target, gate="stable")
+
+    assert "release gate not passed: historical_regression" not in waived_errors
+    assert "historical regression clean-machine limitation is not allowed for stable" not in (
+        waived_errors
+    )
+    assert "stable installer is not Authenticode signed" not in waived_errors
+
+    (evidence / "stable-release-risk-waiver.json").unlink()
+    unwaived_errors = validate_release(target, gate="stable")
+
+    assert "release gate not passed: historical_regression" in unwaived_errors
+    assert "historical regression clean-machine limitation is not allowed for stable" in (
+        unwaived_errors
+    )
+    assert "stable installer is not Authenticode signed" in unwaived_errors
 
 
 def test_release_evidence_redacts_private_paths_without_mutating_source(

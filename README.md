@@ -5,7 +5,7 @@
 
 VisionGuard 是面向 AI / Computer Vision 算法实习作品集的本地优先项目。系统将目标检测、OCR、传统文本分类、动态路由、视觉语言模型与风险融合组织为可评估、可解释、可服务化的完整推理链路。
 
-> 当前处于 **v1.0 Release Candidate 准备阶段**。仓库尚未提供可公开下载的正式安装包，也未发布 `v1.0.0-rc.1` Tag。本地构建成功不代表已获准公开发行。
+> `v1.0.0-rc.1` 已作为 GitHub Prerelease 公开；当前进入 `v1.0.0` Stable 候选构建准备阶段。RC 通过不代表 Stable 已构建或已发布。
 
 ## 产品边界
 
@@ -48,8 +48,9 @@ Core-only 安装体积约 0.843 GiB。Advanced AI 默认不再随 GitHub Release
 - 目标平台：64 位 Windows。
 - Core：CPU 模式；最低内存与性能仍需多机验证。
 - Advanced AI：当前只在 RTX 4060 Laptop 8 GiB 上完成开发验证，这不是最低配置承诺。
-- Clean Core、Fresh-user GUI、Advanced AI GPU 和安装器生命周期 Gate 已通过。历史真实图片回归以 `PASS_WITH_LIMITATION` 推进 RC：开发验收机 27 张图片为 0 confirmed / 0 potential，独立干净机复验延期且仍是 Stable Release 硬门槛。
-- Windows RC 计划为未签名包，可能出现 SmartScreen 提示。
+- Clean Core、Fresh-user GUI、Advanced AI GPU 和安装器生命周期 Gate 已通过。历史真实图片回归保持 `PASS_WITH_LIMITATION`：开发验收机 27 张图片为 0 confirmed / 0 potential，独立干净机复验仍未完成。
+- 项目所有者已对且仅对 `v1.0.0` 接受“独立干净机历史回归延期”和“未使用 Authenticode 签名”两项剩余风险。该决定记录为 `WAIVED_BY_OWNER`，不把未完成项伪装为 `PASS`，也不自动适用于后续版本。
+- Windows 安装包未签名，可能出现 SmartScreen 提示；下载后应核对 Release 页面提供的 SHA-256。
 - Ultralytics Detector 在 AGPL 开源发行路径下为 `ALLOWED_WITH_CONDITIONS`；发布时必须同时满足源码、许可证、构建脚本、来源记录及发行版本映射条件。
 - 默认 online-bootstrap Release 不再直接携带 PyTorch/CUDA/NVIDIA DLL；这些依赖在安装时由官方 PyTorch 源获取。NVIDIA 依赖仍需记录，但 `nvJitLink` 的 VisionGuard 直接二进制再分发门禁因此为 N/A。
 
@@ -143,7 +144,7 @@ python scripts/build_release.py --version 1.0.0-rc.1
 python scripts/validate_release.py --rc
 ```
 
-只有严格校验、clean-machine、GUI 生命周期、升级/回滚/卸载/重装、历史回归与许可证分发门全部通过，才可建议创建 `v1.0.0-rc.1`。真实离线测试不是 v1.0 的产品要求，也不是 RC 阻断项。
+发布候选必须通过严格校验、Windows 分层验收、GUI 生命周期、升级/回滚/卸载/重装、历史回归与许可证分发门。`v1.0.0` 对未完成的独立干净机历史回归与 Authenticode 签名采用显式、版本限定的所有者风险豁免；其原始状态继续保留为未完成。真实离线测试不是 v1.0 的产品要求。
 
 ## 许可证
 

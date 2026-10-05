@@ -45,11 +45,11 @@ artifact 后验收。该 artifact 不是 Final Candidate 或 GitHub Release，�
 - [x] Core readiness、Fast Review、Deep Review 和 fail-safe 通过
 - [x] 动态端口、session token、关闭与无 orphan process 通过
 - [x] 更新、回滚、卸载与重装通过
-- [x] 历史真实图片回归达到 `PASS_WITH_LIMITATION`；独立干净机复验延期至 Stable gate
+- [x] 历史真实图片回归达到 `PASS_WITH_LIMITATION`；独立干净机复验未完成，`v1.0.0` 由项目所有者显式接受风险
 - [x] Detector AGPL 来源、Corresponding Source、commit/tag 映射完整
 - [x] SBOM、LICENSE、NOTICE 和第三方声明由构建器写入候选包
-- [ ] 最终候选包未包含禁止的模型、wheel、CUDA/NVIDIA DLL 或旧分卷
-- [ ] `python scripts/validate_release.py <candidate> --rc` 无绕过通过
+- [x] 最终 RC 候选包未包含禁止的模型、wheel、CUDA/NVIDIA DLL 或旧分卷
+- [x] `python scripts/validate_release.py <candidate> --rc` 无绕过通过
 
 最终 RC 必须使用 `python scripts/build_release.py --version 1.0.0-rc.1 --final-rc`。
 该模式要求 Git tracked tree 干净，禁止复用旧二进制或旧输出，强制重建 Core Models，且只允许
@@ -63,9 +63,19 @@ Qwen3-VL-2B 本地推理与 CUDA 12.8 环境。这是 `Validated On`，不是最
 
 ## 签名策略
 
-当前没有 Authenticode 证书。未签名 RC 可能触发 SmartScreen，必须在 Release Notes 和下载页
-显著披露。自签名只可用于流程测试，不能描述为正式签名。面向普通用户的 Stable Release
-应使用受信任证书，并重新验证安装、升级与卸载。
+当前没有 Authenticode 证书。未签名安装包可能触发 SmartScreen，必须在 Release Notes 和下载页
+显著披露，并要求用户核对 SHA-256。自签名只可用于流程测试，不能描述为正式签名。
+项目所有者已对且仅对 `v1.0.0` 接受未签名发行风险；后续版本必须重新签名或重新作出明确决定。
+
+## Stable 风险豁免
+
+`release-evidence/stable-release-risk-waiver.json` 是 `v1.0.0` 的机器可读决定记录。它同时满足以下原则：
+
+- 只接受独立干净机历史回归未完成与 Authenticode 未签名两项已知风险。
+- 原始要求状态必须保持 `NOT_COMPLETED`，不得改写为 `PASS`。
+- 必须记录项目所有者、日期、版本范围、理由和剩余风险。
+- 必须披露干净机复验未完成、安装包未签名、SmartScreen 风险和 SHA-256 校验方式。
+- 不适用于未来版本；缺失或被篡改时 Stable validator 失败关闭。
 
 ## 模型与依赖许可
 

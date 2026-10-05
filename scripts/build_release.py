@@ -563,6 +563,7 @@ def main() -> None:
         ROOT / "release-evidence/nvjitlink-analysis.json",
         ROOT / "release-evidence/acceptance-status.json",
         ROOT / "release-evidence/historical-regression.json",
+        ROOT / "release-evidence/stable-release-risk-waiver.json",
         ROOT / "release-evidence/local-inference-architecture.json",
         ROOT / "release-evidence/license-migration.json",
         ROOT / "release-evidence/advanced-ai-bootstrap.json",

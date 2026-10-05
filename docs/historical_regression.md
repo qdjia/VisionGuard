@@ -89,7 +89,7 @@
 ## 已接受的限制
 
 1. `v1.0.0-rc.1` 接受开发验收机完整回放作为受限通过依据。
-2. 独立干净验收机复跑被延期，不再阻断 RC，但仍是 Stable Release 的硬门槛。
+2. 独立干净验收机复跑被延期；项目所有者已对且仅对 `v1.0.0` 接受该剩余风险。它不是 `PASS`，也不自动适用于后续版本。
 3. 后续复验必须使用同一 Core、VLM wheel、模型 revision、prompt v2 与锁定图片清单，并达到 0 confirmed / 0 potential。
 
-因此 Historical Regression 对 RC 标记为 `PASS_WITH_LIMITATION`，而不是无条件 `PASS`；`clean_machine_replay_completed` 继续保持 `false`。在独立复验完成前，Stable Release 校验仍会拒绝该限制，Legacy source 也不能标记为 Safe To Retire。
+因此 Historical Regression 保持 `PASS_WITH_LIMITATION`，而不是无条件 `PASS`；`clean_machine_replay_completed` 继续保持 `false`。Stable 校验只有在 `stable-release-risk-waiver.json` 对当前版本明确记录 `WAIVED_BY_OWNER` 时才接受该限制；缺失、内容不完整、版本不符或试图声明已通过时均会失败关闭。Legacy source 仍不能标记为 Safe To Retire。

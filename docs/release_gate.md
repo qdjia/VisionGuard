@@ -1,6 +1,6 @@
 # v1.0 Release Gate
 
-截至 2026-10-04，源码已完成 AGPL 对齐。历史真实图片回归以明确风险接受的 `PASS_WITH_LIMITATION` 继续 RC 流程；最终 RC 尚未重建，因此当前仍不得 Tag 或公开上传二进制。
+截至 2026-10-05，源码已完成 AGPL 对齐，`v1.0.0-rc.1` 已通过严格校验并公开为 Prerelease。当前准备 `v1.0.0` Stable 候选；历史干净机复验和 Authenticode 签名仍未完成，仅通过版本限定的项目所有者风险豁免解除阻断。
 
 | Gate | Status | Closure |
 |---|---|---|
@@ -15,8 +15,9 @@
 | Installer lifecycle | PASS | `0.9.0` → `1.0.0` 升级、降级拒绝、显式回滚、用户数据保留与最终清理均已真实验收 |
 | Prebuilt VLM Runtime distribution | N/A | 已降级为 legacy/reference-only，不属于默认 Release |
 | nvJitLink direct redistribution | N/A | 默认 Release 不携带该 DLL；运行时依赖由官方 PyTorch 源在用户安装时获取 |
-| Historical real-image regression | PASS_WITH_LIMITATION | 开发验收机 27 张锁定图片达到 0 confirmed / 0 potential / 0 unsafe fast path；独立干净机复验延期并作为 Stable 硬门槛 |
-| Final rebuilt candidate | BLOCKED | 须基于当前冻结提交重建最终 RC 并运行严格 validator |
+| Historical real-image regression | PASS_WITH_LIMITATION / WAIVED_BY_OWNER for v1.0.0 | 开发验收机 27 张锁定图片达到 0 confirmed / 0 potential / 0 unsafe fast path；独立干净机复验仍未完成，项目所有者仅为 v1.0.0 接受风险 |
+| Authenticode signing | NOT_COMPLETED / WAIVED_BY_OWNER for v1.0.0 | 安装包未签名，必须披露 SmartScreen 风险并提供 SHA-256 |
+| Final rebuilt RC candidate | PASS | `v1.0.0-rc.1` 已完成严格 validator 并公开为 Prerelease |
 
 Split Windows 验收模型见 [`windows_acceptance.md`](windows_acceptance.md)。只有三个 Windows Gate、
-历史回归的受限通过仅适用于 `v1.0.0-rc.1`；Stable 仍要求独立干净机复验。最终候选重建、严格 validator 和所有实际分发许可 gate 完成后，才建议创建 `v1.0.0-rc.1`。网络只用于安装、模型获取和更新；图片审核推理仍在本地完成且不依赖云端推理 API。
+历史回归的结果仍是 `PASS_WITH_LIMITATION`，代码签名仍是 `NOT_COMPLETED`。项目所有者已通过机器可读证据对且仅对 `v1.0.0` 接受这两项风险；这不会改变原始状态，也不会自动延续到未来版本。Stable validator 必须验证豁免的版本、所有者、理由、剩余风险与披露要求。网络只用于安装、模型获取和更新；图片审核推理仍在本地完成且不依赖云端推理 API。

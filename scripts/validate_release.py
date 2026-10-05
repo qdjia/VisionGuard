@@ -74,14 +74,121 @@ WINDOWS_ACCEPTANCE_FILES = {
     "advanced_ai_gpu": "advanced-ai-gpu-acceptance.json",
 }
 WINDOWS_ACCEPTANCE_STATUSES = {"PASS", "BLOCKED", "BLOCKED_NETWORK", "FAIL"}
+STABLE_RISK_WAIVER_FILE = "stable-release-risk-waiver.json"
+STABLE_WAIVER_DECISIONS = {
+    "historical_clean_machine_replay",
+    "authenticode_code_signing",
+}
 
 
-def release_gate_passed(name: str, value: object, gate: str) -> bool:
+def release_gate_passed(
+    name: str,
+    value: object,
+    gate: str,
+    *,
+    allow_stable_historical_waiver: bool = False,
+) -> bool:
     normalized = str(value).casefold()
     if normalized == "passed":
         return True
     return (
-        gate == "rc" and name == "historical_regression" and normalized == "passed_with_limitation"
+        name == "historical_regression"
+        and normalized == "passed_with_limitation"
+        and (gate == "rc" or (gate == "stable" and allow_stable_historical_waiver))
+    )
+
+
+def _validate_stable_risk_waiver(
+    evidence: Path,
+    release_version: str,
+    errors: list[str],
+) -> set[str]:
+    """Return explicitly waived Stable requirements after fail-closed validation."""
+    path = evidence / STABLE_RISK_WAIVER_FILE
+    waiver = _load_json(path, "stable release risk waiver", errors)
+    if not waiver:
+        return set()
+
+    valid = True
+    if waiver.get("schema_version") != 1:
+        errors.append("stable risk waiver schema is invalid")
+        valid = False
+    if waiver.get("gate") != "stable_release_risk_waiver":
+        errors.append("stable risk waiver gate is invalid")
+        valid = False
+    if str(waiver.get("status", "")).upper() != "ACCEPTED":
+        errors.append("stable risk waiver was not accepted")
+        valid = False
+    if waiver.get("accepted_by") != "project_owner":
+        errors.append("stable risk waiver was not accepted by the project owner")
+        valid = False
+    if not re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}", str(waiver.get("accepted_at", ""))):
+        errors.append("stable risk waiver acceptance date is missing or invalid")
+        valid = False
+    if waiver.get("scope") != f"v{release_version}" or release_version != "1.0.0":
+        errors.append("stable risk waiver scope does not match v1.0.0")
+        valid = False
+    if waiver.get("valid_for_future_versions") is not False:
+        errors.append("stable risk waiver must not apply to future versions")
+        valid = False
+    if waiver.get("does_not_claim_pass") is not True:
+        errors.append("stable risk waiver must explicitly preserve incomplete gate status")
+        valid = False
+
+    decisions = waiver.get("decisions")
+    if not isinstance(decisions, dict):
+        errors.append("stable risk waiver decisions are missing")
+        return set()
+    unknown = sorted(set(decisions) - STABLE_WAIVER_DECISIONS)
+    if unknown:
+        errors.append(f"stable risk waiver has unknown decisions: {', '.join(unknown)}")
+        valid = False
+
+    accepted: set[str] = set()
+    for name, decision in decisions.items():
+        decision_valid = isinstance(decision, dict)
+        if not decision_valid:
+            errors.append(f"stable risk waiver decision is invalid: {name}")
+            valid = False
+            continue
+        if str(decision.get("status", "")).upper() != "WAIVED_BY_OWNER":
+            errors.append(f"stable risk waiver decision was not accepted: {name}")
+            decision_valid = False
+        if str(decision.get("requirement_status", "")).upper() != "NOT_COMPLETED":
+            errors.append(f"stable risk waiver must preserve NOT_COMPLETED status: {name}")
+            decision_valid = False
+        if not str(decision.get("rationale", "")).strip():
+            errors.append(f"stable risk waiver rationale is missing: {name}")
+            decision_valid = False
+        residual_risks = decision.get("residual_risks")
+        if (
+            not isinstance(residual_risks, list)
+            or not residual_risks
+            or not all(isinstance(item, str) and item.strip() for item in residual_risks)
+        ):
+            errors.append(f"stable risk waiver residual risks are missing: {name}")
+            decision_valid = False
+        if decision_valid and name in STABLE_WAIVER_DECISIONS:
+            accepted.add(name)
+        else:
+            valid = False
+
+    disclosures = waiver.get("required_disclosures")
+    expected_disclosures = {
+        "clean_machine_replay_not_completed",
+        "installer_unsigned",
+        "smartscreen_warning",
+        "sha256_verification",
+    }
+    if not isinstance(disclosures, list) or set(disclosures) != expected_disclosures:
+        errors.append("stable risk waiver required disclosures are incomplete")
+        valid = False
+    return accepted if valid else set()
+
+
+def _stable_code_signing_accepted(code_signing: object, waivers: set[str]) -> bool:
+    return code_signing == "authenticode_trusted" or (
+        code_signing == "unsigned" and "authenticode_code_signing" in waivers
     )
 
 
@@ -462,6 +569,16 @@ def validate_release(
     app_version = str(manifest.get("app_version", ""))
     if release_version.split("-", maxsplit=1)[0] != app_version:
         errors.append("release/app versions are inconsistent")
+    gates = manifest.get("gates", {})
+    stable_waivers: set[str] = set()
+    historical_limited = (
+        str(gates.get("historical_regression", "")).casefold() == "passed_with_limitation"
+    )
+    unsigned_stable = distribution.get("code_signing") != "authenticode_trusted"
+    if gate == "stable" and (historical_limited or unsigned_stable):
+        stable_waivers = _validate_stable_risk_waiver(
+            root / "release-evidence", release_version, errors
+        )
     checksums = _checksums(checksum_path, errors)
     for name, expected in checksums.items():
         if Path(name).is_absolute() or ".." in Path(name).parts:
@@ -566,10 +683,16 @@ def validate_release(
         blockers = distribution.get("blockers", [])
         if blockers:
             errors.append(f"release has unresolved blockers: {', '.join(map(str, blockers))}")
-        gates = manifest.get("gates", {})
         for name in sorted(RC_REQUIRED_GATES):
-            if not release_gate_passed(name, gates.get(name), gate):
-                errors.append(f"RC gate not passed: {name}")
+            if not release_gate_passed(
+                name,
+                gates.get(name),
+                gate,
+                allow_stable_historical_waiver=(
+                    "historical_clean_machine_replay" in stable_waivers
+                ),
+            ):
+                errors.append(f"release gate not passed: {name}")
         for sbom in required_sboms:
             sbom_path = root / "sbom" / sbom
             if not sbom_path.is_file():
@@ -580,7 +703,9 @@ def validate_release(
             root,
             errors,
             online_bootstrap=online_bootstrap,
-            allow_historical_limitation=gate == "rc",
+            allow_historical_limitation=(
+                gate == "rc" or "historical_clean_machine_replay" in stable_waivers
+            ),
         )
         models_path = root / "sbom/models.cdx.json"
         if models_path.is_file():
@@ -609,7 +734,8 @@ def validate_release(
         if not distribution.get("public_release_ready", False):
             errors.append("RC distribution is not marked public_release_ready")
     if gate == "stable":
-        if distribution.get("code_signing") != "authenticode_trusted":
+        code_signing = distribution.get("code_signing")
+        if not _stable_code_signing_accepted(code_signing, stable_waivers):
             errors.append("stable installer is not Authenticode signed")
     return errors
 
@@ -640,11 +766,21 @@ def main() -> None:
     errors = validate_release(root, public=args.public, gate=gate)
     if gate in {"rc", "stable"}:
         manifest = _load_json(root / "release-manifest.json", "release manifest", [])
+        waivers: set[str] = set()
+        if gate == "stable":
+            waivers = _validate_stable_risk_waiver(
+                root / "release-evidence", str(manifest.get("release_version", "")), []
+            )
         for name in sorted(RC_REQUIRED_GATES):
             value = str(manifest.get("gates", {}).get(name, "missing")).casefold()
             status = (
                 "PASS"
-                if release_gate_passed(name, value, gate)
+                if release_gate_passed(
+                    name,
+                    value,
+                    gate,
+                    allow_stable_historical_waiver=("historical_clean_machine_replay" in waivers),
+                )
                 else "FAIL"
                 if value == "failed"
                 else "N/A"
