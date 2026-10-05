@@ -1,161 +1,210 @@
+<div align="center">
+
+![VisionGuard：本地多模态出版内容智能审校](docs/assets/visionguard-banner.svg)
+
 # VisionGuard
 
-> 基于视觉语言模型的多模态出版内容智能审校系统<br>
-> Multimodal Publishing Content Moderation System Based on Vision-Language Models
+**基于视觉语言模型的多模态出版内容智能审校系统**
 
-VisionGuard 是面向 AI / Computer Vision 算法实习作品集的本地优先项目。系统将目标检测、OCR、传统文本分类、动态路由、视觉语言模型与风险融合组织为可评估、可解释、可服务化的完整推理链路。
+Multimodal Publishing Content Moderation System Based on Vision-Language Models
 
-> `v1.0.0-rc.1` 已作为 GitHub Prerelease 公开；当前进入 `v1.0.0` Stable 候选构建准备阶段。RC 通过不代表 Stable 已构建或已发布。
+[![版本 v1.0.0](https://img.shields.io/badge/Release-v1.0.0-2563eb)](https://github.com/qdjia/VisionGuard/releases/tag/v1.0.0) [![平台 Windows x64](https://img.shields.io/badge/Platform-Windows%20x64-334155)](https://github.com/qdjia/VisionGuard/releases/tag/v1.0.0) [![本地 AI 推理](https://img.shields.io/badge/Inference-Local-047857)](#审核流程) [![许可证 AGPL-3.0-only](https://img.shields.io/badge/License-AGPL--3.0--only-7c3aed)](LICENSE)
 
-## 产品边界
+[下载安装包](https://github.com/qdjia/VisionGuard/releases/tag/v1.0.0) · [快速开始](#快速开始) · [审核流程](#审核流程) · [实验记录](#实验与评估) · [开发指南](#开发指南)
 
-VisionGuard is a local-first desktop AI application. Internet access may be required for installation, model acquisition, and component updates, while all image review and AI inference run locally on the user's machine without cloud inference APIs.
+</div>
 
-- 安装、模型/组件获取和更新可以使用网络。
-- 实际审核推理在用户本机完成：Detector、OCR、Baseline、Router、VLM、Fusion 和结构化结果均不依赖云端推理 API。
-- 审核图片在推理期间由本地 Runtime 处理；项目不提供向云端审核服务上传图片的实现。
-- “本地推理”不等同于“完全离线”：项目不承诺零网络流量、隔离网运行或安装阶段断网可用。
+---
 
-## 能力
+VisionGuard 面向出版内容审核场景，将 **目标检测、OCR、文本分类与视觉语言模型** 组织成多阶段推理链路，提供可解释的结构化审核结果。项目保留模型训练、评估、性能分析和错误分析工具，展示 AI / Computer Vision 算法研发到桌面交付的工程过程。
 
-- **Fast Review**：使用 CPU Core 完成目标检测、OCR、文本基线、动态路由和风险融合。
-- **Deep Review**：安装可选 Advanced AI 后，按需调用本地 VLM 处理复杂语义或冲突证据。
-- **结构化结果**：输出风险等级、类别、证据、置信度、人工复核建议和分阶段耗时。
-- **工程评估**：包含训练、评估、批量推理、性能分析、错误分析、SBOM 和发行校验工具。
+> **v1.0.0 已正式发布。** 安装与模型获取可联网，图片审核与 AI 推理在本机完成。当前实验主要用于验证工程链路，尚不能代表真实出版场景的审核准确率。
 
-## 组件
+## 核心能力
 
-| 组件 | 必需 | 当前实测体积 | 作用 |
-|---|---:|---:|---|
-| Slim Core Runtime | 是 | 约 0.697 GiB | ONNX Detector、PaddleOCR、Baseline、Routing、Fusion |
-| Core Models | 是 | 约 0.146 GiB | Core 模型资产 |
-| Advanced AI 托管环境（含模型） | 否 | 预计约 8–10 GiB，待全新安装实测 | 固定版本的 Python、PyTorch CUDA、Transformers、VLM Runtime 与模型 |
-| 旧 VLM 分卷资产 | 否 | 约 8.191 GiB | 仅保留为开发/回退参考，不属于默认 Release |
+| 能力 | 可以做什么 |
+|---|---|
+| **Fast Review · 快速审核** | CPU Core 执行检测、OCR、文本基线、动态路由和风险融合 |
+| **Deep Review · 深度审核** | 安装可选 Advanced AI，按需调用本地 VLM 分析复杂语义与冲突证据 |
+| **结构化证据** | 返回风险等级、类别、原因、证据、置信度、人工复核建议与阶段耗时 |
+| **算法实验** | 检测训练与评估、OCR CER、文本基线对比和级联路由实验 |
+| **性能与错误分析** | 批量推理、耗时分析、失败分类、错误案例导出与回归记录 |
+| **桌面交付** | Tauri + React 桌面应用，内置 Core，支持可选 AI 组件安装与隔离运行 |
 
-Core-only 安装体积约 0.843 GiB。Advanced AI 默认不再随 GitHub Release 分发约 8.191 GiB 的 Runtime/模型分卷，而是在用户确认后从 Python、PyTorch 和 Hugging Face 官方来源按固定版本下载，校验后原子激活。安装失败不会影响 Fast Review。
+## 快速开始
 
-## 计划中的安装体验
+### 下载与安装
 
-1. 下载并校验 `VisionGuard-Setup-<version>.exe`。
-2. 安装并启动内置 Slim CPU Core。
-3. 如需 Deep Review，在应用内选择“安装 Advanced AI”，确认预计下载量与磁盘需求。
-4. VisionGuard 创建自己的隔离 Python 环境，从固定官方来源获取依赖和固定 revision 模型，验证后原子激活。
+1. 打开 [v1.0.0 发布页](https://github.com/qdjia/VisionGuard/releases/tag/v1.0.0)，下载 `VisionGuard-Setup-1.0.0.exe` 与 `SHA256SUMS.txt`。
+2. 在 PowerShell 中计算安装包的 SHA-256，与校验和文件中的对应值比较。
+3. 运行安装包，启动 VisionGuard，使用 **Fast Review** 审核图片。
+4. 如需深度审核，在应用内安装 **Advanced AI**，完成后使用 **Deep Review**。
 
-最终用户不需要安装 Python、Conda、Node 或 Rust。
+```powershell
+# 在安装包所在目录执行
+Get-FileHash .\VisionGuard-Setup-1.0.0.exe -Algorithm SHA256
+```
 
-## 系统要求与限制
+最终用户无需自行安装 Python、Conda、Node.js 或 Rust。安装包包含 Core Runtime 与 Core Models；Advanced AI 在用户确认后从固定官方来源获取依赖和模型，校验后激活，安装失败不会影响 Fast Review。
 
-- 目标平台：64 位 Windows。
-- Core：CPU 模式；最低内存与性能仍需多机验证。
-- Advanced AI：当前只在 RTX 4060 Laptop 8 GiB 上完成开发验证，这不是最低配置承诺。
-- Clean Core、Fresh-user GUI、Advanced AI GPU 和安装器生命周期 Gate 已通过。历史真实图片回归保持 `PASS_WITH_LIMITATION`：开发验收机 27 张图片为 0 confirmed / 0 potential，独立干净机复验仍未完成。
-- 项目所有者已对且仅对 `v1.0.0` 接受“独立干净机历史回归延期”和“未使用 Authenticode 签名”两项剩余风险。该决定记录为 `WAIVED_BY_OWNER`，不把未完成项伪装为 `PASS`，也不自动适用于后续版本。
-- Windows 安装包未签名，可能出现 SmartScreen 提示；下载后应核对 Release 页面提供的 SHA-256。
-- Ultralytics Detector 在 AGPL 开源发行路径下为 `ALLOWED_WITH_CONDITIONS`；发布时必须同时满足源码、许可证、构建脚本、来源记录及发行版本映射条件。
-- 默认 online-bootstrap Release 不再直接携带 PyTorch/CUDA/NVIDIA DLL；这些依赖在安装时由官方 PyTorch 源获取。NVIDIA 依赖仍需记录，但 `nvJitLink` 的 VisionGuard 直接二进制再分发门禁因此为 N/A。
+> 安装包目前未使用 Authenticode 签名，Windows 可能显示 SmartScreen 提示。运行前请核对发布页提供的 SHA-256。
 
-当前门禁见 [Release Gate](docs/release_gate.md)，候选验收、硬件和签名策略统一见
-[Release Operations](docs/release_operations.md)，历史架构演进见
-[Release Engineering History](docs/release_history.md)，分层 Windows 验收见
-[Split Windows Acceptance](docs/windows_acceptance.md)。
+### 平台与组件
 
-## 架构
+| 项目 | 当前版本说明 |
+|---|---|
+| 操作系统 | Windows x64 |
+| 快速审核 | CPU 模式；最低内存与性能仍需多设备验证 |
+| 深度审核 | 已在 RTX 4060 Laptop 8 GiB 上验证；不代表最低硬件要求 |
+| v1.0.0 安装包 | 约 **507 MiB** |
+| Core Runtime + Core Models | 文件大小合计约 **0.843 GiB**，不含 Desktop 和用户数据 |
+| Advanced AI | 另行下载；完整占用随依赖、模型与缓存变化 |
+
+### 本地推理与网络边界
+
+- 网络用于安装、模型与组件获取、更新。
+- Detector、OCR、Baseline、Router、VLM 与 Fusion 均在本机运行，不依赖云端推理 API。
+- 审核图片由本地 Runtime 处理，项目不提供向云端审核服务上传图片的实现。
+- “本地推理”不等于“完全离线”：不承诺隔离网部署或安装阶段断网可用。
+
+## 审核流程
+
+图片同时进入目标检测和 OCR；文本基线补充 OCR 证据，动态路由决定是否调用 VLM，最后由风险融合模块生成统一结果。
 
 ```mermaid
-flowchart LR
-    I[输入图片] --> D[YOLO / ONNX Detector]
-    I --> O[PaddleOCR]
-    O --> B[TF-IDF + GBDT]
-    D --> R[Dynamic Routing]
+flowchart TD
+    I[输入图片] --> D[YOLO26 / ONNX 目标检测]
+    I --> O[PaddleOCR 文字识别]
+    O --> B[TF-IDF + GBDT 文本基线]
+    D --> R[动态路由]
     O --> R
     B --> R
-    R -->|证据明确| F[Risk Fusion]
-    R -->|不确定 / 冲突 / 高风险| V[Local VLM Runtime]
+    R -->|证据明确| F[风险融合]
+    R -->|不确定、冲突或需深度审核| V[本地视觉语言模型]
+    I --> V
     V --> F
-    F --> J[Structured Review Result]
+    F --> J[结构化结果与人工复核建议]
 ```
+
+模型通过 Adapter 接入，配置与类别定义独立于业务逻辑。OCR 保留 polygon 与 bbox，ROI 坐标映射回原图；各阶段使用稳定 Schema 并记录耗时，便于替换模型、定位错误和比较实验。
+
+桌面端由内置 **Slim CPU Core** 与可选 **Advanced AI** 组成。VLM 使用独立进程按需加载；VLM 不可用时 Core 仍可运行，对无法确定的案例保留人工复核路径。
+
+详细设计：[算法架构](docs/architecture.md) · [桌面架构](docs/desktop_architecture.md) · [组件化 Runtime](docs/componentized_runtime.md) · [Advanced AI 安装机制](docs/advanced_ai_online_bootstrap.md)
+
+## 实验与评估
+
+以下是已记录的工程实验。**样本量小，部分为合成数据，不能外推为产品质量或工业数据集性能。**
+
+| 实验 | 已记录结果 | 解释边界 |
+|---|---|---|
+| YOLO 训练 | 完成训练、验证与 ONNX 导出链路 | 合成矩形数据、1 epoch，仅验证训练路径 |
+| OCR | CER = 0.0 | 单张干净合成中文图片 |
+| 文本 Baseline | 验证集 F1 = 0.8571 | 自编合成文本，共 36 条样本 |
+| VLM 结构化输出 | 3/3 样本返回结构化结果 | 验证输出契约，不是语义质量基准 |
+| 级联推理 | 3 样本实验中 VLM 调用率由 100% 降至 66.7% | 不足以证明稳定的性能收益 |
+| Batch 对比 | Full 0.123、Cascaded 0.122 图片/秒 | 2 样本、单次测量，未观察到吞吐提升 |
+
+当前实验显示 **VLM 生成是主要耗时来源**。已记录的 Batch 对比中，仅批量化 YOLO 与 Baseline 未改善整体吞吐；后续需要更大数据集和重复测量。
+
+实验入口：[实验说明](docs/experiments.md) · [实验汇总](docs/final_experiment_summary.md) · [复现指南](docs/reproducibility.md) · [历史回归](docs/historical_regression.md)
+
+## 开发指南
+
+### 项目目录
 
 ```text
-VisionGuard Desktop
-├── bundled Slim CPU Core
-│   ├── Core Runtime
-│   └── Core Models
-└── optional Advanced AI
-    ├── managed Python environment (official pinned dependencies)
-    └── managed immutable VLM model snapshot
+VisionGuard/
+├── src/visionguard/   算法、推理链路、评估与模型服务
+├── desktop/          Tauri + React 桌面应用
+├── configs/          模型、路由与融合配置
+├── scripts/          训练、评估、构建与验收工具
+├── packaging/        Runtime 与组件发行配置
+├── tests/            单元与集成测试
+├── docs/             架构、实验、发行与验收文档
+├── release-evidence/ 小型发行证据
+├── artifacts/        本地实验产物（不提交）
+└── models/           本地模型包（不提交）
 ```
 
-详细设计见 [架构说明](docs/architecture.md)、[组件化 Runtime](docs/componentized_runtime.md) 和 [Desktop 架构](docs/desktop_architecture.md)。
+### 开发环境
 
-## 目录
-
-```text
-src/visionguard/       Python 算法、Pipeline、评估与 API
-desktop/               Tauri + React 桌面应用
-configs/               可版本化配置
-scripts/               训练、评估、构建、验收工具
-packaging/             Runtime 与组件发行配置
-tests/                 Python 单元与集成测试
-docs/                  架构、实验、发行和验收记录
-artifacts/              本地实验产物（不提交）
-models/                 本地模型包（不提交）
-```
-
-## 开发
+以下命令面向源码开发者；GPU 训练与 VLM 推理需要与设备兼容的 PyTorch 环境。
 
 ```powershell
 conda activate visionguard
-pip install -e ".[dev]"
+python -m pip install -e ".[dev]"
 
+# 前端依赖
 cd desktop
 npm ci
 ```
 
-质量检查：
+<details>
+<summary><strong>展开质量检查命令</strong></summary>
+
+在仓库根目录检查 Python：
 
 ```powershell
-pytest -q
+python -m pytest -q
 ruff check .
 ruff format --check .
 python -m compileall src scripts
+```
 
-cd desktop
+在 `desktop/` 检查前端：
+
+```powershell
 npm test
 npm run lint
 npx tsc -b
 npm run build
+```
 
-cd src-tauri
+在 `desktop/src-tauri/` 检查 Rust：
+
+```powershell
 cargo test
 cargo fmt --check
 cargo check
 ```
 
-生成 SBOM：
+</details>
 
-```powershell
-python scripts/generate_sbom.py --version 1.0.0-rc.1 --output artifacts/sbom
-```
+<details>
+<summary><strong>展开发行构建与校验命令</strong></summary>
 
-最终 RC 构建和校验命令为：
-
-```powershell
-python scripts/build_release.py --version 1.0.0-rc.1
-python scripts/validate_release.py --rc
-```
-
-严格 Stable 候选必须从干净的已提交源码树重建，并自动执行 Stable validator：
+在仓库根目录执行。严格 Stable 构建要求干净的已提交源码树，重新构建 Core 与模型，并自动校验。
 
 ```powershell
 python scripts/build_release.py --version 1.0.0 --stable
+python scripts/validate_release.py release/v1.0.0 --stable
 ```
 
-该命令不会创建 Git Tag、GitHub Release，也不会公开上传产物。
+构建脚本生成本地产物；创建标签和 GitHub Release 属于独立发布操作。
 
-发布候选必须通过严格校验、Windows 分层验收、GUI 生命周期、升级/回滚/卸载/重装、历史回归与许可证分发门。`v1.0.0` 对未完成的独立干净机历史回归与 Authenticode 签名采用显式、版本限定的所有者风险豁免；其原始状态继续保留为未完成。真实离线测试不是 v1.0 的产品要求。
+单独生成 SBOM：
 
-## 许可证
+```powershell
+python scripts/generate_sbom.py --version 1.0.0 --output artifacts/sbom
+```
 
-VisionGuard 自有代码以 **GNU Affero General Public License v3.0 only (`AGPL-3.0-only`)** 发行。AGPL 是自由/开源许可证，不是“禁止商业使用”许可证；分发或通过网络提供修改后的适用程序时，应遵守相应源码提供义务。
+</details>
 
-第三方代码、Runtime、模型和资产继续适用各自许可证，根许可证不会重新许可它们。详见 [LICENSE](LICENSE)、[NOTICE](NOTICE)、[Third-Party Notices](THIRD_PARTY_NOTICES.md)、[发行许可报告](docs/release_licenses.md) 和 [AGPL 迁移记录](docs/agpl_migration.md)。
+工具说明：[CLI 参考](docs/cli_reference.md) · [配置说明](docs/configuration.md) · [Runtime 打包](docs/runtime_packaging.md)
+
+## 发布状态与已知限制
+
+`v1.0.0` 已公开为 Stable Release。Clean Core、Fresh-user GUI、Advanced AI GPU 及安装器生命周期验收已有通过记录。
+
+- 开发验收机完成 27 张历史真实图片回放，记录为 0 confirmed / 0 potential regression；独立干净机历史复验仍未完成。
+- 项目所有者仅对 `v1.0.0` 接受干净机历史复验延期和未签名发行两项风险，记为 `WAIVED_BY_OWNER`。未完成项保留原始状态，豁免不自动适用于后续版本。
+- 尚缺少大规模独立标注出版数据集、可靠的分类召回率估计、风险置信度校准和重复性能基准。
+
+发行依据：[发布门禁](docs/release_gate.md) · [发布操作](docs/release_operations.md) · [Windows 分层验收](docs/windows_acceptance.md) · [升级与回滚](docs/upgrade_rollback_acceptance.md) · [架构演进](docs/release_history.md)
+
+## 许可证与来源
+
+VisionGuard 自有代码使用 **AGPL-3.0-only**。第三方代码、Runtime 与模型适用各自许可证；来源与发行条件保存在对应记录中。
+
+[项目许可证](LICENSE) · [NOTICE](NOTICE) · [第三方声明](THIRD_PARTY_NOTICES.md) · [发行许可报告](docs/release_licenses.md) · [Detector 来源](docs/detector_provenance.md)
