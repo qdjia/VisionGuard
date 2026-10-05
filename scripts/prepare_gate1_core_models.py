@@ -95,13 +95,21 @@ def fetch_ocr_models(work_root: Path) -> dict[str, Path]:
 
     sources: dict[str, Path] = {}
     for role, spec in OCR_MODELS.items():
+        local_dir = work_root / "ocr-sources" / role
         snapshot = Path(
             snapshot_download(
                 repo_id=str(spec["repo_id"]),
                 revision=str(spec["revision"]),
-                cache_dir=work_root / "huggingface",
+                local_dir=local_dir,
+                local_dir_use_symlinks=False,
+                max_workers=1,
             )
         ).resolve()
+        # local_dir avoids Windows cache symlinks that require Developer Mode or
+        # elevated privileges. The download metadata is not part of the model.
+        metadata = snapshot / ".cache"
+        if metadata.exists():
+            shutil.rmtree(metadata)
         verify_file(snapshot / str(spec["artifact"]), expected_sha256=str(spec["sha256"]))
         sources[role] = snapshot
     return sources

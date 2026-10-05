@@ -2,9 +2,17 @@ from __future__ import annotations
 
 import hashlib
 import json
+import sys
+import types
 from pathlib import Path
 
-from scripts.prepare_gate1_core_models import BASE_CHECKPOINT, OCR_MODELS, verify_file
+from scripts import prepare_gate1_core_models
+from scripts.prepare_gate1_core_models import (
+    BASE_CHECKPOINT,
+    OCR_MODELS,
+    fetch_ocr_models,
+    verify_file,
+)
 from scripts.run_windows_acceptance import GATE_FILES, aggregate
 from scripts.run_windows_core_acceptance import (
     EXPECTED_MODEL_ROLES,
@@ -34,6 +42,38 @@ def _gate_files(root: Path, statuses: dict[str, str]) -> None:
             ),
             encoding="utf-8",
         )
+
+
+def test_ocr_model_download_uses_windows_safe_local_directories(
+    tmp_path: Path, monkeypatch
+) -> None:
+    calls: list[dict[str, object]] = []
+
+    def snapshot_download(**kwargs) -> str:
+        calls.append(kwargs)
+        local_dir = Path(str(kwargs["local_dir"]))
+        local_dir.mkdir(parents=True)
+        (local_dir / "inference.pdiparams").write_bytes(b"model")
+        metadata = local_dir / ".cache/huggingface"
+        metadata.mkdir(parents=True)
+        (metadata / "download.json").write_text("{}", encoding="utf-8")
+        return str(local_dir)
+
+    monkeypatch.setitem(
+        sys.modules,
+        "huggingface_hub",
+        types.SimpleNamespace(snapshot_download=snapshot_download),
+    )
+    monkeypatch.setattr(prepare_gate1_core_models, "verify_file", lambda *args, **kwargs: None)
+
+    sources = fetch_ocr_models(tmp_path)
+
+    assert set(sources) == set(OCR_MODELS)
+    assert len(calls) == len(OCR_MODELS)
+    assert all("cache_dir" not in call for call in calls)
+    assert all(call["local_dir_use_symlinks"] is False for call in calls)
+    assert all(call["max_workers"] == 1 for call in calls)
+    assert all(not (source / ".cache").exists() for source in sources.values())
 
 
 def test_aggregate_pass_requires_all_three_gates(tmp_path: Path) -> None:
